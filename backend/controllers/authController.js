@@ -91,6 +91,7 @@ exports.login = async (req, res) => {
     }
 };
 
+const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 
 exports.forgotPassword = async (req, res) => {
@@ -104,26 +105,28 @@ exports.forgotPassword = async (req, res) => {
         }
         const user = usersResult.rows[0];
 
-        // Create a 15-minute token
-        const resetToken = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET || 'fallback_secret', {
-            expiresIn: '15m'
-        });
+        // Generate secure random token
+        const resetToken = crypto.randomBytes(32).toString('hex');
+        const expiry = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+        await pool.query(
+            'UPDATE Users SET reset_token = $1, reset_token_expiry = $2 WHERE email = $3',
+            [resetToken, expiry, email]
+        );
 
         const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
 
         // Send email
         const transporter = nodemailer.createTransport({
-            service: 'gmail', // Standard fallback, you can configure actual SMTP via ENV later
+            service: 'gmail',
             auth: {
                 user: process.env.EMAIL_USER || 'test@gmail.com',
                 pass: process.env.EMAIL_PASS || 'test'
             }
         });
 
-        // Normally we'd send it, but we also just return it or log it for now so testing is easier without actual SMTP credentials.
         console.log("Reset Link generated:", resetLink);
 
-        // We'll try to send the email, but ignore errors if SMTP isn't configured for this test environment.
         try {
             await transporter.sendMail({
                 from: process.env.EMAIL_USER || 'no-reply@odonticstore.com',
@@ -146,14 +149,26 @@ exports.resetPassword = async (req, res) => {
     if (!token || !password) return res.status(400).json({ message: "Token and new password are required." });
 
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+        const usersResult = await pool.query(
+            'SELECT id FROM Users WHERE reset_token = $1 AND reset_token_expiry > NOW()',
+            [token]
+        );
+
+        if (usersResult.rows.length === 0) {
+            return res.status(400).json({ message: "Invalid or expired token" });
+        }
+
+        const user = usersResult.rows[0];
         const hashedPassword = bcrypt.hashSync(password, 8);
         
-        await pool.query('UPDATE Users SET password = $1 WHERE id = $2', [hashedPassword, decoded.id]);
+        await pool.query(
+            'UPDATE Users SET password = $1, reset_token = NULL, reset_token_expiry = NULL WHERE id = $2', 
+            [hashedPassword, user.id]
+        );
         
         res.status(200).json({ message: "Password reset successful" });
     } catch (err) {
-        res.status(400).json({ message: "Invalid or expired token" });
+        res.status(500).json({ message: err.message });
     }
 };
 
@@ -173,14 +188,14 @@ exports.updateProfile = async (req, res) => {
     const { name, email } = req.body;
     try {
         if (email) {
-            const [existing] = await pool.query('SELECT * FROM Users WHERE email = ? AND id != ?', [email, req.user.id]);
-            if (existing.length > 0) {
+            const result = await pool.query('SELECT * FROM Users WHERE email = $1 AND id != $2', [email, req.user.id]);
+            if (result.rows.length > 0) {
                 return res.status(400).json({ message: "Email already in use by another account." });
             }
         }
         
         await pool.query(
-            'UPDATE Users SET name = COALESCE(?, name), email = COALESCE(?, email) WHERE id = ?',
+            'UPDATE Users SET name = COALESCE($1, name), email = COALESCE($2, email) WHERE id = $3',
             [name, email, req.user.id]
         );
         res.status(200).json({ message: "Profile updated successfully." });
@@ -191,7 +206,7 @@ exports.updateProfile = async (req, res) => {
 
 exports.deleteAccount = async (req, res) => {
     try {
-        await pool.query('DELETE FROM Users WHERE id = ?', [req.user.id]);
+        await pool.query('DELETE FROM Users WHERE id = $1', [req.user.id]);
         res.status(200).json({ message: "Account deleted successfully." });
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -200,8 +215,8 @@ exports.deleteAccount = async (req, res) => {
 
 exports.getAllUsers = async (req, res) => {
     try {
-        const [users] = await pool.query('SELECT id, name, email, role, created_at FROM Users ORDER BY created_at DESC');
-        res.status(200).json(users);
+        const result = await pool.query('SELECT id, name, email, role, created_at FROM Users ORDER BY created_at DESC');
+        res.status(200).json(result.rows);
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
@@ -210,7 +225,7 @@ exports.getAllUsers = async (req, res) => {
 exports.deleteUserAsAdmin = async (req, res) => {
     const { id } = req.params;
     try {
-        await pool.query('DELETE FROM Users WHERE id = ?', [id]);
+        await pool.query('DELETE FROM Users WHERE id = $1', [id]);
         res.status(200).json({ message: "User deleted by admin." });
     } catch (err) {
         res.status(500).json({ message: err.message });

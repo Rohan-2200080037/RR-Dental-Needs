@@ -13,10 +13,10 @@ exports.addReview = async (req, res) => {
     }
 
     try {
-        const [existing] = await pool.query('SELECT id FROM Reviews WHERE user_id = ? AND product_id = ?', [userId, productId]);
-        if (existing.length > 0) return res.status(400).json({ message: "You already reviewed this product." });
+        const result = await pool.query('SELECT id FROM Reviews WHERE user_id = $1 AND product_id = $2', [userId, productId]);
+        if (result.rows.length > 0) return res.status(400).json({ message: "You already reviewed this product." });
 
-        await pool.query('INSERT INTO Reviews (user_id, product_id, rating, comment) VALUES (?, ?, ?, ?)', [userId, productId, rating, comment]);
+        await pool.query('INSERT INTO Reviews (user_id, product_id, rating, comment) VALUES ($1, $2, $3, $4)', [userId, productId, rating, comment]);
         res.status(201).json({ message: "Review added successfully." });
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -26,17 +26,17 @@ exports.addReview = async (req, res) => {
 exports.getProductReviews = async (req, res) => {
     const { productId } = req.params;
     try {
-        const [reviews] = await pool.query(`
+        const reviewsResult = await pool.query(`
             SELECT r.id, r.rating, r.comment, r.review_date, u.name as user_name 
             FROM Reviews r
             JOIN Users u ON r.user_id = u.id
-            WHERE r.product_id = ?
+            WHERE r.product_id = $1
             ORDER BY r.review_date DESC
         `, [productId]);
 
-        const [avg] = await pool.query('SELECT AVG(rating) as average_rating FROM Reviews WHERE product_id = ?', [productId]);
+        const avgResult = await pool.query('SELECT AVG(rating) as average_rating FROM Reviews WHERE product_id = $1', [productId]);
         
-        res.status(200).json({ reviews, averageRating: avg[0].average_rating || 0 });
+        res.status(200).json({ reviews: reviewsResult.rows, averageRating: avgResult.rows[0].average_rating || 0 });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
@@ -52,11 +52,11 @@ exports.updateReview = async (req, res) => {
     }
 
     try {
-        const [review] = await pool.query('SELECT user_id FROM Reviews WHERE id = ?', [id]);
-        if (review.length === 0) return res.status(404).json({ message: "Review not found." });
-        if (review[0].user_id !== userId) return res.status(403).json({ message: "Unauthorized." });
+        const result = await pool.query('SELECT user_id FROM Reviews WHERE id = $1', [id]);
+        if (result.rows.length === 0) return res.status(404).json({ message: "Review not found." });
+        if (result.rows[0].user_id !== userId) return res.status(403).json({ message: "Unauthorized." });
 
-        await pool.query('UPDATE Reviews SET rating = COALESCE(?, rating), comment = COALESCE(?, comment) WHERE id = ?', [rating, comment, id]);
+        await pool.query('UPDATE Reviews SET rating = COALESCE($1, rating), comment = COALESCE($2, comment) WHERE id = $3', [rating, comment, id]);
         res.status(200).json({ message: "Review updated successfully." });
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -68,14 +68,14 @@ exports.deleteReview = async (req, res) => {
     const userId = req.user.id;
 
     try {
-        const [review] = await pool.query('SELECT user_id FROM Reviews WHERE id = ?', [id]);
-        if (review.length === 0) return res.status(404).json({ message: "Review not found." });
+        const result = await pool.query('SELECT user_id FROM Reviews WHERE id = $1', [id]);
+        if (result.rows.length === 0) return res.status(404).json({ message: "Review not found." });
         
-        if (review[0].user_id !== userId && req.user.role !== 'admin') {
+        if (result.rows[0].user_id !== userId && req.user.role !== 'admin') {
             return res.status(403).json({ message: "Unauthorized." });
         }
 
-        await pool.query('DELETE FROM Reviews WHERE id = ?', [id]);
+        await pool.query('DELETE FROM Reviews WHERE id = $1', [id]);
         res.status(200).json({ message: "Review deleted successfully." });
     } catch (err) {
         res.status(500).json({ message: err.message });

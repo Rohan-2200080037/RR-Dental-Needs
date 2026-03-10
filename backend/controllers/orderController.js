@@ -11,21 +11,22 @@ exports.createOrder = async (req, res) => {
         return res.status(400).json({ message: "All address fields are required." });
     }
 
-    const connection = await pool.getConnection();
+    const client = await pool.connect();
 
     try {
-        await connection.beginTransaction();
+        await client.query('BEGIN');
 
         // 1. Get Cart Items
-        const [cartItems] = await connection.query(`
+        const cartResult = await client.query(`
             SELECT c.product_id, c.quantity, p.price, p.stock_quantity, p.seller_id
             FROM Cart c 
             JOIN Products p ON c.product_id = p.id 
-            WHERE c.user_id = ?
+            WHERE c.user_id = $1
         `, [userId]);
+        const cartItems = cartResult.rows;
 
         if (cartItems.length === 0) {
-            await connection.rollback();
+            await client.query('ROLLBACK');
             return res.status(400).json({ message: "Cart is empty." });
         }
 
@@ -33,75 +34,76 @@ exports.createOrder = async (req, res) => {
         let totalPrice = 0;
         for (let item of cartItems) {
             if (item.quantity > item.stock_quantity) {
-                 await connection.rollback();
+                 await client.query('ROLLBACK');
                  return res.status(400).json({ message: `Insufficient stock for product ID ${item.product_id}.` });
             }
             totalPrice += item.price * item.quantity;
         }
 
         // 3. Save Address
-        const [addressResult] = await connection.query(
-            'INSERT INTO Addresses (user_id, name, phone, address, city, state, pincode) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        const addressResult = await client.query(
+            'INSERT INTO Addresses (user_id, name, phone, address, city, state, pincode) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
             [userId, name, phone, address, city, state, pincode]
         );
-        const addressId = addressResult.insertId;
+        const addressId = addressResult.rows[0].id;
 
         // 4. Create Order
-        const [orderResult] = await connection.query(
-            'INSERT INTO Orders (user_id, address_id, total_price, payment_method, order_status) VALUES (?, ?, ?, ?, ?)',
+        const orderResult = await client.query(
+            'INSERT INTO Orders (user_id, address_id, total_price, payment_method, order_status) VALUES ($1, $2, $3, $4, $5) RETURNING id',
             [userId, addressId, totalPrice, paymentMethod, 'Pending']
         );
-        const orderId = orderResult.insertId;
+        const orderId = orderResult.rows[0].id;
 
         // 5. Create Order Items & Update Stock
         for (let item of cartItems) {
-             await connection.query(
-                 'INSERT INTO Order_Items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)',
+             await client.query(
+                 'INSERT INTO Order_Items (order_id, product_id, quantity, price) VALUES ($1, $2, $3, $4)',
                  [orderId, item.product_id, item.quantity, item.price]
              );
 
              // Deduct stock
-             await connection.query(
-                 'UPDATE Products SET stock_quantity = stock_quantity - ? WHERE id = ?',
+             await client.query(
+                 'UPDATE Products SET stock_quantity = stock_quantity - $1 WHERE id = $2',
                  [item.quantity, item.product_id]
              );
         }
 
         // 6. Clear Cart
-        await connection.query('DELETE FROM Cart WHERE user_id = ?', [userId]);
+        await client.query('DELETE FROM Cart WHERE user_id = $1', [userId]);
 
-        await connection.commit();
+        await client.query('COMMIT');
         res.status(201).json({ message: "Order placed successfully.", orderId });
 
     } catch (err) {
-        await connection.rollback();
+        await client.query('ROLLBACK');
         res.status(500).json({ message: err.message });
     } finally {
-        connection.release();
+        client.release();
     }
 };
 
 exports.getUserOrders = async (req, res) => {
     const userId = req.user.id;
     try {
-        const [orders] = await pool.query(`
+        const result = await pool.query(`
             SELECT o.id, o.order_date, o.total_price, o.order_status, o.payment_method,
                    a.name as delivery_name, a.address, a.city, a.state, a.pincode
             FROM Orders o
             JOIN Addresses a ON o.address_id = a.id
-            WHERE o.user_id = ?
+            WHERE o.user_id = $1
             ORDER BY o.order_date DESC
         `, [userId]);
+        const orders = result.rows;
 
         // Get items for each order
         for(let order of orders) {
-             const [items] = await pool.query(`
+             const itemsResult = await pool.query(`
                  SELECT oi.quantity, oi.price, p.name, p.image 
                  FROM Order_Items oi
                  JOIN Products p ON oi.product_id = p.id
-                 WHERE oi.order_id = ?
+                 WHERE oi.order_id = $1
              `, [order.id]);
-             order.items = items;
+             order.items = itemsResult.rows;
         }
 
         res.status(200).json(orders);
@@ -118,7 +120,7 @@ exports.getSellerOrders = async (req, res) => {
 
     try {
         // Find order items that belong to the seller's products
-        const [orders] = await pool.query(`
+        const result = await pool.query(`
             SELECT DISTINCT o.id as order_id, o.order_date, o.order_status, o.payment_method,
                    u.email as customer_email, a.name as customer_name, a.phone, a.address, a.city, a.state, a.pincode
             FROM Orders o
@@ -126,18 +128,19 @@ exports.getSellerOrders = async (req, res) => {
             JOIN Order_Items oi ON o.id = oi.order_id
             JOIN Products p ON oi.product_id = p.id
             JOIN Users u ON o.user_id = u.id
-            WHERE p.seller_id = ?
+            WHERE p.seller_id = $1
             ORDER BY o.order_date DESC
         `, [req.user.sellerId]);
+        const orders = result.rows;
 
         for (let order of orders) {
-             const [items] = await pool.query(`
+             const itemsResult = await pool.query(`
                  SELECT oi.quantity, oi.price, p.name 
                  FROM Order_Items oi
                  JOIN Products p ON oi.product_id = p.id
-                 WHERE oi.order_id = ? AND p.seller_id = ?
+                 WHERE oi.order_id = $1 AND p.seller_id = $2
              `, [order.order_id, req.user.sellerId]);
-             order.items = items;
+             order.items = itemsResult.rows;
         }
 
         res.status(200).json(orders);
@@ -150,20 +153,20 @@ exports.cancelOrder = async (req, res) => {
     const { id } = req.params;
     const userId = req.user.id;
     try {
-        const [orders] = await pool.query('SELECT order_status, user_id FROM Orders WHERE id = ?', [id]);
-        if (orders.length === 0) return res.status(404).json({ message: "Order not found." });
-        if (orders[0].user_id !== userId) return res.status(403).json({ message: "Unauthorized." });
-        if (orders[0].order_status !== 'Pending') {
+        const result = await pool.query('SELECT order_status, user_id FROM Orders WHERE id = $1', [id]);
+        if (result.rows.length === 0) return res.status(404).json({ message: "Order not found." });
+        if (result.rows[0].user_id !== userId) return res.status(403).json({ message: "Unauthorized." });
+        if (result.rows[0].order_status !== 'Pending') {
             return res.status(400).json({ message: "Only pending orders can be cancelled." });
         }
 
         // Restore stock
-        const [items] = await pool.query('SELECT product_id, quantity FROM Order_Items WHERE order_id = ?', [id]);
-        for (let item of items) {
-            await pool.query('UPDATE Products SET stock_quantity = stock_quantity + ? WHERE id = ?', [item.quantity, item.product_id]);
+        const itemsResult = await pool.query('SELECT product_id, quantity FROM Order_Items WHERE order_id = $1', [id]);
+        for (let item of itemsResult.rows) {
+            await pool.query('UPDATE Products SET stock_quantity = stock_quantity + $1 WHERE id = $2', [item.quantity, item.product_id]);
         }
 
-        await pool.query('UPDATE Orders SET order_status = ? WHERE id = ?', ['Cancelled', id]);
+        await pool.query('UPDATE Orders SET order_status = $1 WHERE id = $2', ['Cancelled', id]);
         res.status(200).json({ message: "Order cancelled successfully." });
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -174,11 +177,11 @@ exports.deleteOrderHistory = async (req, res) => {
     const { id } = req.params;
     const userId = req.user.id;
     try {
-        const [orders] = await pool.query('SELECT user_id FROM Orders WHERE id = ?', [id]);
-        if (orders.length === 0) return res.status(404).json({ message: "Order not found." });
-        if (orders[0].user_id !== userId) return res.status(403).json({ message: "Unauthorized." });
+        const result = await pool.query('SELECT user_id FROM Orders WHERE id = $1', [id]);
+        if (result.rows.length === 0) return res.status(404).json({ message: "Order not found." });
+        if (result.rows[0].user_id !== userId) return res.status(403).json({ message: "Unauthorized." });
 
-        await pool.query('DELETE FROM Orders WHERE id = ?', [id]);
+        await pool.query('DELETE FROM Orders WHERE id = $1', [id]);
         res.status(200).json({ message: "Order deleted from history." });
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -200,7 +203,7 @@ exports.updateOrderStatus = async (req, res) => {
         // Sellers can update order status for their products.
         // If order_status is tied to the Order table, updating it affects all items.
 
-        await pool.query('UPDATE Orders SET order_status = ? WHERE id = ?', [status, id]);
+        await pool.query('UPDATE Orders SET order_status = $1 WHERE id = $2', [status, id]);
         res.status(200).json({ message: "Order status updated." });
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -210,13 +213,13 @@ exports.updateOrderStatus = async (req, res) => {
 // Admin
 exports.getAllOrders = async (req, res) => {
     try {
-        const [orders] = await pool.query(`
+        const result = await pool.query(`
             SELECT o.id, o.order_date, o.total_price, o.order_status, o.payment_method, u.email as user_email
             FROM Orders o
             JOIN Users u ON o.user_id = u.id
             ORDER BY o.order_date DESC
         `);
-        res.status(200).json(orders);
+        res.status(200).json(result.rows);
     } catch (err) {
          res.status(500).json({ message: err.message });
     }
@@ -225,7 +228,7 @@ exports.getAllOrders = async (req, res) => {
 exports.deleteOrderAsAdmin = async (req, res) => {
     const { id } = req.params;
     try {
-        await pool.query('DELETE FROM Orders WHERE id = ?', [id]);
+        await pool.query('DELETE FROM Orders WHERE id = $1', [id]);
         res.status(200).json({ message: "Order deleted by admin." });
     } catch (err) {
         res.status(500).json({ message: err.message });

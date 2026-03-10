@@ -21,11 +21,11 @@ exports.createProduct = async (req, res) => {
     }
 
     try {
-        const [result] = await pool.query(
-            'INSERT INTO Products (name, description, price, image, stock_quantity, category, seller_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        const result = await pool.query(
+            'INSERT INTO Products (name, description, price, image, stock_quantity, category, seller_id) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
             [name, description, price, image, stock_quantity || 0, category, req.user.sellerId]
         );
-        res.status(201).json({ id: result.insertId, message: "Product created successfully." });
+        res.status(201).json({ id: result.rows[0].id, message: "Product created successfully." });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
@@ -33,8 +33,8 @@ exports.createProduct = async (req, res) => {
 
 exports.getAllProducts = async (req, res) => {
     try {
-        const [products] = await pool.query('SELECT * FROM Products');
-        res.status(200).json(products);
+        const result = await pool.query('SELECT * FROM Products');
+        res.status(200).json(result.rows);
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
@@ -43,11 +43,11 @@ exports.getAllProducts = async (req, res) => {
 exports.getProductById = async (req, res) => {
     const { id } = req.params;
     try {
-        const [products] = await pool.query('SELECT * FROM Products WHERE id = ?', [id]);
-        if (products.length === 0) {
+        const result = await pool.query('SELECT * FROM Products WHERE id = $1', [id]);
+        if (result.rows.length === 0) {
             return res.status(404).json({ message: "Product not found." });
         }
-        res.status(200).json(products[0]);
+        res.status(200).json(result.rows[0]);
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
@@ -57,8 +57,8 @@ exports.getProductsByCategory = async (req, res) => {
     const { category } = req.params;
     try {
         const decodedCategory = decodeURIComponent(category);
-        const [products] = await pool.query('SELECT * FROM Products WHERE category = ?', [decodedCategory]);
-        res.status(200).json(products);
+        const result = await pool.query('SELECT * FROM Products WHERE category = $1', [decodedCategory]);
+        res.status(200).json(result.rows);
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
@@ -74,20 +74,20 @@ exports.updateProduct = async (req, res) => {
     }
     
     try {
-        const [products] = await pool.query('SELECT seller_id FROM Products WHERE id = ?', [id]);
-        if (products.length === 0) {
+        const result = await pool.query('SELECT seller_id FROM Products WHERE id = $1', [id]);
+        if (result.rows.length === 0) {
             return res.status(404).json({ message: "Product not found." });
         }
 
-        if (req.user.role === 'seller' && products[0].seller_id !== req.user.sellerId) {
+        if (req.user.role === 'seller' && result.rows[0].seller_id !== req.user.sellerId) {
             return res.status(403).json({ message: "Unauthorized to update this product." });
         }
 
-        let query = 'UPDATE Products SET name=?, description=?, price=?, stock_quantity=?, category=? WHERE id=?';
+        let query = 'UPDATE Products SET name=$1, description=$2, price=$3, stock_quantity=$4, category=$5 WHERE id=$6';
         let queryParams = [name, description, price, stock_quantity, category, id];
 
         if (image) {
-             query = 'UPDATE Products SET name=?, description=?, price=?, image=?, stock_quantity=?, category=? WHERE id=?';
+             query = 'UPDATE Products SET name=$1, description=$2, price=$3, image=$4, stock_quantity=$5, category=$6 WHERE id=$7';
              queryParams = [name, description, price, image, stock_quantity, category, id];
         }
 
@@ -102,18 +102,18 @@ exports.deleteProduct = async (req, res) => {
     const { id } = req.params;
     
     try {
-        const [products] = await pool.query('SELECT seller_id FROM Products WHERE id = ?', [id]);
-        if (products.length === 0) {
+        const result = await pool.query('SELECT seller_id FROM Products WHERE id = $1', [id]);
+        if (result.rows.length === 0) {
             return res.status(404).json({ message: "Product not found." });
         }
 
-        if (req.user.role === 'seller' && products[0].seller_id !== req.user.sellerId) {
+        if (req.user.role === 'seller' && result.rows[0].seller_id !== req.user.sellerId) {
              if (req.user.role !== 'admin') {
                 return res.status(403).json({ message: "Unauthorized to delete this product." });
              }
         }
 
-        await pool.query('DELETE FROM Products WHERE id = ?', [id]);
+        await pool.query('DELETE FROM Products WHERE id = $1', [id]);
         res.status(200).json({ message: "Product deleted successfully." });
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -126,8 +126,8 @@ exports.getSellerProducts = async (req, res) => {
     }
     
     try {
-        const [products] = await pool.query('SELECT * FROM Products WHERE seller_id = ?', [req.user.sellerId]);
-        res.status(200).json(products);
+        const result = await pool.query('SELECT * FROM Products WHERE seller_id = $1', [req.user.sellerId]);
+        res.status(200).json(result.rows);
     } catch (err) {
         res.status(500).json({ message: err.message });
     }

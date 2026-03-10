@@ -14,22 +14,22 @@ exports.register = async (req, res) => {
     }
 
     try {
-        const [existing] = await pool.query('SELECT * FROM Users WHERE email = ?', [email]);
-        if (existing.length > 0) {
+        const result = await pool.query('SELECT * FROM Users WHERE email = $1', [email]);
+        if (result.rows.length > 0) {
             return res.status(400).json({ message: "Email already exists!" });
         }
 
         const hashedPassword = bcrypt.hashSync(password, 8);
         
-        const [result] = await pool.query(
-            'INSERT INTO Users (name, email, password, role) VALUES (?, ?, ?, ?)',
+        const insertResult = await pool.query(
+            'INSERT INTO Users (name, email, password, role) VALUES ($1, $2, $3, $4) RETURNING id',
             [name, email, hashedPassword, assignedRole]
         );
         
-        const newUserId = result.insertId;
+        const newUserId = insertResult.rows[0].id;
 
         if (assignedRole === 'seller') {
-            await pool.query('INSERT INTO Sellers (user_id, approved_status) VALUES (?, ?)', [newUserId, 'pending']);
+            await pool.query('INSERT INTO Sellers (user_id, approved_status) VALUES ($1, $2)', [newUserId, 'pending']);
         }
 
         res.status(201).json({ message: "User registered successfully!" });
@@ -46,7 +46,8 @@ exports.login = async (req, res) => {
     }
 
     try {
-        const [users] = await pool.query('SELECT * FROM Users WHERE email = ?', [email]);
+        const usersResult = await pool.query('SELECT * FROM Users WHERE email = $1', [email]);
+        const users = usersResult.rows;
         
         if (users.length === 0) {
             return res.status(404).json({ message: "User not found." });
@@ -63,7 +64,8 @@ exports.login = async (req, res) => {
         let approvedStatus = null;
         
         if (user.role === 'seller') {
-             const [sellers] = await pool.query('SELECT id, approved_status FROM Sellers WHERE user_id = ?', [user.id]);
+             const sellersResult = await pool.query('SELECT id, approved_status FROM Sellers WHERE user_id = $1', [user.id]);
+             const sellers = sellersResult.rows;
              if (sellers.length > 0) {
                  sellerId = sellers[0].id;
                  approvedStatus = sellers[0].approved_status;
@@ -92,11 +94,11 @@ exports.login = async (req, res) => {
 
 exports.getProfile = async (req, res) => {
     try {
-        const [users] = await pool.query('SELECT id, name, email, role, created_at FROM Users WHERE id = ?', [req.user.id]);
-        if (users.length === 0) {
+        const result = await pool.query('SELECT id, name, email, role, created_at FROM Users WHERE id = $1', [req.user.id]);
+        if (result.rows.length === 0) {
             return res.status(404).json({ message: "User not found." });
         }
-        res.status(200).json(users[0]);
+        res.status(200).json(result.rows[0]);
     } catch (err) {
         res.status(500).json({ message: err.message });
     }

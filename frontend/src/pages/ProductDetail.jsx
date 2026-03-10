@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import useAuthStore from '../store/authStore';
 import useCartStore from '../store/cartStore';
+import { HeartIcon as HeartOutline } from '@heroicons/react/24/outline';
+import { HeartIcon as HeartSolid } from '@heroicons/react/24/solid';
 import './ProductDetail.css';
 
 const ProductDetail = () => {
@@ -13,6 +15,8 @@ const ProductDetail = () => {
     const [error, setError] = useState(null);
     const [quantity, setQuantity] = useState(1);
     const [cartFeedback, setCartFeedback] = useState('');
+    const [isInWishlist, setIsInWishlist] = useState(false);
+    const [wishlistLoading, setWishlistLoading] = useState(false);
     
     // Reviews & Related Products States
     const [reviews, setReviews] = useState([]);
@@ -39,6 +43,19 @@ const ProductDetail = () => {
                 const relRes = await axios.get(`${import.meta.env.VITE_API_URL}/api/products/category/${res.data.category}`);
                 setRelatedProducts(relRes.data.filter(p => p.id !== parseInt(id)).slice(0, 4));
 
+                if (isAuthenticated && token) {
+                    try {
+                        const wishRes = await axios.get(`${import.meta.env.VITE_API_URL}/api/wishlist`, {
+                            headers: { Authorization: `Bearer ${token}` }
+                        });
+                        if (wishRes.data.some(w => w.product_id === parseInt(id))) {
+                            setIsInWishlist(true);
+                        }
+                    } catch (e) {
+                        console.error("Failed to fetch wishlist status", e);
+                    }
+                }
+
                 setError(null);
             } catch (err) {
                 setError('Failed to load product details');
@@ -47,7 +64,7 @@ const ProductDetail = () => {
             }
         };
         fetchProduct();
-    }, [id]);
+    }, [id, isAuthenticated, token]);
 
     const handleQuantityChange = (type) => {
         if (type === 'inc' && product && quantity < product.stock_quantity) {
@@ -72,6 +89,31 @@ const ProductDetail = () => {
             setTimeout(() => setCartFeedback(''), 3000);
         } catch (err) {
             setCartFeedback(err.response?.data?.message || 'Failed to add to cart');
+            setTimeout(() => setCartFeedback(''), 3000);
+        }
+    };
+
+    const handleWishlistToggle = async () => {
+        if (!isAuthenticated) return navigate('/login');
+        setWishlistLoading(true);
+        try {
+            if (isInWishlist) {
+                await axios.delete(`${import.meta.env.VITE_API_URL}/api/wishlist/remove/${id}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                setIsInWishlist(false);
+                setCartFeedback('Removed from wishlist');
+            } else {
+                await axios.post(`${import.meta.env.VITE_API_URL}/api/wishlist/add`, { productId: id }, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                setIsInWishlist(true);
+                setCartFeedback('Added to wishlist');
+            }
+        } catch (err) {
+            setCartFeedback('Failed to update wishlist');
+        } finally {
+            setWishlistLoading(false);
             setTimeout(() => setCartFeedback(''), 3000);
         }
     };
@@ -163,6 +205,26 @@ const ProductDetail = () => {
                         >
                             {cartLoading ? 'Adding...' : 'Add to Cart'}
                         </button>
+                        <button 
+                            className={`btn ${isInWishlist ? 'btn-secondary' : 'btn-outline'} btn-wishlist`}
+                            style={{ marginLeft: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}
+                            onClick={handleWishlistToggle}
+                            disabled={wishlistLoading}
+                        >
+                            {wishlistLoading ? '...' : (
+                                isInWishlist ? (
+                                    <>
+                                        <HeartSolid style={{ width: '20px', height: '20px', color: '#ff4d4d' }} />
+                                        Remove from Wishlist
+                                    </>
+                                ) : (
+                                    <>
+                                        <HeartOutline style={{ width: '20px', height: '20px' }} />
+                                        Add to Wishlist
+                                    </>
+                                )
+                            )}
+                        </button>
                     </div>
                     
                     {cartFeedback && (
@@ -174,10 +236,10 @@ const ProductDetail = () => {
             </div>
 
             {/* Reviews Section */}
-            <div className="reviews-section" style={{ marginTop: '50px', borderTop: '1px solid #ddd', paddingTop: '30px' }}>
+            <div className="reviews-section">
                 <h2>Customer Reviews</h2>
-                <div className="reviews-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '30px', marginTop: '20px' }}>
-                    <div className="review-form-container card" style={{ padding: '20px', height: 'fit-content' }}>
+                <div className="reviews-grid">
+                    <div className="review-form-container card">
                         <h3>Write a Review</h3>
                         {!isAuthenticated ? (
                             <p>Please <a href="/login">login</a> to write a review.</p>
@@ -215,16 +277,16 @@ const ProductDetail = () => {
                     
                     <div className="reviews-list">
                         {reviews.length === 0 ? (
-                            <p>No reviews yet. Be the first to review this product!</p>
+                            <p className="no-reviews">No reviews yet. Be the first to review this product!</p>
                         ) : (
                             reviews.map(rev => (
-                                <div key={rev.id} className="card" style={{ padding: '15px', marginBottom: '15px' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                                <div key={rev.id} className="card review-card">
+                                    <div className="review-header">
                                         <strong>{rev.user_name}</strong>
-                                        <span style={{ color: '#eab308' }}>{'★'.repeat(rev.rating)}{'☆'.repeat(5 - rev.rating)}</span>
+                                        <span className="review-stars">{'★'.repeat(rev.rating)}{'☆'.repeat(5 - rev.rating)}</span>
                                     </div>
-                                    <p style={{ margin: 0, color: '#444' }}>{rev.comment}</p>
-                                    <small style={{ color: '#888', display: 'block', marginTop: '10px' }}>
+                                    <p className="review-text">{rev.comment}</p>
+                                    <small className="review-date">
                                         {new Date(rev.review_date).toLocaleDateString()}
                                     </small>
                                 </div>
@@ -236,18 +298,18 @@ const ProductDetail = () => {
 
             {/* Related Products Section */}
             {relatedProducts.length > 0 && (
-                <div className="related-products" style={{ marginTop: '50px', borderTop: '1px solid #ddd', paddingTop: '30px' }}>
+                <div className="related-products">
                     <h2>Related Products</h2>
-                    <div className="products-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '20px', marginTop: '20px' }}>
+                    <div className="products-grid">
                         {relatedProducts.map(p => (
-                            <div key={p.id} className="card cursor-pointer" onClick={() => navigate(`/product/${p.id}`)} style={{ padding: '15px', textAlign: 'center' }}>
+                            <div key={p.id} className="card related-product-card cursor-pointer" onClick={() => navigate(`/product/${p.id}`)}>
                                 <img 
                                     src={p.image?.startsWith('/uploads') ? `${import.meta.env.VITE_API_URL}${p.image}` : (p.image || 'https://via.placeholder.com/200')} 
                                     alt={p.name} 
-                                    style={{ width: '100%', height: '150px', objectFit: 'cover', borderRadius: '4px', marginBottom: '10px' }} 
+                                    className="related-product-img"
                                 />
-                                <h4 style={{ margin: '0 0 10px 0', fontSize: '16px' }}>{p.name}</h4>
-                                <div style={{ color: 'var(--primary-color)', fontWeight: 'bold' }}>₹{Number(p.price).toLocaleString()}</div>
+                                <h4 className="related-product-title">{p.name}</h4>
+                                <div className="related-product-price">₹{Number(p.price).toLocaleString()}</div>
                             </div>
                         ))}
                     </div>

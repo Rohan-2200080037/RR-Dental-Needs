@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
 import useCartStore from '../store/cartStore';
-import { ShoppingCartIcon, UserCircleIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline'; // v2 outline
+import { ShoppingCartIcon, UserCircleIcon, ArrowRightOnRectangleIcon, HeartIcon } from '@heroicons/react/24/outline'; // v2 outline
 import './Navbar.css';
 
 const Navbar = () => {
@@ -51,14 +51,13 @@ const Navbar = () => {
               navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
             }
           }}
-          style={{ display: 'flex', alignItems: 'center', marginLeft: 'auto', marginRight: '20px' }}
         >
           <input
             type="text"
+            className="navbar-search-input"
             placeholder="Search instruments..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            style={{ padding: '6px 12px', borderRadius: '20px', border: '1px solid #ddd', outline: 'none', width: '250px' }}
           />
         </form>
 
@@ -70,6 +69,10 @@ const Navbar = () => {
             </>
           ) : (
             <>
+              <Link to="/profile" state={{ tab: 'wishlist' }} className="action-icon-wrapper cart-icon" style={{ marginRight: '15px' }} title="Wishlist">
+                <HeartIcon className="action-icon" />
+              </Link>
+
               <Link to="/cart" className="action-icon-wrapper cart-icon">
                 <ShoppingCartIcon className="action-icon" />
                 {totalItems > 0 && <span className="cart-badge">{totalItems}</span>}

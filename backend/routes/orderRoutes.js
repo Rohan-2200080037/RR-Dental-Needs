@@ -6,9 +6,9 @@ const { verifyToken, isRole } = require('../middlewares/authMiddleware');
 router.use(verifyToken);
 
 // User routes
-router.post('/', isRole(['user', 'seller', 'admin']), orderController.createOrder); // anyone can buy
+router.post('/create', isRole(['user', 'seller', 'admin']), orderController.createOrder); // anyone can buy
 router.get('/my-orders', isRole(['user', 'seller', 'admin']), orderController.getUserOrders);
-router.put('/:id/cancel', isRole(['user', 'seller', 'admin']), orderController.cancelOrder);
+router.put('/cancel/:id', isRole(['user', 'seller', 'admin']), orderController.cancelOrder);
 router.delete('/:id', isRole(['user', 'seller', 'admin']), orderController.deleteOrderHistory);
 
 // Seller routes

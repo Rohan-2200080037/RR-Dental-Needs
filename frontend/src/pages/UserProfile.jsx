@@ -8,11 +8,11 @@ const UserProfile = () => {
     const { user, token } = useAuthStore();
     const [orders, setOrders] = useState([]);
     const [wishlist, setWishlist] = useState([]);
-    const [activeTab, setActiveTab] = useState('orders');
+    const location = useLocation();
+    const [activeTab, setActiveTab] = useState(location.state?.tab || 'orders');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [feedback, setFeedback] = useState('');
-    const location = useLocation();
     const successMessage = location.state?.message;
 
     useEffect(() => {
@@ -56,7 +56,23 @@ const UserProfile = () => {
             case 'Packed': return 'status-packed';
             case 'Shipped': return 'status-shipped';
             case 'Delivered': return 'status-delivered';
+            case 'Cancelled': return 'bg-danger text-white rounded px-2 py-1';
             default: return '';
+        }
+    };
+
+    const handleCancelOrder = async (orderId) => {
+        if (!window.confirm("Are you sure you want to cancel this order?")) return;
+        try {
+            await axios.put(`${import.meta.env.VITE_API_URL}/api/orders/cancel/${orderId}`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setOrders(orders.map(o => o.id === orderId ? { ...o, order_status: 'Cancelled' } : o));
+            setFeedback('Order cancelled successfully!');
+            setTimeout(() => setFeedback(''), 3000);
+        } catch (err) {
+            setFeedback(err.response?.data?.message || 'Failed to cancel order');
+            setTimeout(() => setFeedback(''), 3000);
         }
     };
 
@@ -145,6 +161,13 @@ const UserProfile = () => {
                                                 <span className="order-date">{new Date(order.order_date).toLocaleDateString()}</span>
                                             </div>
                                             <div className="order-status-wrapper" style={{ width: '100%', marginTop: '15px' }}>
+                                                {order.order_status === 'Cancelled' ? (
+                                                    <div style={{ padding: '10px 0', textAlign: 'center' }}>
+                                                        <span className="bg-danger text-white" style={{ padding: '5px 10px', borderRadius: '4px', fontWeight: 'bold' }}>
+                                                            Status: Cancelled
+                                                        </span>
+                                                    </div>
+                                                ) : (
                                                 <div className="order-timeline" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', width: '100%' }}>
                                                     {['Pending', 'Packed', 'Shipped', 'Delivered'].map((step, index, array) => {
                                                         const currentStatusIndex = array.indexOf(order.order_status);
@@ -177,6 +200,7 @@ const UserProfile = () => {
                                                         }}></div>
                                                     </div>
                                                 </div>
+                                                )}
                                             </div>
                                         </div>
                                         
@@ -197,10 +221,20 @@ const UserProfile = () => {
                                                 <strong>Delivery to:</strong>
                                                 <p>{order.delivery_name}, {order.address}, {order.city}</p>
                                             </div>
-                                            <div className="order-total">
-                                                <span>Total:</span>
-                                                <strong>₹{Number(order.total_price).toLocaleString()}</strong>
-                                                <small className="payment-method">({order.payment_method})</small>
+                                            <div className="order-total" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '10px' }}>
+                                                <div>
+                                                    <span>Total: </span>
+                                                    <strong>₹{Number(order.total_price).toLocaleString()}</strong>
+                                                    <small className="payment-method"> ({order.payment_method})</small>
+                                                </div>
+                                                {(order.order_status === 'Pending' || order.order_status === 'Packed') && (
+                                                    <button 
+                                                        className="btn btn-outline-danger btn-sm"
+                                                        onClick={() => handleCancelOrder(order.id)}
+                                                    >
+                                                        Cancel Order
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
                                     </div>

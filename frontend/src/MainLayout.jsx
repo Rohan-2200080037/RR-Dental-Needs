@@ -1,6 +1,7 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
 import Navbar from './components/Navbar';
+import Footer from './components/Footer';
 import './MainLayout.css';
 
 const MainLayout = () => {
@@ -10,11 +11,7 @@ const MainLayout = () => {
       <main className="main-content">
         <Outlet />
       </main>
-      <footer className="footer">
-         <div className="container">
-            <p>&copy; {new Date().getFullYear()} Odontic Store. For Dental Students, by Dental Students.</p>
-         </div>
-      </footer>
+      <Footer />
     </div>
   );
 };

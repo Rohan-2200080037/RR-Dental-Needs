@@ -7,8 +7,7 @@ const Register = () => {
     const [formData, setFormData] = useState({
         name: '',
         email: '',
-        password: '',
-        role: 'user'
+        password: ''
     });
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
@@ -86,22 +85,6 @@ const Register = () => {
                             required
                             minLength="6"
                         />
-                    </div>
-                    <div className="form-group">
-                        <label className="form-label" htmlFor="role">Role</label>
-                        <select 
-                            id="role" 
-                            name="role" 
-                            className="form-input" 
-                            value={formData.role} 
-                            onChange={handleChange}
-                        >
-                            <option value="user">Dental Student (Buyer)</option>
-                            <option value="seller">Seller / Vendor</option>
-                        </select>
-                        {formData.role === 'seller' && (
-                             <p className="role-help">Note: Seller accounts require admin approval before you can list products or login.</p>
-                        )}
                     </div>
                     
                     <button type="submit" className="btn btn-primary auth-btn" disabled={isLoading}>

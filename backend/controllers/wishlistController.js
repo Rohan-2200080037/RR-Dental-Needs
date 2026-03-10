@@ -82,3 +82,16 @@ exports.removeFromWishlist = async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 };
+
+exports.removeFromWishlistByProduct = async (req, res) => {
+    const { productId } = req.params;
+    const userId = req.user.id;
+
+    try {
+        const result = await pool.query('DELETE FROM Wishlist WHERE product_id = $1 AND user_id = $2', [productId, userId]);
+        if (result.rowCount === 0) return res.status(404).json({ message: "Wishlist item not found or unauthorized." });
+        res.status(200).json({ message: "Item removed from wishlist." });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};

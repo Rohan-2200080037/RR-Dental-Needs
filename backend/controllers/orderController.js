@@ -3,9 +3,9 @@ const pool = require('../db');
 exports.createOrder = async (req, res) => {
     const userId = req.user.id;
     const { 
-        name, phone, address, city, state, pincode, 
-        paymentMethod = 'COD' 
+        name, phone, address, city, state, pincode
     } = req.body;
+    const paymentMethod = 'COD';
 
     if (!name || !phone || !address || !city || !state || !pincode) {
         return res.status(400).json({ message: "All address fields are required." });
@@ -156,8 +156,13 @@ exports.cancelOrder = async (req, res) => {
         const result = await pool.query('SELECT order_status, user_id FROM Orders WHERE id = $1', [id]);
         if (result.rows.length === 0) return res.status(404).json({ message: "Order not found." });
         if (result.rows[0].user_id !== userId) return res.status(403).json({ message: "Unauthorized." });
-        if (result.rows[0].order_status !== 'Pending') {
-            return res.status(400).json({ message: "Only pending orders can be cancelled." });
+        
+        const status = result.rows[0].order_status;
+        if (status === 'Shipped' || status === 'Delivered') {
+            return res.status(400).json({ message: "Order cannot be cancelled at this stage" });
+        }
+        if (status !== 'Pending' && status !== 'Packed') {
+            return res.status(400).json({ message: "Only pending or packed orders can be cancelled." });
         }
 
         // Restore stock

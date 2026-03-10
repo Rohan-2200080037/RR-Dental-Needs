@@ -3,11 +3,10 @@ const jwt = require('jsonwebtoken');
 const pool = require('../db');
 
 exports.register = async (req, res) => {
-    const { name, email, password, role } = req.body;
+    const { name, email, password } = req.body;
     
-    // Validate role
-    const validRoles = ['user', 'seller', 'admin'];
-    const assignedRole = validRoles.includes(role) ? role : 'user';
+    // Default role must always be user
+    const assignedRole = 'user';
 
     if (!name || !email || !password) {
         return res.status(400).json({ message: "Please provide all required fields" });
@@ -89,6 +88,72 @@ exports.login = async (req, res) => {
         });
     } catch (err) {
         res.status(500).json({ message: err.message });
+    }
+};
+
+const nodemailer = require('nodemailer');
+
+exports.forgotPassword = async (req, res) => {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: "Email is required." });
+
+    try {
+        const usersResult = await pool.query('SELECT id, email FROM Users WHERE email = $1', [email]);
+        if (usersResult.rows.length === 0) {
+            return res.status(404).json({ message: "User not found." });
+        }
+        const user = usersResult.rows[0];
+
+        // Create a 15-minute token
+        const resetToken = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET || 'fallback_secret', {
+            expiresIn: '15m'
+        });
+
+        const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+
+        // Send email
+        const transporter = nodemailer.createTransport({
+            service: 'gmail', // Standard fallback, you can configure actual SMTP via ENV later
+            auth: {
+                user: process.env.EMAIL_USER || 'test@gmail.com',
+                pass: process.env.EMAIL_PASS || 'test'
+            }
+        });
+
+        // Normally we'd send it, but we also just return it or log it for now so testing is easier without actual SMTP credentials.
+        console.log("Reset Link generated:", resetLink);
+
+        // We'll try to send the email, but ignore errors if SMTP isn't configured for this test environment.
+        try {
+            await transporter.sendMail({
+                from: process.env.EMAIL_USER || 'no-reply@odonticstore.com',
+                to: email,
+                subject: 'Password Reset - RR Dental Needs',
+                html: `<p>You requested a password reset. Click the link below to reset your password. It expires in 15 minutes.</p><p><a href="${resetLink}">Reset Password</a></p>`
+            });
+        } catch (mailError) {
+            console.warn("Could not send email (check SMTP config). Reset Link: ", resetLink);
+        }
+
+        res.status(200).json({ message: "If this email is registered, a reset link has been sent." });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
+
+exports.resetPassword = async (req, res) => {
+    const { token, password } = req.body;
+    if (!token || !password) return res.status(400).json({ message: "Token and new password are required." });
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+        const hashedPassword = bcrypt.hashSync(password, 8);
+        
+        await pool.query('UPDATE Users SET password = $1 WHERE id = $2', [hashedPassword, decoded.id]);
+        
+        res.status(200).json({ message: "Password reset successful" });
+    } catch (err) {
+        res.status(400).json({ message: "Invalid or expired token" });
     }
 };
 

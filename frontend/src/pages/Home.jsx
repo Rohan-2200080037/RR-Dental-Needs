@@ -42,13 +42,13 @@ const Home = () => {
         <div className="home-page">
             <section className="hero">
                 <div className="container hero-content">
-                    <h1>Your One-Stop Dental Instrument Shop</h1>
-                    <p>High-quality specialized orthodontic and dental laboratory instruments for students of all years.</p>
-                    
+                    <h1>Your One-Stop Dental Needs</h1>
+                    <p>For Pre-Clinical Dental excerises of all years at reasonable prices</p>
+
                     <form className="hero-search" onSubmit={handleSearch}>
-                        <input 
-                            type="text" 
-                            placeholder="Search for instruments..." 
+                        <input
+                            type="text"
+                            placeholder="Search for instruments..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="form-input search-input"
@@ -80,9 +80,9 @@ const Home = () => {
                         {products.slice(0, 8).map(product => (
                             <Link to={`/product/${product.id}`} key={product.id} className="card product-card">
                                 <div className="product-image-container">
-                                    <img 
-                                        src={product.image || 'https://via.placeholder.com/300x200?text=Instrument'} 
-                                        alt={product.name} 
+                                    <img
+                                        src={product.image || 'https://via.placeholder.com/300x200?text=Instrument'}
+                                        alt={product.name}
                                         className="product-image"
                                     />
                                     <span className="product-category-badge">{product.category}</span>

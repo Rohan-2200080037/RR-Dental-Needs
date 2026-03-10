@@ -82,6 +82,9 @@ const Login = () => {
                     <button type="submit" className="btn btn-primary auth-btn" disabled={isLoading}>
                         {isLoading ? 'Signing in...' : 'Sign In'}
                     </button>
+                    <div style={{ textAlign: 'center', marginTop: '10px' }}>
+                        <Link to="/forgot-password" style={{ color: '#0056b3', textDecoration: 'none', fontSize: '14px' }}>Forgot Password?</Link>
+                    </div>
                 </form>
                 
                 <div className="auth-footer">

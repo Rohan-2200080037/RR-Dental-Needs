@@ -18,6 +18,7 @@ const Checkout = () => {
         state: '',
         pincode: ''
     });
+    const [paymentMethod, setPaymentMethod] = useState('COD');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
@@ -41,8 +42,8 @@ const Checkout = () => {
         setError(null);
 
         try {
-            await axios.post(`${import.meta.env.VITE_API_URL}/api/orders`, 
-                { ...formData, paymentMethod: 'COD' },
+            await axios.post(`${import.meta.env.VITE_API_URL}/api/orders/create`, 
+                { ...formData, paymentMethod },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             
@@ -99,10 +100,13 @@ const Checkout = () => {
 
                             <div className="payment-method-sec mt-4">
                                 <h3>Payment Method</h3>
-                                <div className="payment-option selected">
-                                    <input type="radio" id="cod" name="payment" checked readOnly />
-                                    <label htmlFor="cod">Cash on Delivery (COD) Only</label>
+                                <div className={`payment-option ${paymentMethod === 'COD' ? 'selected' : ''}`}>
+                                    <input type="radio" id="cod" name="payment" value="COD" checked={paymentMethod === 'COD'} onChange={(e) => setPaymentMethod(e.target.value)} />
+                                    <label htmlFor="cod">Cash on Delivery (COD)</label>
                                 </div>
+                                <p className="text-muted mt-2">
+                                    "Payment will be collected at the time of delivery."
+                                </p>
                             </div>
                         </form>
                     </div>

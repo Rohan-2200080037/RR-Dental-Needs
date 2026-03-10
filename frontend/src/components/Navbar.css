@@ -1,0 +1,200 @@
+.navbar {
+    background-color: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    box-shadow: var(--shadow-sm);
+  }
+  
+  .nav-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 4rem; /* 64px */
+  }
+  
+  .brand-logo {
+    display: flex;
+    align-items: center;
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    letter-spacing: -0.05em;
+  }
+  
+  .brand-icon {
+    font-size: 1.75rem;
+    margin-right: 0.5rem;
+  }
+  
+  .brand-highlight {
+    color: var(--primary-color);
+  }
+  
+  .nav-links {
+    display: flex;
+    gap: 1.5rem;
+    margin-left: 2.5rem;
+  }
+  
+  .nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  
+  .btn-sm {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+  }
+  
+  .action-icon-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+    color: var(--text-secondary);
+    border-radius: var(--radius-full, 9999px);
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+    cursor: pointer;
+  }
+  
+  .action-icon-wrapper:hover {
+    background-color: var(--bg-color);
+    color: var(--primary-color);
+  }
+  
+  .action-icon {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+  
+  .cart-badge {
+    position: absolute;
+    top: -0.25rem;
+    right: -0.25rem;
+    background-color: var(--danger-color);
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 700;
+    height: 1.25rem;
+    min-width: 1.25rem;
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid white;
+    padding: 0 0.25rem;
+  }
+  
+  .user-greeting {
+    margin-left: 0.5rem;
+    font-weight: 500;
+  }
+  
+  .user-menu-dropdown {
+    position: relative;
+  }
+  
+  .dropdown-content {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 100%;
+    margin-top: 0.5rem;
+    background-color: white;
+    min-width: 12rem;
+    box-shadow: var(--shadow-lg);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+    z-index: 100;
+  }
+  
+  .user-menu-dropdown:hover .dropdown-content {
+    display: block;
+  }
+  
+  .dropdown-item {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    text-align: left;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    transition: background-color var(--transition-fast);
+  }
+  
+  .dropdown-item:hover {
+    background-color: var(--bg-color);
+    color: var(--primary-color);
+  }
+  
+  .text-danger {
+    color: var(--danger-color);
+  }
+  
+  .text-danger:hover {
+    color: #b91c1c; /* darker red */
+    background-color: #fef2f2;
+  }
+  
+  .dropdown-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-right: 0.5rem;
+  }
+  
+  /* ── Tablet (≤ 768px) ───────────────────────────────── */
+  @media (max-width: 768px) {
+    .desktop-only {
+      display: none !important;
+    }
+
+    .brand-logo {
+      font-size: 1.15rem;
+      white-space: nowrap;
+      letter-spacing: -0.03em;
+    }
+
+    .brand-icon {
+      font-size: 1.35rem;
+      margin-right: 0.35rem;
+    }
+
+    .nav-links {
+      gap: 0.9rem;
+      margin-left: 1.25rem;
+    }
+
+    .nav-container {
+      height: 3.75rem;
+    }
+  }
+
+  /* ── Mobile (≤ 480px) ────────────────────────────────── */
+  @media (max-width: 480px) {
+    .brand-logo {
+      font-size: 0.95rem;
+      white-space: nowrap;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-icon {
+      font-size: 1.1rem;
+      margin-right: 0.25rem;
+    }
+
+    .nav-links {
+      gap: 0.6rem;
+      margin-left: 0.75rem;
+    }
+
+    .nav-container {
+      height: 3.5rem;
+    }
+  }

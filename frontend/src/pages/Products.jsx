@@ -18,7 +18,7 @@ const Products = () => {
         const fetchProducts = async () => {
             setLoading(true);
             try {
-                const res = await axios.get('http://localhost:5000/api/products');
+                const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/products`);
                 let data = res.data;
 
                 // Apply Search Filter locally if standard API doesn't support query params

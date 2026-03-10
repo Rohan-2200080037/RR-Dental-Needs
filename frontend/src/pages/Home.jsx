@@ -13,7 +13,7 @@ const Home = () => {
         const fetchProducts = async () => {
             try {
                 // For the home page, just get all products or a few
-                const res = await axios.get('http://localhost:5000/api/products');
+                const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/products`);
                 setProducts(res.data);
             } catch (err) {
                 console.error("Failed to load products", err);

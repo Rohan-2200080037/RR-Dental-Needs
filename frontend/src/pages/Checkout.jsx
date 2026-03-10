@@ -41,7 +41,7 @@ const Checkout = () => {
         setError(null);
 
         try {
-            await axios.post('http://localhost:5000/api/orders', 
+            await axios.post(`${import.meta.env.VITE_API_URL}/api/orders`, 
                 { ...formData, paymentMethod: 'COD' },
                 { headers: { Authorization: `Bearer ${token}` } }
             );

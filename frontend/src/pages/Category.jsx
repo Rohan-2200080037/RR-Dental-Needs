@@ -14,7 +14,7 @@ const Category = () => {
         const fetchCategoryProducts = async () => {
             setLoading(true);
             try {
-                const res = await axios.get(`http://localhost:5000/api/products/category/${encodeURIComponent(decodedCategory)}`);
+                const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/products/category/${encodeURIComponent(decodedCategory)}`);
                 setProducts(res.data);
                 setError(null);
             } catch (err) {

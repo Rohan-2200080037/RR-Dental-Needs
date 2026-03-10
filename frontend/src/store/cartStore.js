@@ -9,7 +9,7 @@ const useCartStore = create((set, get) => ({
     fetchCart: async (token) => {
         set({ loading: true });
         try {
-            const res = await axios.get('http://localhost:5000/api/cart', {
+            const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/cart`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             set({ items: res.data, loading: false, error: null });
@@ -21,7 +21,7 @@ const useCartStore = create((set, get) => ({
     addToCart: async (productId, quantity, token) => {
         set({ loading: true });
         try {
-             await axios.post('http://localhost:5000/api/cart/add', 
+             await axios.post(`${import.meta.env.VITE_API_URL}/api/cart/add`, 
                 { productId, quantity },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -35,7 +35,7 @@ const useCartStore = create((set, get) => ({
     updateQuantity: async (cartId, quantity, token) => {
         set({ loading: true });
         try {
-            await axios.put(`http://localhost:5000/api/cart/${cartId}`,
+            await axios.put(`${import.meta.env.VITE_API_URL}/api/cart/${cartId}`,
                 { quantity },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -48,7 +48,7 @@ const useCartStore = create((set, get) => ({
     removeFromCart: async (cartId, token) => {
         set({ loading: true });
         try {
-             await axios.delete(`http://localhost:5000/api/cart/${cartId}`, {
+             await axios.delete(`${import.meta.env.VITE_API_URL}/api/cart/${cartId}`, {
                  headers: { Authorization: `Bearer ${token}` }
              });
              set(state => ({ items: state.items.filter(item => item.cart_id !== cartId), loading: false }));

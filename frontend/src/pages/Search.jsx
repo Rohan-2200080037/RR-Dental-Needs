@@ -21,7 +21,7 @@ const Search = () => {
             try {
                 // Fetch all and filter client side for simplicity, or we could add a backend search route.
                 // Since this is a demo, client side filter on all products is fine for small DB.
-                const res = await axios.get('http://localhost:5000/api/products');
+                const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/products`);
                 const filtered = res.data.filter(p => 
                     p.name.toLowerCase().includes(query.toLowerCase()) || 
                     p.description.toLowerCase().includes(query.toLowerCase()) ||
@@ -58,7 +58,7 @@ const Search = () => {
                         <div key={product.id} className="product-card card">
                             <div className="product-image-wrapper">
                                 <img 
-                                    src={product.image?.startsWith('/uploads') ? `http://localhost:5000${product.image}` : (product.image || 'https://via.placeholder.com/300')} 
+                                    src={product.image?.startsWith('/uploads') ? `${import.meta.env.VITE_API_URL}${product.image}` : (product.image || 'https://via.placeholder.com/300')} 
                                     alt={product.name} 
                                     className="product-image"
                                 />

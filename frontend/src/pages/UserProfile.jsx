@@ -19,10 +19,10 @@ const UserProfile = () => {
         const fetchUserData = async () => {
             try {
                 const [ordersResult, wishlistResult] = await Promise.allSettled([
-                    axios.get('http://localhost:5000/api/orders/my-orders', {
+                    axios.get(`${import.meta.env.VITE_API_URL}/api/orders/my-orders`, {
                         headers: { Authorization: `Bearer ${token}` }
                     }),
-                    axios.get('http://localhost:5000/api/wishlist', {
+                    axios.get(`${import.meta.env.VITE_API_URL}/api/wishlist`, {
                         headers: { Authorization: `Bearer ${token}` }
                     })
                 ]);
@@ -62,7 +62,7 @@ const UserProfile = () => {
 
     const handleMoveToCart = async (wishlistId) => {
         try {
-            await axios.post(`http://localhost:5000/api/wishlist/${wishlistId}/move-to-cart`, {}, {
+            await axios.post(`${import.meta.env.VITE_API_URL}/api/wishlist/${wishlistId}/move-to-cart`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setWishlist(wishlist.filter(w => w.wishlist_id !== wishlistId));
@@ -77,7 +77,7 @@ const UserProfile = () => {
     const handleRemoveWishlist = async (wishlistId) => {
         if(!window.confirm("Remove item from wishlist?")) return;
         try {
-            await axios.delete(`http://localhost:5000/api/wishlist/${wishlistId}`, {
+            await axios.delete(`${import.meta.env.VITE_API_URL}/api/wishlist/${wishlistId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setWishlist(wishlist.filter(w => w.wishlist_id !== wishlistId));
@@ -237,7 +237,7 @@ const UserProfile = () => {
                                             <tr key={item.wishlist_id}>
                                                 <td>
                                                     <img 
-                                                        src={item.image?.startsWith('/uploads') ? `http://localhost:5000${item.image}` : (item.image || 'https://via.placeholder.com/50')} 
+                                                        src={item.image?.startsWith('/uploads') ? `${import.meta.env.VITE_API_URL}${item.image}` : (item.image || 'https://via.placeholder.com/50')} 
                                                         alt={item.name} 
                                                         className="table-img" 
                                                     />

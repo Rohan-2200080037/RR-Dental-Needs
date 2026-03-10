@@ -23,19 +23,19 @@ const AdminDashboard = () => {
         setError(null);
         try {
             if (activeTab === 'analytics') {
-                const res = await axios.get('http://localhost:5000/api/admin/analytics', { headers: { Authorization: `Bearer ${token}` } });
+                const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/admin/analytics`, { headers: { Authorization: `Bearer ${token}` } });
                 setAnalytics(res.data);
             } else if (activeTab === 'users') {
-                const res = await axios.get('http://localhost:5000/api/admin/users', { headers: { Authorization: `Bearer ${token}` } });
+                const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/admin/users`, { headers: { Authorization: `Bearer ${token}` } });
                 setUsers(res.data);
             } else if (activeTab === 'sellers') {
-                const res = await axios.get('http://localhost:5000/api/admin/sellers', { headers: { Authorization: `Bearer ${token}` } });
+                const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/admin/sellers`, { headers: { Authorization: `Bearer ${token}` } });
                 setSellers(res.data);
             } else if (activeTab === 'products') {
-                const res = await axios.get('http://localhost:5000/api/products'); // Public, but admin views it here
+                const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/products`); // Public, but admin views it here
                 setProducts(res.data);
             } else if (activeTab === 'orders') {
-               const res = await axios.get('http://localhost:5000/api/orders/all', { headers: { Authorization: `Bearer ${token}` } });
+               const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/orders/all`, { headers: { Authorization: `Bearer ${token}` } });
                setOrders(res.data);
             }
         } catch (err) {
@@ -58,7 +58,7 @@ const AdminDashboard = () => {
     const handleDeleteUser = async (id) => {
         if (!window.confirm("Delete this user permanently? This will cascade delete their cart, orders, etc.")) return;
         try {
-            await axios.delete(`http://localhost:5000/api/admin/users/${id}`, { headers: { Authorization: `Bearer ${token}` }});
+            await axios.delete(`${import.meta.env.VITE_API_URL}/api/admin/users/${id}`, { headers: { Authorization: `Bearer ${token}` }});
             setUsers(users.filter(u => u.id !== id));
             showFeedback("User deleted successfully.");
         } catch (err) {
@@ -68,7 +68,7 @@ const AdminDashboard = () => {
 
     const handleSellerStatusUpdate = async (sellerId, newStatus) => {
         try {
-            await axios.put(`http://localhost:5000/api/admin/sellers/${sellerId}/status`, 
+            await axios.put(`${import.meta.env.VITE_API_URL}/api/admin/sellers/${sellerId}/status`, 
                 { status: newStatus },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -81,7 +81,7 @@ const AdminDashboard = () => {
 
     const handleOrderStatusUpdate = async (orderId, newStatus) => {
         try {
-            await axios.put(`http://localhost:5000/api/orders/${orderId}/status`, { status: newStatus }, {
+            await axios.put(`${import.meta.env.VITE_API_URL}/api/orders/${orderId}/status`, { status: newStatus }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setOrders(orders.map(o => o.id === orderId ? { ...o, order_status: newStatus } : o));
@@ -94,7 +94,7 @@ const AdminDashboard = () => {
     const handleDeleteProduct = async (id) => {
         if (!window.confirm("Delete this product permanently?")) return;
         try {
-            await axios.delete(`http://localhost:5000/api/products/${id}`, { headers: { Authorization: `Bearer ${token}` }});
+            await axios.delete(`${import.meta.env.VITE_API_URL}/api/products/${id}`, { headers: { Authorization: `Bearer ${token}` }});
             setProducts(products.filter(p => p.id !== id));
             showFeedback("Product deleted successfully.");
         } catch (err) {

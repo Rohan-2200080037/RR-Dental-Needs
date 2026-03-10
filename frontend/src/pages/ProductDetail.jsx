@@ -27,16 +27,16 @@ const ProductDetail = () => {
     useEffect(() => {
         const fetchProduct = async () => {
             try {
-                const res = await axios.get(`http://localhost:5000/api/products/${id}`);
+                const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/products/${id}`);
                 setProduct(res.data);
                 
                 // Fetch reviews
-                const revRes = await axios.get(`http://localhost:5000/api/reviews/product/${id}`);
+                const revRes = await axios.get(`${import.meta.env.VITE_API_URL}/api/reviews/product/${id}`);
                 setReviews(revRes.data.reviews || []);
                 setAverageRating(revRes.data.averageRating || 0);
 
                 // Fetch Related Products
-                const relRes = await axios.get(`http://localhost:5000/api/products/category/${res.data.category}`);
+                const relRes = await axios.get(`${import.meta.env.VITE_API_URL}/api/products/category/${res.data.category}`);
                 setRelatedProducts(relRes.data.filter(p => p.id !== parseInt(id)).slice(0, 4));
 
                 setError(null);
@@ -81,7 +81,7 @@ const ProductDetail = () => {
         if (!isAuthenticated) return navigate('/login');
 
         try {
-            await axios.post('http://localhost:5000/api/reviews', {
+            await axios.post(`${import.meta.env.VITE_API_URL}/api/reviews`, {
                 productId: id,
                 rating: reviewForm.rating,
                 comment: reviewForm.comment
@@ -90,7 +90,7 @@ const ProductDetail = () => {
             setReviewFeedback('Review submitted successfully!');
             setReviewForm({ rating: 5, comment: '' });
             
-            const revRes = await axios.get(`http://localhost:5000/api/reviews/product/${id}`);
+            const revRes = await axios.get(`${import.meta.env.VITE_API_URL}/api/reviews/product/${id}`);
             setReviews(revRes.data.reviews || []);
             setAverageRating(revRes.data.averageRating || 0);
             
@@ -112,7 +112,7 @@ const ProductDetail = () => {
             <div className="product-detail-wrapper">
                 <div className="product-detail-image-sec">
                     <img 
-                        src={product.image?.startsWith('/uploads') ? `http://localhost:5000${product.image}` : (product.image || 'https://via.placeholder.com/600x400?text=Instrument')} 
+                        src={product.image?.startsWith('/uploads') ? `${import.meta.env.VITE_API_URL}${product.image}` : (product.image || 'https://via.placeholder.com/600x400?text=Instrument')} 
                         alt={product.name} 
                         className="detail-image"
                     />
@@ -242,7 +242,7 @@ const ProductDetail = () => {
                         {relatedProducts.map(p => (
                             <div key={p.id} className="card cursor-pointer" onClick={() => navigate(`/product/${p.id}`)} style={{ padding: '15px', textAlign: 'center' }}>
                                 <img 
-                                    src={p.image?.startsWith('/uploads') ? `http://localhost:5000${p.image}` : (p.image || 'https://via.placeholder.com/200')} 
+                                    src={p.image?.startsWith('/uploads') ? `${import.meta.env.VITE_API_URL}${p.image}` : (p.image || 'https://via.placeholder.com/200')} 
                                     alt={p.name} 
                                     style={{ width: '100%', height: '150px', objectFit: 'cover', borderRadius: '4px', marginBottom: '10px' }} 
                                 />

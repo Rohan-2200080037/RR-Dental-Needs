@@ -30,12 +30,12 @@ const SellerDashboard = () => {
             setLoading(true);
             try {
                 if (activeTab === 'products') {
-                    const res = await axios.get('http://localhost:5000/api/products/seller/my-products', {
+                    const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/products/seller/my-products`, {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     setProducts(res.data);
                 } else {
-                    const res = await axios.get('http://localhost:5000/api/orders/seller-orders', {
+                    const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/orders/seller-orders`, {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     setOrders(res.data);
@@ -59,12 +59,12 @@ const SellerDashboard = () => {
         setFeedback('');
         try {
             if (editingId) {
-                 await axios.put(`http://localhost:5000/api/products/${editingId}`, formData, {
+                 await axios.put(`${import.meta.env.VITE_API_URL}/api/products/${editingId}`, formData, {
                      headers: { Authorization: `Bearer ${token}` }
                  });
                  setFeedback("Product updated successfully");
             } else {
-                 await axios.post('http://localhost:5000/api/products', formData, {
+                 await axios.post(`${import.meta.env.VITE_API_URL}/api/products`, formData, {
                      headers: { Authorization: `Bearer ${token}` }
                  });
                  setFeedback("Product created successfully");
@@ -75,7 +75,7 @@ const SellerDashboard = () => {
             setFormData({ name: '', description: '', price: '', stock_quantity: '', category: '1st Year', image: ''});
             
             // Refresh products
-            const res = await axios.get('http://localhost:5000/api/products/seller/my-products', {
+            const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/products/seller/my-products`, {
                         headers: { Authorization: `Bearer ${token}` }
             });
             setProducts(res.data);
@@ -102,7 +102,7 @@ const SellerDashboard = () => {
     const handleDeleteProduct = async (id) => {
         if (!window.confirm("Are you sure you want to delete this product?")) return;
         try {
-            await axios.delete(`http://localhost:5000/api/products/${id}`, {
+            await axios.delete(`${import.meta.env.VITE_API_URL}/api/products/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setProducts(products.filter(p => p.id !== id));
@@ -115,7 +115,7 @@ const SellerDashboard = () => {
 
     const handleOrderStatusUpdate = async (orderId, newStatus) => {
         try {
-            await axios.put(`http://localhost:5000/api/orders/${orderId}/status`, { status: newStatus }, {
+            await axios.put(`${import.meta.env.VITE_API_URL}/api/orders/${orderId}/status`, { status: newStatus }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             // Update local state
@@ -266,7 +266,7 @@ const SellerDashboard = () => {
                                         {products.map(p => (
                                             <tr key={p.id}>
                                                 <td>#{p.id}</td>
-                                                <td><img src={p.image?.startsWith('/uploads') ? `http://localhost:5000${p.image}` : (p.image || 'https://via.placeholder.com/50')} alt={p.name} className="table-img" /></td>
+                                                <td><img src={p.image?.startsWith('/uploads') ? `${import.meta.env.VITE_API_URL}${p.image}` : (p.image || 'https://via.placeholder.com/50')} alt={p.name} className="table-img" /></td>
                                                 <td>{p.name}</td>
                                                 <td>{p.category}</td>
                                                 <td>₹{Number(p.price).toLocaleString()}</td>

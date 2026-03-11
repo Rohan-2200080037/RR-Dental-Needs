@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   HomeIcon, 
@@ -12,7 +12,7 @@ import {
 } from '@heroicons/react/24/outline';
 import useAuthStore from '../../store/authStore';
 
-const Sidebar = ({ isAdmin = false }) => {
+const Sidebar = ({ isAdmin = false, activeTab, onTabChange }) => {
   const { logout } = useAuthStore();
   const navigate = useNavigate();
 
@@ -21,20 +21,21 @@ const Sidebar = ({ isAdmin = false }) => {
     navigate('/login');
   };
 
-  const adminLinks = [
-    { name: 'Dashboard', path: '/admin', icon: HomeIcon, end: true },
-    { name: 'Users', path: '/admin/users', icon: UsersIcon },
-    { name: 'Sellers', path: '/admin/sellers', icon: UsersIcon },
-    { name: 'Products', path: '/admin/products', icon: ShoppingBagIcon },
-    { name: 'Orders', path: '/admin/orders', icon: ClipboardDocumentListIcon },
-    { name: 'Reviews', path: '/admin/reviews', icon: StarIcon },
+    const adminLinks = [
+    { name: 'Dashboard', id: 'analytics', icon: HomeIcon },
+    { name: 'Users', id: 'users', icon: UsersIcon },
+    { name: 'Sellers', id: 'sellers', icon: UsersIcon },
+    { name: 'Products', id: 'products', icon: ShoppingBagIcon },
+    { name: 'Orders', id: 'orders', icon: ClipboardDocumentListIcon },
+    { name: 'Messages', id: 'messages', icon: ClipboardDocumentListIcon },
+    { name: 'Reviews', id: 'reviews', icon: StarIcon },
   ];
 
   const sellerLinks = [
-    { name: 'Dashboard', path: '/seller', icon: HomeIcon, end: true },
-    { name: 'My Products', path: '/seller/products', icon: ShoppingBagIcon },
-    { name: 'Add Product', path: '/seller/add-product', icon: ShoppingBagIcon },
-    { name: 'Orders', path: '/seller/orders', icon: ClipboardDocumentListIcon },
+    { name: 'Dashboard', id: 'analytics', icon: HomeIcon },
+    { name: 'My Products', id: 'products', icon: ShoppingBagIcon },
+    { name: 'Add Product', id: 'add-product', icon: ShoppingBagIcon },
+    { name: 'Orders', id: 'orders', icon: ClipboardDocumentListIcon },
   ];
 
   const links = isAdmin ? adminLinks : sellerLinks;
@@ -52,35 +53,31 @@ const Sidebar = ({ isAdmin = false }) => {
         {links.map((link) => {
           const Icon = link.icon;
           return (
-            <NavLink
-              key={link.name}
-              to={link.path}
-              end={link.end}
-              className={({ isActive }) =>
-                `flex items-center px-4 py-3 rounded-xl transition-all duration-200 ${
-                  isActive
-                    ? 'bg-primary text-white shadow-md shadow-primary/20'
-                    : 'hover:bg-slate-800 hover:text-white'
-                }`
-              }
+            <button
+              key={link.id}
+              onClick={() => onTabChange?.(link.id)}
+              className={`w-full flex items-center px-4 py-3 rounded-xl transition-all duration-200 ${
+                activeTab === link.id
+                  ? 'bg-primary text-white shadow-md shadow-primary/20'
+                  : 'hover:bg-slate-800 hover:text-white'
+              }`}
             >
               <Icon className="w-5 h-5 mr-3 flex-shrink-0" />
-              <span className="font-medium">{link.name}</span>
-            </NavLink>
+              <span className="font-medium text-left">{link.name}</span>
+            </button>
           );
         })}
       </nav>
 
       <div className="p-4 border-t border-slate-800">
         <div className="space-y-2">
-          <NavLink
-            to="/"
-            end
-            className="flex items-center px-4 py-3 rounded-xl hover:bg-slate-800 hover:text-white transition-all text-slate-400"
+          <button
+            onClick={() => navigate('/')}
+            className="w-full flex items-center px-4 py-3 rounded-xl hover:bg-slate-800 hover:text-white transition-all text-slate-400"
           >
             <HomeIcon className="w-5 h-5 mr-3 flex-shrink-0" />
             <span className="font-medium">Back to Store</span>
-          </NavLink>
+          </button>
           <button
             onClick={handleLogout}
             className="w-full flex items-center px-4 py-3 rounded-xl hover:bg-red-500/10 text-danger hover:text-red-400 transition-all font-medium"

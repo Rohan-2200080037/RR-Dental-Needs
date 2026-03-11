@@ -8,7 +8,7 @@ const Footer = () => {
             <div className="footer-container">
                 <div className="footer-section">
                     <h3>RR Dental Needs</h3>
-                    <p>Your trusted marketplace for high-quality dental lab Instruments</p>
+                    <p>Your trusted marketplace for high-quality dental Products</p>
                 </div>
 
                 <div className="footer-section">

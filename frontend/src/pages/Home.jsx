@@ -43,8 +43,8 @@ const Home = () => {
     ];
 
     const benefits = [
-        { title: 'Quality Assured', desc: 'Standardized instruments for all clinical exercises', icon: ShieldCheckIcon },
-        { title: 'Fast Delivery', desc: 'Quick shipping to your medical college campus', icon: TruckIcon },
+        { title: 'Quality Assured', desc: 'Standardized productsfor all clinical exercises', icon: ShieldCheckIcon },
+        { title: 'Fast Delivery', desc: 'Quick shipping to your address', icon: TruckIcon },
         { title: 'Student Pricing', desc: 'Affordable rates designed for dental students', icon: CurrencyRupeeIcon },
         { title: '24/7 Support', desc: 'Always available to help with your orders', icon: ClockIcon },
     ];
@@ -90,7 +90,7 @@ const Home = () => {
                             <input
                                 type="text"
                                 className="block w-full pl-12 pr-32 py-4 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent focus:bg-white/20 transition-all shadow-xl text-lg"
-                                placeholder="Search for articulators, typodonts, probes..."
+                                placeholder="Search for products..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
@@ -138,7 +138,7 @@ const Home = () => {
             <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-24">
                 <div className="text-center mb-12">
                     <h2 className="text-3xl font-bold text-slate-900 mb-4">Browse by Academic Year</h2>
-                    <p className="text-slate-500 max-w-2xl mx-auto text-lg">Find the exact materials required for your current curriculum level.</p>
+                    <p className="text-slate-500 max-w-2xl mx-auto text-lg">Find the products required for your current curriculum level.</p>
                 </div>
 
                 <motion.div

@@ -88,6 +88,11 @@ const Footer = () => {
                   <span className="mr-2">&rsaquo;</span> Privacy Policy
                 </Link>
               </li>
+              <li>
+                <Link to="/contact" className="text-slate-400 hover:text-primary transition-colors flex items-center">
+                  <span className="mr-2">&rsaquo;</span> Contact Us
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -95,17 +100,14 @@ const Footer = () => {
           <div>
             <h3 className="text-lg font-semibold text-white mb-6 uppercase tracking-wider">Contact Us</h3>
             <ul className="space-y-5">
-              <li className="flex items-start">
-                <MapPinIcon className="w-6 h-6 text-primary mr-3 flex-shrink-0 mt-0.5" />
-                <span className="text-slate-400">123 Dental Street, Medical Hub, City, Country 12345</span>
-              </li>
+              <li className="flex items-start"></li>
               <li className="flex items-center">
                 <PhoneIcon className="w-6 h-6 text-primary mr-3 flex-shrink-0" />
-                <span className="text-slate-400">+1 234 567 8900</span>
+                <span className="text-slate-400">+91 9876543210</span>
               </li>
               <li className="flex items-center">
                 <EnvelopeIcon className="w-6 h-6 text-primary mr-3 flex-shrink-0" />
-                <span className="text-slate-400">support@rrdentalneeds.com</span>
+                <span className="text-slate-400">rrdentalneeds@gmail.com</span>
               </li>
             </ul>
           </div>
@@ -116,7 +118,6 @@ const Footer = () => {
             &copy; {currentYear} RR Dental Needs. All rights reserved.
           </p>
           <div className="flex space-x-6 mt-4 md:mt-0">
-             <span className="text-slate-400 text-sm">Design by a Senior Dev</span>
           </div>
         </div>
       </div>

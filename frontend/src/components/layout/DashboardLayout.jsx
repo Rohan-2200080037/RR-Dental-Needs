@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Sidebar from './Sidebar';
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 
-const DashboardLayout = ({ isAdmin = false, children }) => {
+const DashboardLayout = ({ isAdmin = false, activeTab, onTabChange, children }) => {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   return (
@@ -21,7 +21,7 @@ const DashboardLayout = ({ isAdmin = false, children }) => {
           isMobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <Sidebar isAdmin={isAdmin} />
+        <Sidebar isAdmin={isAdmin} activeTab={activeTab} onTabChange={onTabChange} />
       </div>
 
       {/* Main Content Info */}

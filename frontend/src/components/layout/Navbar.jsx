@@ -36,7 +36,7 @@ const Navbar = () => {
             {/* Logo */}
             <Link to="/" className="flex items-center space-x-2 flex-shrink-0">
               <span className="text-2xl">🦷</span>
-              <span className="font-bold text-slate-800 text-xl hidden sm:block">
+              <span className="font-bold text-slate-800 text-lg sm:text-xl">
                 RR <span className="text-primary">Dental Needs</span>
               </span>
             </Link>

@@ -5,6 +5,8 @@ import DashboardLayout from '../components/layout/DashboardLayout';
 import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
 const AdminDashboard = () => {
     const { token } = useAuthStore();
@@ -16,6 +18,8 @@ const AdminDashboard = () => {
     const [sellers, setSellers] = useState([]);
     const [orders, setOrders] = useState([]);
     const [products, setProducts] = useState([]);
+    const [messages, setMessages] = useState([]);
+    const [reviews, setReviews] = useState([]);
     
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -40,6 +44,12 @@ const AdminDashboard = () => {
             } else if (activeTab === 'orders') {
                const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/orders/all`, { headers: { Authorization: `Bearer ${token}` } });
                setOrders(res.data);
+            } else if (activeTab === 'messages') {
+               const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/contact`, { headers: { Authorization: `Bearer ${token}` } });
+               setMessages(res.data);
+            } else if (activeTab === 'reviews') {
+               const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/admin/reviews`, { headers: { Authorization: `Bearer ${token}` } });
+               setReviews(res.data);
             }
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to fetch admin data');
@@ -105,21 +115,46 @@ const AdminDashboard = () => {
         }
     };
 
-    const TabButton = ({ id, label }) => (
-        <button
-            onClick={() => setActiveTab(id)}
-            className={`px-4 py-2 font-medium text-sm rounded-lg transition-colors ${
-                activeTab === id
-                    ? 'bg-primary text-white shadow-md shadow-primary/20'
-                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-            }`}
-        >
-            {label}
-        </button>
-    );
+    const handleDeleteReview = async (id) => {
+        if (!window.confirm("Delete this review permanently?")) return;
+        try {
+            await axios.delete(`${import.meta.env.VITE_API_URL}/api/reviews/${id}`, { headers: { Authorization: `Bearer ${token}` }});
+            setReviews(reviews.filter(r => r.id !== id));
+            showFeedback("Review deleted successfully.");
+        } catch (err) {
+            showFeedback(err.response?.data?.message || 'Deletion failed.');
+        }
+    };
+
+    const exportMessagesToExcel = () => {
+        if (messages.length === 0) {
+            showFeedback("No messages to export.");
+            return;
+        }
+
+        const dataToExport = messages.map(msg => ({
+            ID: msg.id,
+            Date: new Date(msg.created_at).toLocaleString(),
+            Name: msg.name,
+            Email: msg.email,
+            Subject: msg.subject || 'N/A',
+            Message: msg.message
+        }));
+
+        const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Contact Messages");
+        
+        const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+        const data = new Blob([excelBuffer], { type: 'application/octet-stream' });
+        saveAs(data, `Contact_Messages_${new Date().toLocaleDateString().replace(/\//g, '-')}.xlsx`);
+        showFeedback("Excel file downloaded successfully.");
+    };
+
+
 
     return (
-        <DashboardLayout isAdmin={true}>
+        <DashboardLayout isAdmin={true} activeTab={activeTab} onTabChange={setActiveTab}>
             <div className="space-y-6">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900">Admin Dashboard</h1>
@@ -138,13 +173,7 @@ const AdminDashboard = () => {
                     </div>
                 )}
 
-                <div className="flex flex-wrap gap-2 p-1 bg-white border border-slate-200 rounded-xl shadow-sm">
-                    <TabButton id="analytics" label="Analytics" />
-                    <TabButton id="users" label="Users" />
-                    <TabButton id="sellers" label="Sellers" />
-                    <TabButton id="products" label="Products" />
-                    <TabButton id="orders" label="All Orders" />
-                </div>
+
 
                 <div className="mt-6">
                     {loading ? (
@@ -328,6 +357,97 @@ const AdminDashboard = () => {
                                         </tbody>
                                     </table>
                                     {orders.length === 0 && <div className="p-8 text-center text-slate-500">No orders received yet.</div>}
+                                </Card>
+                            )}
+
+                            {activeTab === 'messages' && (
+                                <Card className="overflow-x-auto">
+                                    <div className="p-4 flex justify-between items-center border-b border-slate-200">
+                                        <h2 className="text-lg font-semibold text-slate-900">Contact Form Messages</h2>
+                                        <Button 
+                                            onClick={exportMessagesToExcel} 
+                                            className="bg-emerald-600 hover:bg-emerald-700 text-white flex items-center shadow-md"
+                                        >
+                                            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                            Download as Excel
+                                        </Button>
+                                    </div>
+                                    <table className="min-w-full divide-y divide-slate-200 text-sm">
+                                        <thead className="bg-slate-50">
+                                            <tr>
+                                                <th className="px-6 py-4 text-left font-semibold text-slate-900 w-32">Date</th>
+                                                <th className="px-6 py-4 text-left font-semibold text-slate-900 w-48">From</th>
+                                                <th className="px-6 py-4 text-left font-semibold text-slate-900 w-48">Subject</th>
+                                                <th className="px-6 py-4 text-left font-semibold text-slate-900">Message</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-200 bg-white">
+                                            {messages.map(msg => (
+                                                <tr key={msg.id} className="hover:bg-slate-50 transition-colors">
+                                                    <td className="px-6 py-4 text-slate-500 whitespace-nowrap">
+                                                        <div className="font-medium">{new Date(msg.created_at).toLocaleDateString()}</div>
+                                                        <div className="text-xs mt-0.5">{new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <div className="font-medium text-slate-900">{msg.name}</div>
+                                                        <a href={`mailto:${msg.email}`} className="text-primary hover:underline text-xs mt-0.5">{msg.email}</a>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-slate-800 font-medium">
+                                                        {msg.subject || <span className="text-slate-400 italic">No subject</span>}
+                                                    </td>
+                                                    <td className="px-6 py-4 text-slate-600">
+                                                        <div className="max-w-md md:max-w-lg lg:max-w-2xl whitespace-pre-wrap">{msg.message}</div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                    {messages.length === 0 && <div className="p-8 text-center text-slate-500">No messages received yet.</div>}
+                                </Card>
+                            )}
+
+                            {activeTab === 'reviews' && (
+                                <Card className="overflow-x-auto">
+                                    <div className="p-4 border-b border-slate-200">
+                                        <h2 className="text-lg font-semibold text-slate-900">Product Reviews</h2>
+                                    </div>
+                                    <table className="min-w-full divide-y divide-slate-200 text-sm">
+                                        <thead className="bg-slate-50">
+                                            <tr>
+                                                <th className="px-6 py-4 text-left font-semibold text-slate-900 w-32">Date</th>
+                                                <th className="px-6 py-4 text-left font-semibold text-slate-900 w-48">Product & User</th>
+                                                <th className="px-6 py-4 text-left font-semibold text-slate-900 w-24">Rating</th>
+                                                <th className="px-6 py-4 text-left font-semibold text-slate-900">Comment</th>
+                                                <th className="px-6 py-4 text-right font-semibold text-slate-900 w-24">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-200 bg-white">
+                                            {reviews.map(r => (
+                                                <tr key={r.id} className="hover:bg-slate-50 transition-colors">
+                                                    <td className="px-6 py-4 text-slate-500 whitespace-nowrap">
+                                                        <div className="font-medium">{new Date(r.review_date).toLocaleDateString()}</div>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <div className="font-medium text-slate-900">{r.product_name}</div>
+                                                        <div className="text-slate-500 text-xs mt-0.5">By {r.user_name}</div>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <div className="flex items-center">
+                                                            <span className="font-bold text-slate-900 mr-1">{r.rating}</span>
+                                                            <svg className="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-slate-600">
+                                                        <div className="max-w-md whitespace-pre-wrap">{r.comment || <span className="text-slate-400 italic">No comment provided</span>}</div>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-right">
+                                                        <Button variant="ghost" size="sm" className="text-danger hover:text-red-700 hover:bg-red-50" onClick={() => handleDeleteReview(r.id)}>Delete</Button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                    {reviews.length === 0 && <div className="p-8 text-center text-slate-500">No reviews found.</div>}
                                 </Card>
                             )}
                         </>

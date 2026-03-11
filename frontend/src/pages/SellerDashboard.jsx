@@ -10,7 +10,7 @@ import { PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
 
 const SellerDashboard = () => {
     const { token, user } = useAuthStore();
-    const [activeTab, setActiveTab] = useState('products');
+    const [activeTab, setActiveTab] = useState('analytics');
     const [products, setProducts] = useState([]);
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -34,12 +34,19 @@ const SellerDashboard = () => {
         const fetchData = async () => {
             setLoading(true);
             try {
-                if (activeTab === 'products') {
+                if (activeTab === 'products' || activeTab === 'add-product') {
                     const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/products/seller/my-products`, {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     setProducts(res.data);
-                } else {
+                    if (activeTab === 'add-product') {
+                        setShowForm(true);
+                        setEditingId(null);
+                        setFormData({ name: '', description: '', price: '', stock_quantity: '', category: '1st Year', image: ''});
+                    } else {
+                        setShowForm(false);
+                    }
+                } else if (activeTab === 'orders') {
                     const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/orders/seller-orders`, {
                         headers: { Authorization: `Bearer ${token}` }
                     });
@@ -167,7 +174,10 @@ const SellerDashboard = () => {
     );
 
     return (
-        <DashboardLayout isAdmin={false}>
+        <DashboardLayout isAdmin={false} activeTab={activeTab === 'add-product' ? 'add-product' : showForm ? 'add-product' : activeTab} onTabChange={(tab) => {
+            setActiveTab(tab);
+            if (tab !== 'products' && tab !== 'add-product') setShowForm(false);
+        }}>
             <div className="space-y-6">
                 <div className="flex justify-between items-center flex-wrap gap-4">
                     <div>
@@ -201,10 +211,7 @@ const SellerDashboard = () => {
                     </div>
                 )}
 
-                <div className="flex flex-wrap gap-2 p-1 bg-white border border-slate-200 rounded-xl shadow-sm w-max">
-                    <TabButton id="products" label="My Products" />
-                    <TabButton id="orders" label="Order Management" />
-                </div>
+
 
                 <div className="mt-6">
                     {activeTab === 'orders' && (
@@ -224,7 +231,7 @@ const SellerDashboard = () => {
                         </div>
                     )}
 
-                    {activeTab === 'products' ? (
+                    {(activeTab === 'products' || activeTab === 'add-product') ? (
                         <div className="space-y-6">
                             {showForm && (
                                 <Card className="p-6 animate-fade-in-down mb-8 border-t-4 border-t-primary">

@@ -20,6 +20,12 @@ import AdminDashboard from './pages/AdminDashboard';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 
+import AboutUs from './pages/AboutUs';
+import FAQ from './pages/FAQ';
+import TermsConditions from './pages/TermsConditions';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import ContactUs from './pages/ContactUs';
+
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, isAuthenticated } = useAuthStore();
   if (!isAuthenticated) return <Navigate to="/login" replace />;
@@ -54,6 +60,12 @@ function App() {
           <Route path="category/:category" element={<Category />} />
           <Route path="product/:id" element={<ProductDetail />} />
           <Route path="search" element={<Search />} />
+          
+          <Route path="about" element={<AboutUs />} />
+          <Route path="faq" element={<FAQ />} />
+          <Route path="terms" element={<TermsConditions />} />
+          <Route path="privacy" element={<PrivacyPolicy />} />
+          <Route path="contact" element={<ContactUs />} />
           
           <Route path="cart" element={
              <ProtectedRoute>

@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { useNavigate, useParams, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import Input from '../components/ui/Input';
 import { CheckCircleIcon, XMarkIcon, KeyIcon } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from 'framer-motion';
+
+const useQuery = () => {
+    return new URLSearchParams(useLocation().search);
+};
 
 const ResetPassword = () => {
     const [newPassword, setNewPassword] = useState('');
@@ -14,7 +18,8 @@ const ResetPassword = () => {
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     
-    const { token } = useParams();
+    const query = useQuery();
+    const token = query.get('token');
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {

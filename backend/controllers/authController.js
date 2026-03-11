@@ -101,72 +101,97 @@ exports.forgotPassword = async (req, res) => {
     try {
         const usersResult = await pool.query('SELECT id, email FROM Users WHERE email = $1', [email]);
         if (usersResult.rows.length === 0) {
-            return res.status(404).json({ message: "User not found." });
+            // Return success even if not found to prevent email enumeration
+            return res.status(200).json({ message: "If this email is registered, a reset link has been sent." });
         }
-        const user = usersResult.rows[0];
 
         // Generate secure random token
         const resetToken = crypto.randomBytes(32).toString('hex');
-        const expiry = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+        
+        // Hash token before storing
+        const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+        
+        const expiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
         await pool.query(
-            'UPDATE Users SET reset_token = $1, reset_token_expiry = $2 WHERE email = $3',
-            [resetToken, expiry, email]
+            'UPDATE Users SET reset_password_token = $1, reset_password_expire = $2 WHERE email = $3',
+            [hashedToken, expiry, email]
         );
 
-        const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+        const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
 
         // Send email
         const transporter = nodemailer.createTransport({
-            service: 'gmail',
+            host: process.env.SMTP_HOST || 'smtp.gmail.com',
+            port: process.env.SMTP_PORT || 587,
+            secure: false, // true for 465, false for other ports
             auth: {
-                user: process.env.EMAIL_USER || 'test@gmail.com',
-                pass: process.env.EMAIL_PASS || 'test'
+                user: process.env.SMTP_EMAIL,
+                pass: process.env.SMTP_PASSWORD
             }
         });
 
-        console.log("Reset Link generated:", resetLink);
+        const mailOptions = {
+            from: process.env.SMTP_EMAIL || 'no-reply@odonticstore.com',
+            to: email,
+            subject: 'Password Reset Request',
+            html: `
+                <p>Click the link below to reset your password.</p>
+                <p>The link expires in 1 hour.</p>
+                <p><a href="${resetUrl}">${resetUrl}</a></p>
+            `
+        };
 
         try {
-            await transporter.sendMail({
-                from: process.env.EMAIL_USER || 'no-reply@odonticstore.com',
-                to: email,
-                subject: 'Password Reset - RR Dental Needs',
-                html: `<p>You requested a password reset. Click the link below to reset your password. It expires in 15 minutes.</p><p><a href="${resetLink}">Reset Password</a></p>`
-            });
+            await transporter.sendMail(mailOptions);
+            res.status(200).json({ message: "If this email is registered, a reset link has been sent." });
         } catch (mailError) {
-            console.warn("Could not send email (check SMTP config). Reset Link: ", resetLink);
+            console.error("Could not send email:", mailError);
+            
+            // Revert changes in DB if email fails
+            await pool.query(
+                'UPDATE Users SET reset_password_token = NULL, reset_password_expire = NULL WHERE email = $1',
+                [email]
+            );
+            return res.status(500).json({ message: "Email could not be sent. Please try again later." });
         }
-
-        res.status(200).json({ message: "If this email is registered, a reset link has been sent." });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
 };
 
 exports.resetPassword = async (req, res) => {
-    const { token, password } = req.body;
-    if (!token || !password) return res.status(400).json({ message: "Token and new password are required." });
+    const { token } = req.params;
+    const { password } = req.body;
+    
+    // In our routes, we mapped /reset-password, but wait, authRoutes says router.post('/reset-password', authController.resetPassword);
+    // Let me check if authRoutes maps this to /reset-password/:token. The user asked for "POST /api/auth/reset-password/:token"
+    
+    const requestToken = req.params.token || req.body.token;
+
+    if (!requestToken || !password) return res.status(400).json({ message: "Token and new password are required." });
 
     try {
+        const hashedToken = crypto.createHash('sha256').update(requestToken).digest('hex');
+
         const usersResult = await pool.query(
-            'SELECT id FROM Users WHERE reset_token = $1 AND reset_token_expiry > NOW()',
-            [token]
+            'SELECT id FROM Users WHERE reset_password_token = $1 AND reset_password_expire > NOW()',
+            [hashedToken]
         );
 
         if (usersResult.rows.length === 0) {
-            return res.status(400).json({ message: "Invalid or expired token" });
+            return res.status(400).json({ message: "Reset token is invalid or has expired" });
         }
 
         const user = usersResult.rows[0];
         const hashedPassword = bcrypt.hashSync(password, 8);
         
         await pool.query(
-            'UPDATE Users SET password = $1, reset_token = NULL, reset_token_expiry = NULL WHERE id = $2', 
+            'UPDATE Users SET password = $1, reset_password_token = NULL, reset_password_expire = NULL WHERE id = $2', 
             [hashedPassword, user.id]
         );
         
-        res.status(200).json({ message: "Password reset successful" });
+        res.status(200).json({ message: "Password reset successfully" });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }

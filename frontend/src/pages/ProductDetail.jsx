@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import useAuthStore from '../store/authStore';
 import useCartStore from '../store/cartStore';
-import { HeartIcon as HeartOutline } from '@heroicons/react/24/outline';
-import { HeartIcon as HeartSolid } from '@heroicons/react/24/solid';
-import './ProductDetail.css';
+import { HeartIcon as HeartOutline, ShoppingCartIcon, ShieldCheckIcon, TruckIcon } from '@heroicons/react/24/outline';
+import { HeartIcon as HeartSolid, StarIcon } from '@heroicons/react/24/solid';
+import { motion, AnimatePresence } from 'framer-motion';
+import Button from '../components/ui/Button';
+import Badge from '../components/ui/Badge';
+import Card from '../components/ui/Card';
+import ProductCard from '../components/ui/ProductCard';
+import { PageLoader } from '../components/ui/Loader';
 
 const ProductDetail = () => {
     const { id } = useParams();
@@ -29,6 +34,7 @@ const ProductDetail = () => {
     const { addToCart, loading: cartLoading } = useCartStore();
 
     useEffect(() => {
+        window.scrollTo(0, 0);
         const fetchProduct = async () => {
             try {
                 const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/products/${id}`);
@@ -75,14 +81,7 @@ const ProductDetail = () => {
     };
 
     const handleAddToCart = async () => {
-        if (!isAuthenticated) {
-            navigate('/login');
-            return;
-        }
-
-        // Sellers shouldn't really buy their own stuff, but let's just allow it for testing,
-        // or prevent it if wanted. We'll allow it but Admin / Seller checking out is fine.
-
+        if (!isAuthenticated) return navigate('/login');
         try {
             await addToCart(product.id, quantity, token);
             setCartFeedback('Added to cart successfully!');
@@ -143,178 +142,243 @@ const ProductDetail = () => {
         }
     };
 
-    if (loading) return <div className="container page-container loading-spinner">Loading product...</div>;
-    if (error) return <div className="container page-container"><div className="alert alert-danger">{error}</div></div>;
-    if (!product) return <div className="container page-container">Product not found</div>;
+    if (loading) return <PageLoader />;
+    if (error) return (
+        <div className="min-h-[60vh] flex flex-col items-center justify-center p-8">
+            <div className="bg-red-50 text-red-800 p-6 rounded-xl border border-red-100 max-w-lg text-center">
+                <h3 className="text-xl font-bold mb-2">Error Loading Product</h3>
+                <p>{error}</p>
+                <Button className="mt-4" onClick={() => navigate('/products')}>Back to Products</Button>
+            </div>
+        </div>
+    );
+    if (!product) return <div className="min-h-[60vh] flex items-center justify-center font-semibold text-xl text-slate-500">Product not found</div>;
 
-    const isOutOfStock = product.stock_quantity === 0;
+    const isOutOfStock = product.stock_quantity <= 0;
+    const imageUrl = product.image?.startsWith('/uploads') ? `${import.meta.env.VITE_API_URL}${product.image}` : (product.image || 'https://via.placeholder.com/600x400?text=Instrument');
 
     return (
-        <div className="container page-container">
-            <div className="product-detail-wrapper">
-                <div className="product-detail-image-sec">
-                    <img 
-                        src={product.image?.startsWith('/uploads') ? `${import.meta.env.VITE_API_URL}${product.image}` : (product.image || 'https://via.placeholder.com/600x400?text=Instrument')} 
-                        alt={product.name} 
-                        className="detail-image"
-                    />
-                </div>
+        <div className="bg-slate-50 min-h-screen pb-20 pt-8">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 
-                <div className="product-detail-info-sec">
-                    <div className="breadcrumb">
-                        <span>Products</span> / <span>{product.category}</span>
-                    </div>
-                    
-                    <h1 className="detail-title">{product.name}</h1>
-                    <div className="detail-rating" style={{ color: '#eab308', marginBottom: '10px' }}>
-                        {'★'.repeat(Math.round(averageRating))}{'☆'.repeat(5 - Math.round(averageRating))} 
-                        <span style={{ color: '#666', fontSize: '14px', marginLeft: '5px' }}>({reviews.length} reviews)</span>
-                    </div>
+                {/* Breadcrumbs */}
+                <nav className="flex text-sm text-slate-500 mb-8 font-medium">
+                    <Link to="/" className="hover:text-primary transition-colors">Home</Link>
+                    <span className="mx-2">/</span>
+                    <Link to="/products" className="hover:text-primary transition-colors">Products</Link>
+                    <span className="mx-2">/</span>
+                    <Link to={`/category/${product.category}`} className="hover:text-primary transition-colors">{product.category}</Link>
+                    <span className="mx-2 text-slate-300">/</span>
+                    <span className="text-slate-900 truncate max-w-[200px] sm:max-w-none">{product.name}</span>
+                </nav>
 
-                    <div className="detail-price-stock">
-                        <span className="detail-price">₹{Number(product.price).toLocaleString()}</span>
-                        <span className={`stock-badge ${isOutOfStock ? 'out-of-stock' : 'in-stock'}`}>
-                            {isOutOfStock ? 'Out of Stock' : `In Stock: ${product.stock_quantity}`}
-                        </span>
-                    </div>
-                    
-                    <div className="detail-description">
-                        <h3>Description</h3>
-                        <p>{product.description}</p>
-                    </div>
-
-                    <div className="add-to-cart-sec">
-                        <div className="quantity-selector">
-                            <button 
-                                className="qty-btn" 
-                                onClick={() => handleQuantityChange('dec')}
-                                disabled={quantity <= 1 || isOutOfStock}
-                            >-</button>
-                            <span className="qty-display">{quantity}</span>
-                            <button 
-                                className="qty-btn" 
-                                onClick={() => handleQuantityChange('inc')}
-                                disabled={quantity >= product.stock_quantity || isOutOfStock}
-                            >+</button>
-                        </div>
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-12">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 p-6 lg:p-12">
                         
-                        <button 
-                            className="btn btn-primary btn-add-cart"
-                            onClick={handleAddToCart}
-                            disabled={isOutOfStock || cartLoading}
-                        >
-                            {cartLoading ? 'Adding...' : 'Add to Cart'}
-                        </button>
-                        <button 
-                            className={`btn ${isInWishlist ? 'btn-secondary' : 'btn-outline'} btn-wishlist`}
-                            style={{ marginLeft: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}
-                            onClick={handleWishlistToggle}
-                            disabled={wishlistLoading}
-                        >
-                            {wishlistLoading ? '...' : (
-                                isInWishlist ? (
-                                    <>
-                                        <HeartSolid style={{ width: '20px', height: '20px', color: '#ff4d4d' }} />
-                                        Remove from Wishlist
-                                    </>
-                                ) : (
-                                    <>
-                                        <HeartOutline style={{ width: '20px', height: '20px' }} />
-                                        Add to Wishlist
-                                    </>
-                                )
-                            )}
-                        </button>
-                    </div>
-                    
-                    {cartFeedback && (
-                        <div className={`alert mt-4 ${cartFeedback.includes('successfully') ? 'alert-success' : 'alert-danger'}`}>
-                            {cartFeedback}
-                        </div>
-                    )}
-                </div>
-            </div>
-
-            {/* Reviews Section */}
-            <div className="reviews-section">
-                <h2>Customer Reviews</h2>
-                <div className="reviews-grid">
-                    <div className="review-form-container card">
-                        <h3>Write a Review</h3>
-                        {!isAuthenticated ? (
-                            <p>Please <a href="/login">login</a> to write a review.</p>
-                        ) : (
-                            <form onSubmit={handleReviewSubmit}>
-                                <div className="form-group">
-                                    <label>Rating</label>
-                                    <select 
-                                        className="form-input"
-                                        value={reviewForm.rating}
-                                        onChange={(e) => setReviewForm({...reviewForm, rating: e.target.value})}
-                                    >
-                                        <option value={5}>5 - Excellent</option>
-                                        <option value={4}>4 - Very Good</option>
-                                        <option value={3}>3 - Average</option>
-                                        <option value={2}>2 - Poor</option>
-                                        <option value={1}>1 - Terrible</option>
-                                    </select>
-                                </div>
-                                <div className="form-group">
-                                    <label>Comment</label>
-                                    <textarea 
-                                        className="form-input" 
-                                        rows="4"
-                                        value={reviewForm.comment}
-                                        onChange={(e) => setReviewForm({...reviewForm, comment: e.target.value})}
-                                        required
-                                    ></textarea>
-                                </div>
-                                <button type="submit" className="btn btn-primary" style={{width: '100%'}}>Submit Review</button>
-                                {reviewFeedback && <div className="alert mt-2" style={{fontSize: '14px', padding: '10px'}}>{reviewFeedback}</div>}
-                            </form>
-                        )}
-                    </div>
-                    
-                    <div className="reviews-list">
-                        {reviews.length === 0 ? (
-                            <p className="no-reviews">No reviews yet. Be the first to review this product!</p>
-                        ) : (
-                            reviews.map(rev => (
-                                <div key={rev.id} className="card review-card">
-                                    <div className="review-header">
-                                        <strong>{rev.user_name}</strong>
-                                        <span className="review-stars">{'★'.repeat(rev.rating)}{'☆'.repeat(5 - rev.rating)}</span>
-                                    </div>
-                                    <p className="review-text">{rev.comment}</p>
-                                    <small className="review-date">
-                                        {new Date(rev.review_date).toLocaleDateString()}
-                                    </small>
-                                </div>
-                            ))
-                        )}
-                    </div>
-                </div>
-            </div>
-
-            {/* Related Products Section */}
-            {relatedProducts.length > 0 && (
-                <div className="related-products">
-                    <h2>Related Products</h2>
-                    <div className="products-grid">
-                        {relatedProducts.map(p => (
-                            <div key={p.id} className="card related-product-card cursor-pointer" onClick={() => navigate(`/product/${p.id}`)}>
-                                <img 
-                                    src={p.image?.startsWith('/uploads') ? `${import.meta.env.VITE_API_URL}${p.image}` : (p.image || 'https://via.placeholder.com/200')} 
-                                    alt={p.name} 
-                                    className="related-product-img"
-                                />
-                                <h4 className="related-product-title">{p.name}</h4>
-                                <div className="related-product-price">₹{Number(p.price).toLocaleString()}</div>
+                        {/* Image Gallery */}
+                        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="flex flex-col space-y-4">
+                            <div className="aspect-[4/3] rounded-xl overflow-hidden bg-slate-100 border border-slate-200">
+                                <img src={imageUrl} alt={product.name} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500 cursor-zoom-in" />
                             </div>
-                        ))}
+                            {/* Thumbnails could go here if the API supported multiple images */}
+                        </motion.div>
+
+                        {/* Product Info */}
+                        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex flex-col">
+                            <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-2 leading-tight">
+                                {product.name}
+                            </h1>
+                            
+                            <div className="flex items-center space-x-4 mb-6">
+                                <div className="flex items-center">
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                        <StarIcon key={star} className={`w-5 h-5 ${star <= Math.round(averageRating) ? 'text-amber-400' : 'text-slate-200'}`} />
+                                    ))}
+                                    <span className="ml-2 text-sm font-medium text-slate-600">{averageRating.toFixed(1)}</span>
+                                </div>
+                                <span className="text-slate-300">|</span>
+                                <a href="#reviews" className="text-sm font-medium text-primary hover:underline">{reviews.length} Reviews</a>
+                                <span className="text-slate-300">|</span>
+                                <Badge variant="primary">{product.category}</Badge>
+                            </div>
+
+                            <div className="mb-8 flex items-end space-x-4">
+                                <span className="text-4xl font-extrabold text-primary">₹{Number(product.price).toLocaleString()}</span>
+                                <span className="text-lg text-slate-400 line-through mb-1">₹{Number(product.price * 1.2).toLocaleString()}</span>
+                            </div>
+
+                            <p className="text-slate-600 leading-relaxed mb-8">
+                                {product.description}
+                            </p>
+
+                            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-8">
+                                <div className="flex flex-col sm:flex-row gap-4 justify-between sm:items-center">
+                                    <div className="flex items-center space-x-2">
+                                        <div className={`w-3 h-3 rounded-full ${isOutOfStock ? 'bg-danger' : product.stock_quantity > 10 ? 'bg-success' : 'bg-warning'}`}></div>
+                                        <span className={`font-semibold ${isOutOfStock ? 'text-danger' : 'text-slate-700'}`}>
+                                            {isOutOfStock ? 'Out of Stock' : `${product.stock_quantity} units available in stock`}
+                                        </span>
+                                    </div>
+                                    <div className="text-sm text-slate-500">Seller ID: #{product.seller_id}</div>
+                                </div>
+                            </div>
+
+                            <hr className="border-slate-100 mb-8" />
+
+                            <div className="flex flex-col sm:flex-row gap-4 mb-4">
+                                <div className="flex items-center border border-slate-300 rounded-xl h-12 bg-white w-full sm:w-32 flex-shrink-0">
+                                    <button onClick={() => handleQuantityChange('dec')} disabled={quantity <= 1 || isOutOfStock} className="w-10 h-full flex items-center justify-center text-slate-600 hover:text-primary disabled:opacity-50 transition-colors">-</button>
+                                    <input type="text" readOnly value={quantity} className="flex-1 w-8 text-center font-semibold text-slate-900 bg-transparent border-none focus:ring-0 p-0" />
+                                    <button onClick={() => handleQuantityChange('inc')} disabled={quantity >= product.stock_quantity || isOutOfStock} className="w-10 h-full flex items-center justify-center text-slate-600 hover:text-primary disabled:opacity-50 transition-colors">+</button>
+                                </div>
+
+                                <Button 
+                                    size="lg" 
+                                    className="flex-1 h-12 text-lg shadow-md hover:shadow-lg" 
+                                    isLoading={cartLoading}
+                                    disabled={isOutOfStock}
+                                    onClick={handleAddToCart}
+                                >
+                                    <ShoppingCartIcon className="w-5 h-5 mr-2" />
+                                    {isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
+                                </Button>
+
+                                <Button 
+                                    variant={isInWishlist ? 'secondary' : 'outline'} 
+                                    className="h-12 w-12 sm:w-auto px-0 sm:px-6 flex-shrink-0 flex items-center justify-center p-0"
+                                    onClick={handleWishlistToggle}
+                                    disabled={wishlistLoading}
+                                    title={isInWishlist ? "Remove from wishlist" : "Add to wishlist"}
+                                >
+                                    {isInWishlist ? <HeartSolid className="w-6 h-6 text-danger" /> : <HeartOutline className="w-6 h-6" />}
+                                    <span className="hidden sm:inline sm:ml-2">{isInWishlist ? 'Saved' : 'Save'}</span>
+                                </Button>
+                            </div>
+
+                            <AnimatePresence>
+                                {cartFeedback && (
+                                    <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className={`p-3 rounded-lg text-sm font-medium text-center ${cartFeedback.includes('successfully') || cartFeedback.includes('Added') ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+                                        {cartFeedback}
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+
+                            <div className="mt-8 grid grid-cols-2 gap-4">
+                                <div className="flex items-center text-slate-500 text-sm">
+                                    <ShieldCheckIcon className="w-5 h-5 mr-2 text-primary" /> Genuine Instruments
+                                </div>
+                                <div className="flex items-center text-slate-500 text-sm">
+                                    <TruckIcon className="w-5 h-5 mr-2 text-primary" /> Fast Shipping
+                                </div>
+                            </div>
+                        </motion.div>
                     </div>
                 </div>
-            )}
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12" id="reviews">
+                    {/* Reviews Column */}
+                    <div className="lg:col-span-2 space-y-8">
+                        <Card className="p-6 sm:p-8">
+                            <h2 className="text-2xl font-bold text-slate-900 mb-6">Customer Reviews</h2>
+                            
+                            <div className="space-y-6">
+                                {reviews.length === 0 ? (
+                                    <div className="text-center py-8 bg-slate-50 rounded-xl border border-slate-100 border-dashed">
+                                        <p className="text-slate-500 pb-2">No reviews yet. Be the first to review this product!</p>
+                                    </div>
+                                ) : (
+                                    reviews.map(rev => (
+                                        <div key={rev.id} className="pb-6 border-b border-slate-100 last:border-0 last:pb-0">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <div className="font-semibold text-slate-800 flex items-center">
+                                                    <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center mr-3 font-bold">
+                                                        {rev.user_name.charAt(0).toUpperCase()}
+                                                    </div>
+                                                    {rev.user_name}
+                                                </div>
+                                                <span className="text-sm text-slate-400">{new Date(rev.review_date).toLocaleDateString()}</span>
+                                            </div>
+                                            <div className="flex items-center mb-3">
+                                                {[1, 2, 3, 4, 5].map((star) => (
+                                                    <StarIcon key={star} className={`w-4 h-4 ${star <= rev.rating ? 'text-amber-400' : 'text-slate-200'}`} />
+                                                ))}
+                                            </div>
+                                            <p className="text-slate-600 leading-relaxed text-sm lg:text-base">{rev.comment}</p>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </Card>
+                    </div>
+
+                    {/* Write Review Form */}
+                    <div className="lg:col-span-1">
+                        <Card className="p-6 sticky top-24">
+                            <h3 className="text-xl font-bold text-slate-900 mb-4">Write a Review</h3>
+                            {!isAuthenticated ? (
+                                <div className="text-center py-6 bg-slate-50 rounded-lg">
+                                    <p className="text-slate-600 mb-4 text-sm">Please log in to share your experience with this product.</p>
+                                    <Button variant="outline" className="w-full" onClick={() => navigate('/login')}>Sign In to Review</Button>
+                                </div>
+                            ) : (
+                                <form onSubmit={handleReviewSubmit} className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-2">Rating</label>
+                                        <select 
+                                            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
+                                            value={reviewForm.rating}
+                                            onChange={(e) => setReviewForm({...reviewForm, rating: e.target.value})}
+                                        >
+                                            <option value={5}>⭐⭐⭐⭐⭐ - Excellent</option>
+                                            <option value={4}>⭐⭐⭐⭐ - Very Good</option>
+                                            <option value={3}>⭐⭐⭐ - Average</option>
+                                            <option value={2}>⭐⭐ - Poor</option>
+                                            <option value={1}>⭐ - Terrible</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-2">Review Comment</label>
+                                        <textarea 
+                                            className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none resize-none" 
+                                            rows="4"
+                                            placeholder="What did you like or dislike?"
+                                            value={reviewForm.comment}
+                                            onChange={(e) => setReviewForm({...reviewForm, comment: e.target.value})}
+                                            required
+                                        ></textarea>
+                                    </div>
+                                    <Button type="submit" variant="primary" className="w-full">Submit Review</Button>
+                                    
+                                    <AnimatePresence>
+                                        {reviewFeedback && (
+                                            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-2 text-sm text-emerald-600 bg-emerald-50 p-2 rounded text-center font-medium">
+                                                {reviewFeedback}
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </form>
+                            )}
+                        </Card>
+                    </div>
+                </div>
+
+                {/* Related Products Section */}
+                {relatedProducts.length > 0 && (
+                    <div className="mt-16 pt-8 border-t border-slate-200">
+                        <div className="flex items-center justify-between mb-8">
+                            <h2 className="text-2xl font-bold text-slate-900">Related Products</h2>
+                            <Link to={`/category/${product.category}`} className="text-primary font-medium hover:underline flex items-center">
+                                View all {product.category} <span className="ml-1">&rarr;</span>
+                            </Link>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                            {relatedProducts.map(p => (
+                                <ProductCard key={p.id} product={p} />
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>
     );
 };

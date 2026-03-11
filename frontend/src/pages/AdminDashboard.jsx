@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import useAuthStore from '../store/authStore';
-import './Dashboard.css';
+import DashboardLayout from '../components/layout/DashboardLayout';
+import Card from '../components/ui/Card';
+import Badge from '../components/ui/Badge';
+import Button from '../components/ui/Button';
 
 const AdminDashboard = () => {
     const { token } = useAuthStore();
@@ -32,7 +35,7 @@ const AdminDashboard = () => {
                 const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/admin/sellers`, { headers: { Authorization: `Bearer ${token}` } });
                 setSellers(res.data);
             } else if (activeTab === 'products') {
-                const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/products`); // Public, but admin views it here
+                const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/products`);
                 setProducts(res.data);
             } else if (activeTab === 'orders') {
                const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/orders/all`, { headers: { Authorization: `Bearer ${token}` } });
@@ -102,195 +105,236 @@ const AdminDashboard = () => {
         }
     };
 
+    const TabButton = ({ id, label }) => (
+        <button
+            onClick={() => setActiveTab(id)}
+            className={`px-4 py-2 font-medium text-sm rounded-lg transition-colors ${
+                activeTab === id
+                    ? 'bg-primary text-white shadow-md shadow-primary/20'
+                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+            }`}
+        >
+            {label}
+        </button>
+    );
+
     return (
-        <div className="container page-container">
-            <h1 className="page-title">Admin Dashboard</h1>
-            
-            {feedback && <div className="alert alert-success">{feedback}</div>}
-            {error && <div className="alert alert-danger">{error}</div>}
+        <DashboardLayout isAdmin={true}>
+            <div className="space-y-6">
+                <div>
+                    <h1 className="text-2xl font-bold text-slate-900">Admin Dashboard</h1>
+                    <p className="text-sm text-slate-500 mt-1">Manage users, sellers, products, and system settings.</p>
+                </div>
+                
+                {feedback && (
+                    <div className="bg-emerald-50 text-emerald-800 border border-emerald-200 p-4 rounded-lg flex items-center">
+                        <span className="font-medium">{feedback}</span>
+                    </div>
+                )}
+                
+                {error && (
+                    <div className="bg-red-50 text-red-800 border border-red-200 p-4 rounded-lg flex items-center">
+                        <span className="font-medium">{error}</span>
+                    </div>
+                )}
 
-            <div className="dashboard-tabs">
-                <button className={`tab-btn ${activeTab === 'analytics' ? 'active' : ''}`} onClick={() => setActiveTab('analytics')}>Analytics</button>
-                <button className={`tab-btn ${activeTab === 'users' ? 'active' : ''}`} onClick={() => setActiveTab('users')}>Users</button>
-                <button className={`tab-btn ${activeTab === 'sellers' ? 'active' : ''}`} onClick={() => setActiveTab('sellers')}>Sellers</button>
-                <button className={`tab-btn ${activeTab === 'products' ? 'active' : ''}`} onClick={() => setActiveTab('products')}>Products</button>
-                <button className={`tab-btn ${activeTab === 'orders' ? 'active' : ''}`} onClick={() => setActiveTab('orders')}>All Orders</button>
-            </div>
+                <div className="flex flex-wrap gap-2 p-1 bg-white border border-slate-200 rounded-xl shadow-sm">
+                    <TabButton id="analytics" label="Analytics" />
+                    <TabButton id="users" label="Users" />
+                    <TabButton id="sellers" label="Sellers" />
+                    <TabButton id="products" label="Products" />
+                    <TabButton id="orders" label="All Orders" />
+                </div>
 
-            <div className="dashboard-content">
-                {loading ? <div className="loading-spinner">Loading System Data...</div> : (
-                    <>
-                        {activeTab === 'analytics' && analytics && (
-                            <div className="analytics-view">
-                                <h2>System Overview</h2>
-                                <div className="analytics-grid mt-4">
-                                    <div className="card stat-card">
-                                        <div className="stat-title">Total Users</div>
-                                        <div className="stat-value">{analytics.totalUsers}</div>
-                                    </div>
-                                    <div className="card stat-card">
-                                        <div className="stat-title">Registered Sellers</div>
-                                        <div className="stat-value">{analytics.totalSellers}</div>
-                                    </div>
-                                    <div className="card stat-card">
-                                        <div className="stat-title">Total Orders Placed</div>
-                                        <div className="stat-value">{analytics.totalOrders}</div>
-                                    </div>
-                                    <div className="card stat-card">
-                                        <div className="stat-title">Platform Revenue</div>
-                                        <div className="stat-value">₹{Number(analytics.totalRevenue).toLocaleString()}</div>
+                <div className="mt-6">
+                    {loading ? (
+                        <div className="flex justify-center items-center py-20">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                        </div>
+                    ) : (
+                        <>
+                            {activeTab === 'analytics' && analytics && (
+                                <div className="space-y-6">
+                                    <h2 className="text-lg font-semibold text-slate-800">System Overview</h2>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                        <Card className="p-6">
+                                            <p className="text-sm font-medium text-slate-500 mb-1">Total Users</p>
+                                            <p className="text-3xl font-bold text-slate-900">{analytics.totalUsers}</p>
+                                        </Card>
+                                        <Card className="p-6">
+                                            <p className="text-sm font-medium text-slate-500 mb-1">Registered Sellers</p>
+                                            <p className="text-3xl font-bold text-slate-900">{analytics.totalSellers}</p>
+                                        </Card>
+                                        <Card className="p-6">
+                                            <p className="text-sm font-medium text-slate-500 mb-1">Total Orders Placed</p>
+                                            <p className="text-3xl font-bold text-slate-900">{analytics.totalOrders}</p>
+                                        </Card>
+                                        <Card className="p-6 border-l-4 border-l-primary">
+                                            <p className="text-sm font-medium text-slate-500 mb-1">Platform Revenue</p>
+                                            <p className="text-3xl font-bold text-primary">₹{Number(analytics.totalRevenue).toLocaleString()}</p>
+                                        </Card>
                                     </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
 
-                        {activeTab === 'users' && (
-                            <div className="data-table-wrapper card">
-                                <table className="data-table">
-                                    <thead>
-                                        <tr>
-                                            <th>ID</th>
-                                            <th>Name</th>
-                                            <th>Email</th>
-                                            <th>Role</th>
-                                            <th>Created At</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {users.map(u => (
-                                            <tr key={u.id}>
-                                                <td>#{u.id}</td>
-                                                <td>{u.name}</td>
-                                                <td>{u.email}</td>
-                                                <td><span className="role-badge" style={{marginTop: 0}}>{u.role}</span></td>
-                                                <td>{new Date(u.created_at).toLocaleDateString()}</td>
-                                                <td>
-                                                    {u.role !== 'admin' && (
-                                                        <button className="btn btn-danger btn-sm" onClick={() => handleDeleteUser(u.id)}>Delete</button>
-                                                    )}
-                                                </td>
+                            {activeTab === 'users' && (
+                                <Card className="overflow-x-auto">
+                                    <table className="min-w-full divide-y divide-slate-200 text-sm">
+                                        <thead className="bg-slate-50">
+                                            <tr>
+                                                <th className="px-6 py-4 text-left font-semibold text-slate-900">ID</th>
+                                                <th className="px-6 py-4 text-left font-semibold text-slate-900">Name</th>
+                                                <th className="px-6 py-4 text-left font-semibold text-slate-900">Email</th>
+                                                <th className="px-6 py-4 text-left font-semibold text-slate-900">Role</th>
+                                                <th className="px-6 py-4 text-left font-semibold text-slate-900">Created At</th>
+                                                <th className="px-6 py-4 text-right font-semibold text-slate-900">Actions</th>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-200 bg-white">
+                                            {users.map(u => (
+                                                <tr key={u.id} className="hover:bg-slate-50 transition-colors">
+                                                    <td className="px-6 py-4 text-slate-500 font-medium">#{u.id}</td>
+                                                    <td className="px-6 py-4 font-medium text-slate-900">{u.name}</td>
+                                                    <td className="px-6 py-4 text-slate-500">{u.email}</td>
+                                                    <td className="px-6 py-4">
+                                                        <Badge variant={u.role === 'admin' ? 'primary' : u.role === 'seller' ? 'warning' : 'default'}>
+                                                            {u.role}
+                                                        </Badge>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-slate-500">{new Date(u.created_at).toLocaleDateString()}</td>
+                                                    <td className="px-6 py-4 text-right">
+                                                        {u.role !== 'admin' && (
+                                                            <Button variant="ghost" size="sm" className="text-danger hover:text-red-700 hover:bg-red-50" onClick={() => handleDeleteUser(u.id)}>Delete</Button>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </Card>
+                            )}
 
-                        {activeTab === 'sellers' && (
-                            <div className="data-table-wrapper card">
-                                <table className="data-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Seller ID</th>
-                                            <th>User Info</th>
-                                            <th>Status</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {sellers.map(s => (
-                                            <tr key={s.seller_id}>
-                                                <td>#{s.seller_id}</td>
-                                                <td>
-                                                    <strong>{s.name}</strong><br/>
-                                                    <small className="text-secondary">{s.email}</small>
-                                                </td>
-                                                <td>
-                                                     <span className={`stock-badge-sm ${s.approved_status === 'approved' ? 'bg-success' : s.approved_status === 'rejected' ? 'bg-danger' : 'bg-warning'}`} style={{ backgroundColor: s.approved_status === 'pending' ? '#eab308' : undefined}}>
-                                                        {s.approved_status.toUpperCase()}
-                                                    </span>
-                                                </td>
-                                                <td className="table-actions">
-                                                    {s.approved_status !== 'approved' && (
-                                                        <button className="btn btn-primary btn-sm" onClick={() => handleSellerStatusUpdate(s.seller_id, 'approved')}>Approve</button>
-                                                    )}
-                                                    {s.approved_status !== 'rejected' && (
-                                                        <button className="btn btn-danger btn-sm" onClick={() => handleSellerStatusUpdate(s.seller_id, 'rejected')}>Reject</button>
-                                                    )}
-                                                </td>
+                            {activeTab === 'sellers' && (
+                                <Card className="overflow-x-auto">
+                                    <table className="min-w-full divide-y divide-slate-200 text-sm">
+                                        <thead className="bg-slate-50">
+                                            <tr>
+                                                <th className="px-6 py-4 text-left font-semibold text-slate-900">ID</th>
+                                                <th className="px-6 py-4 text-left font-semibold text-slate-900">User Info</th>
+                                                <th className="px-6 py-4 text-left font-semibold text-slate-900">Status</th>
+                                                <th className="px-6 py-4 text-right font-semibold text-slate-900">Actions</th>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-200 bg-white">
+                                            {sellers.map(s => (
+                                                <tr key={s.seller_id} className="hover:bg-slate-50 transition-colors">
+                                                    <td className="px-6 py-4 text-slate-500 font-medium">#{s.seller_id}</td>
+                                                    <td className="px-6 py-4">
+                                                        <div className="font-medium text-slate-900">{s.name}</div>
+                                                        <div className="text-slate-500 text-xs mt-0.5">{s.email}</div>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <Badge variant={s.approved_status === 'approved' ? 'success' : s.approved_status === 'rejected' ? 'danger' : 'warning'}>
+                                                            {s.approved_status.toUpperCase()}
+                                                        </Badge>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-right space-x-2">
+                                                        {s.approved_status !== 'approved' && (
+                                                            <Button variant="outline" size="sm" onClick={() => handleSellerStatusUpdate(s.seller_id, 'approved')}>Approve</Button>
+                                                        )}
+                                                        {s.approved_status !== 'rejected' && (
+                                                            <Button variant="ghost" className="text-danger hover:bg-red-50" size="sm" onClick={() => handleSellerStatusUpdate(s.seller_id, 'rejected')}>Reject</Button>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </Card>
+                            )}
 
-                        {activeTab === 'products' && (
-                            <div className="data-table-wrapper card">
-                                <table className="data-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Product ID</th>
-                                            <th>Name</th>
-                                            <th>Seller ID</th>
-                                            <th>Price</th>
-                                            <th>Stock</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {products.map(p => (
-                                            <tr key={p.id}>
-                                                <td>#{p.id}</td>
-                                                <td>{p.name}</td>
-                                                <td>#{p.seller_id}</td>
-                                                <td>₹{Number(p.price).toLocaleString()}</td>
-                                                <td>{p.stock_quantity}</td>
-                                                <td className="table-actions">
-                                                    <button className="btn btn-danger btn-sm" onClick={() => handleDeleteProduct(p.id)}>Delete</button>
-                                                </td>
+                            {activeTab === 'products' && (
+                                <Card className="overflow-x-auto">
+                                    <table className="min-w-full divide-y divide-slate-200 text-sm">
+                                        <thead className="bg-slate-50">
+                                            <tr>
+                                                <th className="px-6 py-4 text-left font-semibold text-slate-900">ID</th>
+                                                <th className="px-6 py-4 text-left font-semibold text-slate-900">Name</th>
+                                                <th className="px-6 py-4 text-left font-semibold text-slate-900">Seller ID</th>
+                                                <th className="px-6 py-4 text-left font-semibold text-slate-900">Price</th>
+                                                <th className="px-6 py-4 text-left font-semibold text-slate-900">Stock</th>
+                                                <th className="px-6 py-4 text-right font-semibold text-slate-900">Actions</th>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-200 bg-white">
+                                            {products.map(p => (
+                                                <tr key={p.id} className="hover:bg-slate-50 transition-colors">
+                                                    <td className="px-6 py-4 text-slate-500 font-medium">#{p.id}</td>
+                                                    <td className="px-6 py-4 font-medium text-slate-900">{p.name}</td>
+                                                    <td className="px-6 py-4 text-slate-500">#{p.seller_id}</td>
+                                                    <td className="px-6 py-4 font-semibold">₹{Number(p.price).toLocaleString()}</td>
+                                                    <td className="px-6 py-4">
+                                                        <Badge variant={p.stock_quantity > 10 ? 'success' : p.stock_quantity > 0 ? 'warning' : 'danger'}>
+                                                            {p.stock_quantity} in stock
+                                                        </Badge>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-right">
+                                                        <Button variant="ghost" size="sm" className="text-danger hover:bg-red-50" onClick={() => handleDeleteProduct(p.id)}>Delete</Button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </Card>
+                            )}
 
-                        {activeTab === 'orders' && (
-                             <div className="data-table-wrapper card">
-                             <table className="data-table">
-                                 <thead>
-                                     <tr>
-                                         <th>Order ID</th>
-                                         <th>Date</th>
-                                         <th>User Email</th>
-                                         <th>Total Price</th>
-                                         <th>Method</th>
-                                         <th>Status</th>
-                                     </tr>
-                                 </thead>
-                                 <tbody>
-                                     {orders.map(o => (
-                                         <tr key={o.id}>
-                                             <td>#{o.id}</td>
-                                             <td>{new Date(o.order_date).toLocaleDateString()}</td>
-                                             <td>{o.user_email}</td>
-                                             <td>₹{Number(o.total_price).toLocaleString()}</td>
-                                             <td>{o.payment_method}</td>
-                                             <td>
-                                                 <select 
-                                                     className={`form-input status-select ${o.order_status.toLowerCase()}`}
-                                                     value={o.order_status}
-                                                     onChange={(e) => handleOrderStatusUpdate(o.id, e.target.value)}
-                                                 >
-                                                     <option value="Pending">Pending</option>
-                                                     <option value="Packed">Packed</option>
-                                                     <option value="Shipped">Shipped</option>
-                                                     <option value="Delivered">Delivered</option>
-                                                 </select>
-                                             </td>
-                                         </tr>
-                                     ))}
-                                 </tbody>
-                             </table>
-                             {orders.length === 0 && <div className="p-4 text-center">No orders received yet.</div>}
-                         </div>
-                        )}
-                    </>
-                )}
+                            {activeTab === 'orders' && (
+                                <Card className="overflow-x-auto">
+                                    <table className="min-w-full divide-y divide-slate-200 text-sm">
+                                        <thead className="bg-slate-50">
+                                            <tr>
+                                                <th className="px-6 py-4 text-left font-semibold text-slate-900">ID</th>
+                                                <th className="px-6 py-4 text-left font-semibold text-slate-900">Date</th>
+                                                <th className="px-6 py-4 text-left font-semibold text-slate-900">User Email</th>
+                                                <th className="px-6 py-4 text-left font-semibold text-slate-900">Total Price</th>
+                                                <th className="px-6 py-4 text-left font-semibold text-slate-900">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-200 bg-white">
+                                            {orders.map(o => (
+                                                <tr key={o.id} className="hover:bg-slate-50 transition-colors">
+                                                    <td className="px-6 py-4 text-slate-500 font-medium">#{o.id}</td>
+                                                    <td className="px-6 py-4 text-slate-500">{new Date(o.order_date).toLocaleDateString()}</td>
+                                                    <td className="px-6 py-4 text-slate-600 font-medium">{o.user_email}</td>
+                                                    <td className="px-6 py-4 font-semibold text-primary">₹{Number(o.total_price).toLocaleString()}</td>
+                                                    <td className="px-6 py-4">
+                                                        <select 
+                                                            className={`block w-full text-sm rounded-lg border-slate-300 py-1.5 pl-3 pr-8 focus:border-primary focus:ring-primary ${
+                                                                o.order_status === 'Delivered' ? 'bg-emerald-50 text-emerald-800' : 
+                                                                o.order_status === 'Shipped' ? 'bg-blue-50 text-blue-800' :
+                                                                'bg-slate-50 text-slate-800'
+                                                            }`}
+                                                            value={o.order_status}
+                                                            onChange={(e) => handleOrderStatusUpdate(o.id, e.target.value)}
+                                                        >
+                                                            <option value="Pending">Pending</option>
+                                                            <option value="Packed">Packed</option>
+                                                            <option value="Shipped">Shipped</option>
+                                                            <option value="Delivered">Delivered</option>
+                                                        </select>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                    {orders.length === 0 && <div className="p-8 text-center text-slate-500">No orders received yet.</div>}
+                                </Card>
+                            )}
+                        </>
+                    )}
+                </div>
             </div>
-        </div>
+        </DashboardLayout>
     );
 };
 

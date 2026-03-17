@@ -6,8 +6,9 @@ import useCartStore from '../store/cartStore';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import Input from '../components/ui/Input';
-import { ShieldCheckIcon, TruckIcon, BanknotesIcon, CreditCardIcon } from '@heroicons/react/24/outline';
-import { motion } from 'framer-motion';
+import { ShieldCheckIcon, TruckIcon, BanknotesIcon, CreditCardIcon, MapPinIcon, PlusIcon, CheckIcon } from '@heroicons/react/24/outline';
+import { motion, AnimatePresence } from 'framer-motion';
+import { indiaData } from '../utils/indiaData';
 
 const Checkout = () => {
     const { items, fetchCart, clearCartState } = useCartStore();
@@ -25,12 +26,46 @@ const Checkout = () => {
     const [paymentMethod, setPaymentMethod] = useState('COD');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [savedAddresses, setSavedAddresses] = useState([]);
+    const [showSavedAddresses, setShowSavedAddresses] = useState(false);
+    const [shouldSaveAddress, setShouldSaveAddress] = useState(false);
+    const [states] = useState(Object.keys(indiaData));
+    const [cities, setCities] = useState([]);
+    const [orderPlaced, setOrderPlaced] = useState(false);
 
     useEffect(() => {
-        if (items.length === 0) {
+        const loadAddresses = async () => {
+            try {
+                const { data } = await axios.get(`${import.meta.env.VITE_API_URL}/api/addresses`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                setSavedAddresses(data);
+                if (data.length > 0) {
+                    setShowSavedAddresses(true);
+                }
+            } catch (err) {
+                console.error("Failed to fetch addresses:", err);
+            }
+        };
+
+        if (token) {
+            loadAddresses();
+        }
+    }, [token]);
+
+    useEffect(() => {
+        if (formData.state && indiaData[formData.state]) {
+            setCities(indiaData[formData.state]);
+        } else {
+            setCities([]);
+        }
+    }, [formData.state]);
+
+    useEffect(() => {
+        if (items.length === 0 && !orderPlaced) {
             navigate('/cart');
         }
-    }, [items, navigate]);
+    }, [items, navigate, orderPlaced]);
 
     const calculateTotal = () => {
         return items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -38,6 +73,21 @@ const Checkout = () => {
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
+        if (e.target.name === 'state') {
+            setFormData(prev => ({ ...prev, city: '' }));
+        }
+    };
+
+    const selectSavedAddress = (addr) => {
+        setFormData({
+            name: addr.name,
+            phone: addr.phone,
+            address: addr.address,
+            city: addr.city,
+            state: addr.state,
+            pincode: addr.pincode
+        });
+        setShowSavedAddresses(false);
     };
 
     const handleCheckout = async (e) => {
@@ -72,8 +122,20 @@ const Checkout = () => {
                                 orderDetails: { ...formData, paymentMethod: 'Razorpay' }
                             }, { headers: { Authorization: `Bearer ${token}` } });
 
+                            // Save address if requested
+                            if (shouldSaveAddress) {
+                                try {
+                                    await axios.post(`${import.meta.env.VITE_API_URL}/api/addresses`, formData, {
+                                        headers: { Authorization: `Bearer ${token}` }
+                                    });
+                                } catch (addrErr) {
+                                    console.error("Address save failed:", addrErr);
+                                }
+                            }
+
+                            setOrderPlaced(true);
                             clearCartState();
-                            navigate('/profile', { state: { message: 'Order placed successfully!', tab: 'orders' } });
+                            navigate('/profile?tab=orders', { state: { message: 'Order placed successfully!' } });
                         } catch (err) {
                             setError(err.response?.data?.message || 'Payment verification failed.');
                         }
@@ -95,8 +157,20 @@ const Checkout = () => {
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
                 
+                // Save address if requested
+                if (shouldSaveAddress) {
+                    try {
+                        await axios.post(`${import.meta.env.VITE_API_URL}/api/addresses`, formData, {
+                            headers: { Authorization: `Bearer ${token}` }
+                        });
+                    } catch (addrErr) {
+                        console.error("Address save failed:", addrErr);
+                    }
+                }
+
+                setOrderPlaced(true);
                 clearCartState();
-                navigate('/profile', { state: { message: 'Order placed successfully!', tab: 'orders' } });
+                navigate('/profile?tab=orders', { state: { message: 'Order placed successfully!' } });
             }
         } catch (err) {
              setError(err.response?.data?.message || 'Failed to place order.');
@@ -131,6 +205,57 @@ const Checkout = () => {
                                     <h2 className="text-xl font-bold text-slate-900">Delivery Details</h2>
                                 </div>
                                 
+                                {savedAddresses.length > 0 && (
+                                    <div className="mb-8">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <h3 className="text-sm font-black text-slate-500 uppercase tracking-widest">Deliver to:</h3>
+                                            <button 
+                                                type="button"
+                                                onClick={() => setShowSavedAddresses(!showSavedAddresses)}
+                                                className="text-xs font-black text-primary hover:text-primary-dark transition-colors uppercase tracking-widest flex items-center"
+                                            >
+                                                {showSavedAddresses ? 'Enter New Address' : 'Choose Saved Address'}
+                                            </button>
+                                        </div>
+
+                                        <AnimatePresence>
+                                            {showSavedAddresses && (
+                                                <motion.div 
+                                                    initial={{ height: 0, opacity: 0 }}
+                                                    animate={{ height: 'auto', opacity: 1 }}
+                                                    exit={{ height: 0, opacity: 0 }}
+                                                    className="overflow-hidden"
+                                                >
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                                                        {savedAddresses.map((addr) => (
+                                                            <div 
+                                                                key={addr.id}
+                                                                onClick={() => selectSavedAddress(addr)}
+                                                                className="relative p-4 border-2 border-slate-100 rounded-2xl hover:border-primary/30 hover:bg-primary/5 cursor-pointer transition-all group"
+                                                            >
+                                                                <div className="flex items-start justify-between">
+                                                                    <div className="flex items-center space-x-2 mb-2">
+                                                                        <MapPinIcon className="w-4 h-4 text-primary" />
+                                                                        <span className="font-black text-slate-900 text-sm">{addr.name}</span>
+                                                                    </div>
+                                                                    <div className="w-5 h-5 rounded-full border-2 border-slate-200 group-hover:border-primary flex items-center justify-center">
+                                                                        <div className="w-2.5 h-2.5 rounded-full bg-primary opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                                    </div>
+                                                                </div>
+                                                                <p className="text-xs text-slate-600 line-clamp-2 font-medium mb-1">{addr.address}</p>
+                                                                <p className="text-xs text-slate-500 font-bold">{addr.city}, {addr.state} - {addr.pincode}</p>
+                                                                <div className="mt-2 pt-2 border-t border-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                                                    Phone: {addr.phone}
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+                                    </div>
+                                )}
+                                
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
                                     <Input label="Full Name" type="text" id="name" name="name" value={formData.name} onChange={handleChange} required placeholder="John Doe" />
                                     <Input label="Phone Number" type="tel" id="phone" name="phone" value={formData.phone} onChange={handleChange} required placeholder="10-digit mobile number" />
@@ -150,10 +275,52 @@ const Checkout = () => {
                                     ></textarea>
                                 </div>
                                 
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                                    <Input label="City/District" type="text" id="city" name="city" value={formData.city} onChange={handleChange} required placeholder="e.g. Chennai" />
-                                    <Input label="State" type="text" id="state" name="state" value={formData.state} onChange={handleChange} required placeholder="e.g. Tamil Nadu" />
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
+                                    <div>
+                                        <label className="block text-sm font-bold text-slate-700 mb-2">State</label>
+                                        <select
+                                            name="state"
+                                            value={formData.state}
+                                            onChange={handleChange}
+                                            required
+                                            className="w-full rounded-xl border-slate-300 shadow-sm focus:border-primary focus:ring focus:ring-primary/20 transition-all font-medium py-2.5 px-3.5 text-slate-900 border bg-white"
+                                        >
+                                            <option value="">Select State</option>
+                                            {states.map(s => (
+                                                <option key={s} value={s}>{s}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-slate-700 mb-2">City/District</label>
+                                        <select
+                                            name="city"
+                                            value={formData.city}
+                                            onChange={handleChange}
+                                            required
+                                            disabled={!formData.state}
+                                            className="w-full rounded-xl border-slate-300 shadow-sm focus:border-primary focus:ring focus:ring-primary/20 transition-all font-medium py-2.5 px-3.5 text-slate-900 border bg-white disabled:bg-slate-50 disabled:text-slate-400"
+                                        >
+                                            <option value="">Select City</option>
+                                            {cities.map(c => (
+                                                <option key={c} value={c}>{c}</option>
+                                            ))}
+                                        </select>
+                                    </div>
                                     <Input label="Pincode" type="text" id="pincode" name="pincode" value={formData.pincode} onChange={handleChange} required placeholder="6-digit code" />
+                                </div>
+
+                                <div className="flex items-center space-x-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                                    <input 
+                                        type="checkbox" 
+                                        id="saveAddress" 
+                                        checked={shouldSaveAddress}
+                                        onChange={(e) => setShouldSaveAddress(e.target.checked)}
+                                        className="w-5 h-5 text-primary border-slate-300 rounded focus:ring-primary cursor-pointer"
+                                    />
+                                    <label htmlFor="saveAddress" className="text-sm font-black text-slate-700 cursor-pointer select-none tracking-tight">
+                                        Save this address for future deliveries
+                                    </label>
                                 </div>
                             </Card>
 

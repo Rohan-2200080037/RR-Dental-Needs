@@ -8,6 +8,7 @@ import Button from '../components/ui/Button';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { UsersIcon, ShoppingBagIcon, ClipboardDocumentListIcon } from '@heroicons/react/24/outline';
 
 const AdminDashboard = () => {
     const { token } = useAuthStore();
@@ -157,9 +158,11 @@ const AdminDashboard = () => {
     return (
         <DashboardLayout isAdmin={true} activeTab={activeTab} onTabChange={setActiveTab}>
             <div className="space-y-6">
-                <div>
-                    <h1 className="text-2xl font-bold text-slate-900">Admin Dashboard</h1>
-                    <p className="text-sm text-slate-500 mt-1">Manage users, sellers, products, and system settings.</p>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h1 className="text-2xl font-bold text-slate-800">Admin Dashboard</h1>
+                        <p className="text-sm text-slate-500 mt-1">Manage users, sellers, products, and system settings.</p>
+                    </div>
                 </div>
                 
                 {feedback && (
@@ -186,22 +189,61 @@ const AdminDashboard = () => {
                             {activeTab === 'analytics' && analytics && (
                                 <div className="space-y-6">
                                     <h2 className="text-lg font-semibold text-slate-800">System Overview</h2>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                        <Card className="p-6">
-                                            <p className="text-sm font-medium text-slate-500 mb-1">Total Users</p>
-                                            <p className="text-3xl font-bold text-slate-900">{analytics.totalUsers}</p>
+                                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                                        <Card className="premium-card p-4 sm:p-6 relative overflow-hidden group animate-premium" style={{ animationDelay: '0.1s' }}>
+                                            <div className="absolute -right-4 -top-4 w-24 h-24 bg-blue-500/5 rounded-full transition-transform group-hover:scale-150 duration-700"></div>
+                                            <div className="relative z-10">
+                                                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-blue-50 flex items-center justify-center mb-4 text-blue-600 transition-colors group-hover:bg-blue-600 group-hover:text-white duration-300">
+                                                    <UsersIcon className="w-6 h-6" />
+                                                </div>
+                                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Total Users</p>
+                                                <p className="text-3xl font-black text-slate-900">{analytics.totalUsers}</p>
+                                                <div className="mt-4 flex items-center text-[10px] font-bold text-emerald-500 bg-emerald-500/10 w-fit px-2 py-1 rounded-full">
+                                                    <span>+12.5%</span>
+                                                </div>
+                                            </div>
                                         </Card>
-                                        <Card className="p-6">
-                                            <p className="text-sm font-medium text-slate-500 mb-1">Registered Sellers</p>
-                                            <p className="text-3xl font-bold text-slate-900">{analytics.totalSellers}</p>
+
+                                        <Card className="premium-card p-4 sm:p-6 relative overflow-hidden group animate-premium" style={{ animationDelay: '0.2s' }}>
+                                            <div className="absolute -right-4 -top-4 w-24 h-24 bg-amber-500/5 rounded-full transition-transform group-hover:scale-150 duration-700"></div>
+                                            <div className="relative z-10">
+                                                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-amber-50 flex items-center justify-center mb-4 text-amber-600 transition-colors group-hover:bg-amber-600 group-hover:text-white duration-300">
+                                                    <ShoppingBagIcon className="w-6 h-6" />
+                                                </div>
+                                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Market Sellers</p>
+                                                <p className="text-3xl font-black text-slate-900">{analytics.totalSellers}</p>
+                                                <div className="mt-4 flex items-center text-[10px] font-bold text-amber-500 bg-amber-500/10 w-fit px-2 py-1 rounded-full">
+                                                    <span>Active Hub</span>
+                                                </div>
+                                            </div>
                                         </Card>
-                                        <Card className="p-6">
-                                            <p className="text-sm font-medium text-slate-500 mb-1">Total Orders Placed</p>
-                                            <p className="text-3xl font-bold text-slate-900">{analytics.totalOrders}</p>
+
+                                        <Card className="premium-card p-4 sm:p-6 relative overflow-hidden group animate-premium" style={{ animationDelay: '0.3s' }}>
+                                            <div className="absolute -right-4 -top-4 w-24 h-24 bg-indigo-500/5 rounded-full transition-transform group-hover:scale-150 duration-700"></div>
+                                            <div className="relative z-10">
+                                                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-indigo-50 flex items-center justify-center mb-4 text-indigo-600 transition-colors group-hover:bg-indigo-600 group-hover:text-white duration-300">
+                                                    <ClipboardDocumentListIcon className="w-6 h-6" />
+                                                </div>
+                                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Total Orders</p>
+                                                <p className="text-3xl font-black text-slate-900">{analytics.totalOrders}</p>
+                                                <div className="mt-4 flex items-center text-[10px] font-bold text-indigo-500 bg-indigo-500/10 w-fit px-2 py-1 rounded-full">
+                                                    <span>Order Flow</span>
+                                                </div>
+                                            </div>
                                         </Card>
-                                        <Card className="p-6 border-l-4 border-l-primary">
-                                            <p className="text-sm font-medium text-slate-500 mb-1">Platform Revenue</p>
-                                            <p className="text-3xl font-bold text-primary">₹{Number(analytics.totalRevenue).toLocaleString()}</p>
+
+                                        <Card className="premium-card p-4 sm:p-6 relative overflow-hidden group animate-premium bg-gradient-to-br from-teal-600 to-emerald-700 border-none" style={{ animationDelay: '0.4s' }}>
+                                            <div className="absolute -right-4 -top-4 w-32 h-32 bg-white/10 rounded-full transition-transform group-hover:scale-150 duration-700"></div>
+                                            <div className="relative z-10">
+                                                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center mb-4 text-white">
+                                                    <span className="text-xl font-black">₹</span>
+                                                </div>
+                                                <p className="text-xs font-bold text-teal-100 uppercase tracking-widest mb-1">Revenue</p>
+                                                <p className="text-3xl font-black text-white">₹{Number(analytics.totalRevenue).toLocaleString()}</p>
+                                                <div className="mt-4 flex items-center text-[10px] font-bold text-white bg-white/20 w-fit px-2 py-1 rounded-full">
+                                                    <span>Peak Analytics</span>
+                                                </div>
+                                            </div>
                                         </Card>
                                     </div>
 
@@ -210,27 +252,31 @@ const AdminDashboard = () => {
                                         <Card className="p-6">
                                             <h3 className="text-lg font-bold text-slate-900 mb-6">Top Selling Products</h3>
                                             <div className="h-80 w-full">
-                                                <ResponsiveContainer width="100%" height="100%">
+                                                <ResponsiveContainer width="100%" height="100%" minHeight={300}>
                                                     <BarChart
                                                         data={analytics.topProducts || []}
                                                         layout="vertical"
-                                                        margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
+                                                        margin={{ top: 5, right: 10, left: 10, bottom: 5 }}
                                                     >
                                                         <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
                                                         <XAxis type="number" hide />
                                                         <YAxis 
                                                             dataKey="name" 
                                                             type="category" 
-                                                            width={100}
-                                                            tick={{ fontSize: 12, fontWeight: 600, fill: '#64748b' }}
+                                                            width={80}
+                                                            tick={{ fontSize: 10, fontWeight: 600, fill: '#64748b' }}
                                                         />
                                                         <Tooltip 
                                                             cursor={{ fill: '#f8fafc' }}
                                                             contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
                                                         />
-                                                        <Bar dataKey="total_sold" radius={[0, 4, 4, 0]}>
+                                                        <Bar dataKey="total_sold" radius={[0, 8, 8, 0]} barSize={28}>
                                                             {(analytics.topProducts || []).map((entry, index) => (
-                                                                <Cell key={`cell-${index}`} fill={['#0d9488', '#0ea5e9', '#6366f1', '#8b5cf6', '#ec4899'][index % 5]} />
+                                                                <Cell 
+                                                                    key={`cell-${index}`} 
+                                                                    fill={['#14b8a6', '#0ea5e9', '#6366f1', '#8b5cf6', '#f43f5e'][index % 5]} 
+                                                                    fillOpacity={0.9}
+                                                                />
                                                             ))}
                                                         </Bar>
                                                     </BarChart>
@@ -285,72 +331,97 @@ const AdminDashboard = () => {
                             )}
 
                             {activeTab === 'users' && (
-                                <Card className="overflow-x-auto">
-                                    <table className="min-w-full divide-y divide-slate-200 text-sm">
-                                        <thead className="bg-slate-50">
-                                            <tr>
-                                                <th className="px-6 py-4 text-left font-semibold text-slate-900">ID</th>
-                                                <th className="px-6 py-4 text-left font-semibold text-slate-900">Name</th>
-                                                <th className="px-6 py-4 text-left font-semibold text-slate-900">Email</th>
-                                                <th className="px-6 py-4 text-left font-semibold text-slate-900">Role</th>
-                                                <th className="px-6 py-4 text-left font-semibold text-slate-900">Created At</th>
-                                                <th className="px-6 py-4 text-right font-semibold text-slate-900">Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-200 bg-white">
-                                            {users.map(u => (
-                                                <tr key={u.id} className="hover:bg-slate-50 transition-colors">
-                                                    <td className="px-6 py-4 text-slate-500 font-medium">#{u.id}</td>
-                                                    <td className="px-6 py-4 font-medium text-slate-900">{u.name}</td>
-                                                    <td className="px-6 py-4 text-slate-500">{u.email}</td>
-                                                    <td className="px-6 py-4">
-                                                        <Badge variant={u.role === 'admin' ? 'primary' : u.role === 'seller' ? 'warning' : 'default'}>
-                                                            {u.role}
-                                                        </Badge>
-                                                    </td>
-                                                    <td className="px-6 py-4 text-slate-500">{new Date(u.created_at).toLocaleDateString()}</td>
-                                                    <td className="px-6 py-4 text-right">
-                                                        {u.role !== 'admin' && (
-                                                            <Button variant="ghost" size="sm" className="text-danger hover:text-red-700 hover:bg-red-50" onClick={() => handleDeleteUser(u.id)}>Delete</Button>
-                                                        )}
-                                                    </td>
+                                <Card className="premium-card overflow-hidden animate-premium">
+                                    <div className="p-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/30">
+                                        <h3 className="font-bold text-slate-800">User Management</h3>
+                                        <Badge variant="primary">{users.length} Total</Badge>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="min-w-full text-sm">
+                                            <thead>
+                                                <tr className="bg-slate-200/50">
+                                                    <th className="px-6 py-4 text-left font-bold text-slate-600 uppercase tracking-widest text-[10px]">S.No</th>
+                                                    <th className="px-6 py-4 text-left font-bold text-slate-600 uppercase tracking-widest text-[10px]">User</th>
+                                                    <th className="px-6 py-4 text-left font-bold text-slate-600 uppercase tracking-widest text-[10px]">Role</th>
+                                                    <th className="px-6 py-4 text-left font-bold text-slate-600 uppercase tracking-widest text-[10px]">Joined</th>
+                                                    <th className="px-6 py-4 text-right font-bold text-slate-600 uppercase tracking-widest text-[10px]">Actions</th>
                                                 </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-200">
+                                                {users.map((u, idx) => (
+                                                    <tr key={u.id} className="hover:bg-blue-50/50 transition-colors group even:bg-slate-100/80">
+                                                        <td className="px-6 py-4 bg-slate-200/50 group-hover:bg-transparent transition-colors font-bold text-slate-500">
+                                                            {idx + 1}
+                                                        </td>
+                                                        <td className="px-6 py-4">
+                                                            <div className="flex items-center">
+                                                                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-slate-300 to-slate-200 flex items-center justify-center mr-3 text-slate-600 font-bold group-hover:from-teal-200 group-hover:to-teal-100 transition-colors shadow-sm">
+                                                                    {u.name.charAt(0)}
+                                                                </div>
+                                                                <div>
+                                                                    <div className="font-bold text-slate-900">{u.name}</div>
+                                                                    <div className="text-xs text-slate-600">{u.email}</div>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-4 bg-blue-100/40 group-hover:bg-transparent transition-colors">
+                                                            <Badge variant={u.role === 'admin' ? 'primary' : u.role === 'seller' ? 'warning' : 'default'} className="px-3 py-1 rounded-lg shadow-sm border-white/50">
+                                                                {u.role}
+                                                            </Badge>
+                                                        </td>
+                                                        <td className="px-6 py-4 text-slate-600 font-bold bg-teal-100/30 group-hover:bg-transparent transition-colors">
+                                                            {new Date(u.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                        </td>
+                                                        <td className="px-6 py-4 text-right bg-slate-200/30 group-hover:bg-transparent transition-colors">
+                                                            {u.role !== 'admin' && (
+                                                                <Button 
+                                                                    variant="ghost" 
+                                                                    size="sm" 
+                                                                    className="text-red-500 hover:text-red-700 hover:bg-red-100 rounded-xl transition-all font-bold" 
+                                                                    onClick={() => handleDeleteUser(u.id)}
+                                                                >
+                                                                    Remove
+                                                                </Button>
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </Card>
                             )}
 
                             {activeTab === 'sellers' && (
                                 <Card className="overflow-x-auto">
                                     <table className="min-w-full divide-y divide-slate-200 text-sm">
-                                        <thead className="bg-slate-50">
+                                        <thead className="bg-slate-200/50">
                                             <tr>
-                                                <th className="px-6 py-4 text-left font-semibold text-slate-900">ID</th>
-                                                <th className="px-6 py-4 text-left font-semibold text-slate-900">User Info</th>
-                                                <th className="px-6 py-4 text-left font-semibold text-slate-900">Status</th>
-                                                <th className="px-6 py-4 text-right font-semibold text-slate-900">Actions</th>
+                                                <th className="px-6 py-4 text-left font-bold text-slate-600 uppercase tracking-widest text-[10px]">S.No</th>
+                                                <th className="px-6 py-4 text-left font-bold text-slate-600 uppercase tracking-widest text-[10px]">User Info</th>
+                                                <th className="px-6 py-4 text-left font-bold text-slate-600 uppercase tracking-widest text-[10px]">Status</th>
+                                                <th className="px-6 py-4 text-right font-bold text-slate-600 uppercase tracking-widest text-[10px]">Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-200 bg-white">
-                                            {sellers.map(s => (
-                                                <tr key={s.seller_id} className="hover:bg-slate-50 transition-colors">
-                                                    <td className="px-6 py-4 text-slate-500 font-medium">#{s.seller_id}</td>
+                                            {sellers.map((s, idx) => (
+                                                <tr key={s.seller_id} className="hover:bg-blue-50/50 transition-colors even:bg-slate-100/80 group">
+                                                    <td className="px-6 py-4 font-bold text-slate-500 bg-slate-200/50 group-hover:bg-transparent transition-colors">{idx + 1}</td>
                                                     <td className="px-6 py-4">
                                                         <div className="font-medium text-slate-900">{s.name}</div>
-                                                        <div className="text-slate-500 text-xs mt-0.5">{s.email}</div>
+                                                        <div className="text-slate-600 text-xs mt-0.5 font-medium">{s.email}</div>
                                                     </td>
-                                                    <td className="px-6 py-4">
+                                                    <td className="px-6 py-4 bg-blue-100/40 group-hover:bg-transparent transition-colors">
                                                         <Badge variant={s.approved_status === 'approved' ? 'success' : s.approved_status === 'rejected' ? 'danger' : 'warning'}>
                                                             {s.approved_status.toUpperCase()}
                                                         </Badge>
                                                     </td>
-                                                    <td className="px-6 py-4 text-right space-x-2">
+                                                    <td className="px-6 py-4 text-right space-x-2 bg-slate-200/30 group-hover:bg-transparent transition-colors">
                                                         {s.approved_status !== 'approved' && (
-                                                            <Button variant="outline" size="sm" onClick={() => handleSellerStatusUpdate(s.seller_id, 'approved')}>Approve</Button>
+                                                            <Button variant="outline" size="sm" onClick={() => handleSellerStatusUpdate(s.seller_id, 'approved')} className="font-bold">Approve</Button>
                                                         )}
                                                         {s.approved_status !== 'rejected' && (
-                                                            <Button variant="ghost" className="text-danger hover:bg-red-50" size="sm" onClick={() => handleSellerStatusUpdate(s.seller_id, 'rejected')}>Reject</Button>
+                                                            <Button variant="ghost" className="text-danger hover:bg-red-100 font-bold" size="sm" onClick={() => handleSellerStatusUpdate(s.seller_id, 'rejected')}>Reject</Button>
                                                         )}
                                                     </td>
                                                 </tr>
@@ -363,30 +434,30 @@ const AdminDashboard = () => {
                             {activeTab === 'products' && (
                                 <Card className="overflow-x-auto">
                                     <table className="min-w-full divide-y divide-slate-200 text-sm">
-                                        <thead className="bg-slate-50">
+                                        <thead className="bg-slate-200/60">
                                             <tr>
-                                                <th className="px-6 py-4 text-left font-semibold text-slate-900">ID</th>
-                                                <th className="px-6 py-4 text-left font-semibold text-slate-900">Name</th>
-                                                <th className="px-6 py-4 text-left font-semibold text-slate-900">Seller ID</th>
-                                                <th className="px-6 py-4 text-left font-semibold text-slate-900">Price</th>
-                                                <th className="px-6 py-4 text-left font-semibold text-slate-900">Stock</th>
-                                                <th className="px-6 py-4 text-right font-semibold text-slate-900">Actions</th>
+                                                <th className="px-6 py-4 text-left font-bold text-slate-700 uppercase tracking-widest text-[10px]">S.No</th>
+                                                <th className="px-6 py-4 text-left font-bold text-slate-700 uppercase tracking-widest text-[10px]">Name</th>
+                                                <th className="px-6 py-4 text-left font-bold text-slate-700 uppercase tracking-widest text-[10px]">Seller</th>
+                                                <th className="px-6 py-4 text-left font-bold text-slate-700 uppercase tracking-widest text-[10px]">Price</th>
+                                                <th className="px-6 py-4 text-left font-bold text-slate-700 uppercase tracking-widest text-[10px]">Stock</th>
+                                                <th className="px-6 py-4 text-right font-bold text-slate-700 uppercase tracking-widest text-[10px]">Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-200 bg-white">
-                                            {products.map(p => (
-                                                <tr key={p.id} className="hover:bg-slate-50 transition-colors">
-                                                    <td className="px-6 py-4 text-slate-500 font-medium">#{p.id}</td>
-                                                    <td className="px-6 py-4 font-medium text-slate-900">{p.name}</td>
-                                                    <td className="px-6 py-4 text-slate-500">#{p.seller_id}</td>
-                                                    <td className="px-6 py-4 font-semibold">₹{Number(p.price).toLocaleString()}</td>
+                                            {products.map((p, idx) => (
+                                                <tr key={p.id} className="hover:bg-blue-50/50 transition-colors even:bg-slate-100/80 group">
+                                                    <td className="px-6 py-4 font-bold text-slate-600 bg-slate-300/20 group-hover:bg-transparent transition-colors">{idx + 1}</td>
+                                                    <td className="px-6 py-4 font-extrabold text-slate-900">{p.name}</td>
+                                                    <td className="px-6 py-4 text-slate-700 font-bold bg-blue-100/30 group-hover:bg-transparent transition-colors">#{p.seller_id}</td>
+                                                    <td className="px-6 py-4 font-black text-slate-900 bg-emerald-100/30 group-hover:bg-transparent transition-colors">₹{Number(p.price).toLocaleString()}</td>
                                                     <td className="px-6 py-4">
-                                                        <Badge variant={p.stock_quantity > 10 ? 'success' : p.stock_quantity > 0 ? 'warning' : 'danger'}>
+                                                        <Badge variant={p.stock_quantity > 10 ? 'success' : p.stock_quantity > 0 ? 'warning' : 'danger'} className="shadow-sm font-black">
                                                             {p.stock_quantity} in stock
                                                         </Badge>
                                                     </td>
-                                                    <td className="px-6 py-4 text-right">
-                                                        <Button variant="ghost" size="sm" className="text-danger hover:bg-red-50" onClick={() => handleDeleteProduct(p.id)}>Delete</Button>
+                                                    <td className="px-6 py-4 text-right bg-slate-200/30 group-hover:bg-transparent transition-colors">
+                                                        <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700 hover:bg-red-100 font-bold" onClick={() => handleDeleteProduct(p.id)}>Delete</Button>
                                                     </td>
                                                 </tr>
                                             ))}
@@ -398,33 +469,33 @@ const AdminDashboard = () => {
                             {activeTab === 'orders' && (
                                 <Card className="overflow-x-auto">
                                     <table className="min-w-full divide-y divide-slate-200 text-sm">
-                                        <thead className="bg-slate-50">
+                                        <thead className="bg-slate-200/60">
                                             <tr>
-                                                <th className="px-6 py-4 text-left font-semibold text-slate-900">ID</th>
-                                                <th className="px-6 py-4 text-left font-semibold text-slate-900">Date</th>
-                                                <th className="px-6 py-4 text-left font-semibold text-slate-900">User Email</th>
-                                                <th className="px-6 py-4 text-left font-semibold text-slate-900">Total Price</th>
-                                                <th className="px-6 py-4 text-left font-semibold text-slate-900">Status</th>
+                                                <th className="px-6 py-4 text-left font-bold text-slate-700 uppercase tracking-widest text-[10px]">S.No</th>
+                                                <th className="px-6 py-4 text-left font-bold text-slate-700 uppercase tracking-widest text-[10px]">Date</th>
+                                                <th className="px-6 py-4 text-left font-bold text-slate-700 uppercase tracking-widest text-[10px]">User Email</th>
+                                                <th className="px-6 py-4 text-left font-bold text-slate-700 uppercase tracking-widest text-[10px]">Total Price</th>
+                                                <th className="px-6 py-4 text-left font-bold text-slate-700 uppercase tracking-widest text-[10px]">Status</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-200 bg-white">
-                                            {orders.map(o => (
-                                                <tr key={o.id} className="hover:bg-slate-50 transition-colors">
-                                                    <td className="px-6 py-4 text-slate-500 font-medium">#{o.id}</td>
-                                                    <td className="px-6 py-4 text-slate-500">{new Date(o.order_date).toLocaleDateString()}</td>
-                                                    <td className="px-6 py-4 text-slate-600 font-medium">{o.user_email}</td>
-                                                    <td className="px-6 py-4 font-semibold text-primary">₹{Number(o.total_price).toLocaleString()}</td>
-                                                    <td className="px-6 py-4">
+                                            {orders.map((o, idx) => (
+                                                <tr key={o.id} className="hover:bg-blue-50/50 transition-colors even:bg-slate-100/80 group">
+                                                    <td className="px-6 py-4 font-bold text-slate-600 bg-slate-300/20 group-hover:bg-transparent transition-colors">{idx + 1}</td>
+                                                    <td className="px-6 py-4 text-slate-800 font-bold">{new Date(o.order_date).toLocaleDateString()}</td>
+                                                    <td className="px-6 py-4 text-slate-800 font-bold bg-blue-100/30 group-hover:bg-transparent transition-colors">{o.user_email}</td>
+                                                    <td className="px-6 py-4 font-black text-primary bg-emerald-100/30 group-hover:bg-transparent transition-colors">₹{Number(o.total_price).toLocaleString()}</td>
+                                                    <td className="px-6 py-4 bg-slate-200/30 group-hover:bg-transparent transition-colors">
                                                         {o.order_status === 'Cancelled' ? (
-                                                            <div className="px-3 py-1.5 bg-red-50 text-red-700 font-bold text-xs uppercase rounded-lg border border-red-100 text-center">
+                                                            <div className="px-3 py-1.5 bg-red-100 text-red-800 font-black text-[10px] uppercase rounded-lg border border-red-200 text-center shadow-sm">
                                                                 Cancelled
                                                             </div>
                                                         ) : (
                                                             <select 
-                                                                className={`block w-full text-sm rounded-lg border-slate-300 py-1.5 pl-3 pr-8 focus:border-primary focus:ring-primary ${
-                                                                    o.order_status === 'Delivered' ? 'bg-emerald-50 text-emerald-800' : 
-                                                                    o.order_status === 'Shipped' ? 'bg-blue-50 text-blue-800' :
-                                                                    'bg-slate-50 text-slate-800'
+                                                                className={`block w-full text-[10px] font-black uppercase tracking-widest rounded-lg border-slate-300 py-2 pl-3 pr-8 focus:border-primary focus:ring-primary shadow-sm ${
+                                                                    o.order_status === 'Delivered' ? 'bg-emerald-100 text-emerald-900' : 
+                                                                    o.order_status === 'Shipped' ? 'bg-blue-100 text-blue-900' :
+                                                                    'bg-white text-slate-900'
                                                                 }`}
                                                                 value={o.order_status}
                                                                 onChange={(e) => handleOrderStatusUpdate(o.id, e.target.value)}
@@ -457,29 +528,33 @@ const AdminDashboard = () => {
                                         </Button>
                                     </div>
                                     <table className="min-w-full divide-y divide-slate-200 text-sm">
-                                        <thead className="bg-slate-50">
+                                        <thead className="bg-slate-200/60">
                                             <tr>
-                                                <th className="px-6 py-4 text-left font-semibold text-slate-900 w-32">Date</th>
-                                                <th className="px-6 py-4 text-left font-semibold text-slate-900 w-48">From</th>
-                                                <th className="px-6 py-4 text-left font-semibold text-slate-900 w-48">Subject</th>
-                                                <th className="px-6 py-4 text-left font-semibold text-slate-900">Message</th>
+                                                <th className="px-6 py-4 text-left font-bold text-slate-700 uppercase tracking-widest text-[10px] w-16">S.No</th>
+                                                <th className="px-6 py-4 text-left font-bold text-slate-700 uppercase tracking-widest text-[10px] w-32">Date</th>
+                                                <th className="px-6 py-4 text-left font-bold text-slate-700 uppercase tracking-widest text-[10px] w-48">From</th>
+                                                <th className="px-6 py-4 text-left font-bold text-slate-700 uppercase tracking-widest text-[10px] w-48">Subject</th>
+                                                <th className="px-6 py-4 text-left font-bold text-slate-700 uppercase tracking-widest text-[10px]">Message</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-200 bg-white">
-                                            {messages.map(msg => (
-                                                <tr key={msg.id} className="hover:bg-slate-50 transition-colors">
-                                                    <td className="px-6 py-4 text-slate-500 whitespace-nowrap">
-                                                        <div className="font-medium">{new Date(msg.created_at).toLocaleDateString()}</div>
-                                                        <div className="text-xs mt-0.5">{new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                                            {messages.map((msg, idx) => (
+                                                <tr key={msg.id} className="hover:bg-blue-50/50 transition-colors even:bg-slate-100/80 group">
+                                                    <td className="px-6 py-4 font-bold text-slate-600 bg-slate-300/20 group-hover:bg-transparent transition-colors">
+                                                        {idx + 1}
+                                                    </td>
+                                                    <td className="px-6 py-4 text-slate-800 font-bold">
+                                                        <div className="font-bold">{new Date(msg.created_at).toLocaleDateString()}</div>
+                                                        <div className="text-xs mt-0.5 text-slate-600">{new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
                                                     </td>
                                                     <td className="px-6 py-4">
-                                                        <div className="font-medium text-slate-900">{msg.name}</div>
-                                                        <a href={`mailto:${msg.email}`} className="text-primary hover:underline text-xs mt-0.5">{msg.email}</a>
+                                                        <div className="font-extrabold text-slate-900">{msg.name}</div>
+                                                        <a href={`mailto:${msg.email}`} className="text-primary hover:underline text-xs mt-0.5 font-bold">{msg.email}</a>
                                                     </td>
-                                                    <td className="px-6 py-4 text-slate-800 font-medium">
-                                                        {msg.subject || <span className="text-slate-400 italic">No subject</span>}
+                                                    <td className="px-6 py-4 text-slate-900 font-extrabold bg-blue-100/30 group-hover:bg-transparent transition-colors">
+                                                        {msg.subject || <span className="text-slate-500 italic">No subject</span>}
                                                     </td>
-                                                    <td className="px-6 py-4 text-slate-600">
+                                                    <td className="px-6 py-4 text-slate-700 font-medium bg-emerald-100/5 group-hover:bg-transparent transition-colors">
                                                         <div className="max-w-md md:max-w-lg lg:max-w-2xl whitespace-pre-wrap">{msg.message}</div>
                                                     </td>
                                                 </tr>
@@ -496,36 +571,40 @@ const AdminDashboard = () => {
                                         <h2 className="text-lg font-semibold text-slate-900">Product Reviews</h2>
                                     </div>
                                     <table className="min-w-full divide-y divide-slate-200 text-sm">
-                                        <thead className="bg-slate-50">
+                                        <thead className="bg-slate-200/60">
                                             <tr>
-                                                <th className="px-6 py-4 text-left font-semibold text-slate-900 w-32">Date</th>
-                                                <th className="px-6 py-4 text-left font-semibold text-slate-900 w-48">Product & User</th>
-                                                <th className="px-6 py-4 text-left font-semibold text-slate-900 w-24">Rating</th>
-                                                <th className="px-6 py-4 text-left font-semibold text-slate-900">Comment</th>
-                                                <th className="px-6 py-4 text-right font-semibold text-slate-900 w-24">Actions</th>
+                                                <th className="px-6 py-4 text-left font-bold text-slate-700 uppercase tracking-widest text-[10px] w-16">S.No</th>
+                                                <th className="px-6 py-4 text-left font-bold text-slate-700 uppercase tracking-widest text-[10px] w-32">Date</th>
+                                                <th className="px-6 py-4 text-left font-bold text-slate-700 uppercase tracking-widest text-[10px] w-48">Product & User</th>
+                                                <th className="px-6 py-4 text-left font-bold text-slate-700 uppercase tracking-widest text-[10px] w-24">Rating</th>
+                                                <th className="px-6 py-4 text-left font-bold text-slate-700 uppercase tracking-widest text-[10px]">Comment</th>
+                                                <th className="px-6 py-4 text-right font-bold text-slate-700 uppercase tracking-widest text-[10px] w-24">Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-200 bg-white">
-                                            {reviews.map(r => (
-                                                <tr key={r.id} className="hover:bg-slate-50 transition-colors">
-                                                    <td className="px-6 py-4 text-slate-500 whitespace-nowrap">
-                                                        <div className="font-medium">{new Date(r.review_date).toLocaleDateString()}</div>
+                                            {reviews.map((r, idx) => (
+                                                <tr key={r.id} className="hover:bg-blue-50/50 transition-colors even:bg-slate-100/80 group">
+                                                    <td className="px-6 py-4 font-bold text-slate-600 bg-slate-200/50 group-hover:bg-transparent transition-colors">
+                                                        {idx + 1}
+                                                    </td>
+                                                    <td className="px-6 py-4 text-slate-800 font-bold whitespace-nowrap">
+                                                        <div className="font-bold">{new Date(r.review_date).toLocaleDateString()}</div>
                                                     </td>
                                                     <td className="px-6 py-4">
-                                                        <div className="font-medium text-slate-900">{r.product_name}</div>
-                                                        <div className="text-slate-500 text-xs mt-0.5">By {r.user_name}</div>
+                                                        <div className="font-extrabold text-slate-900">{r.product_name}</div>
+                                                        <div className="text-slate-600 text-xs mt-0.5 font-bold">By {r.user_name}</div>
                                                     </td>
-                                                    <td className="px-6 py-4">
+                                                    <td className="px-6 py-4 bg-emerald-100/20 group-hover:bg-transparent transition-colors">
                                                         <div className="flex items-center">
-                                                            <span className="font-bold text-slate-900 mr-1">{r.rating}</span>
-                                                            <svg className="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                                                            <span className="font-black text-slate-900 mr-2 text-base">{r.rating}</span>
+                                                            <svg className="w-5 h-5 text-amber-500 drop-shadow-sm" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
                                                         </div>
                                                     </td>
-                                                    <td className="px-6 py-4 text-slate-600">
-                                                        <div className="max-w-md whitespace-pre-wrap">{r.comment || <span className="text-slate-400 italic">No comment provided</span>}</div>
+                                                    <td className="px-6 py-4 text-slate-700 font-medium bg-blue-100/5 group-hover:bg-transparent transition-colors">
+                                                        <div className="max-w-md whitespace-pre-wrap">{r.comment || <span className="text-slate-500 italic font-normal">No comment provided</span>}</div>
                                                     </td>
-                                                    <td className="px-6 py-4 text-right">
-                                                        <Button variant="ghost" size="sm" className="text-danger hover:text-red-700 hover:bg-red-50" onClick={() => handleDeleteReview(r.id)}>Delete</Button>
+                                                    <td className="px-6 py-4 text-right bg-slate-200/30 group-hover:bg-transparent transition-colors">
+                                                        <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700 hover:bg-red-100 font-bold" onClick={() => handleDeleteReview(r.id)}>Delete</Button>
                                                     </td>
                                                 </tr>
                                             ))}

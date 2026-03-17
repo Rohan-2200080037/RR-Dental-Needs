@@ -45,7 +45,7 @@ exports.getProductReviews = async (req, res) => {
             ORDER BY r.review_date DESC
         `, [productId]);
 
-        const avgResult = await pool.query('SELECT AVG(rating) as average_rating FROM Reviews WHERE product_id = $1', [productId]);
+        const avgResult = await pool.query('SELECT AVG(rating)::float as average_rating FROM Reviews WHERE product_id = $1', [productId]);
         
         res.status(200).json({ reviews: reviewsResult.rows, averageRating: avgResult.rows[0].average_rating || 0 });
     } catch (err) {

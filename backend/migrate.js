@@ -1,14 +1,12 @@
-const { Pool } = require('pg');
-require('dotenv').config({ path: 'e:/Sreeju/odontic store V.10.3/backend/.env' });
-const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
-async function migrate() {
-    try {
-        await pool.query('ALTER TABLE Users ADD COLUMN IF NOT EXISTS reset_token TEXT, ADD COLUMN IF NOT EXISTS reset_token_expiry TIMESTAMP;');
-        console.log('Migration successful');
-    } catch (e) {
-        console.error('Migration failed:', e);
-    } finally {
-        await pool.end();
-    }
-}
-migrate();
+const pool = require('./db');
+require('dotenv').config();
+
+pool.query('ALTER TABLE Addresses ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE;')
+    .then(() => {
+        console.log("SUCCESS_MIGRATION");
+        process.exit(0);
+    })
+    .catch(err => {
+        console.error("FAILURE_MIGRATION", err.message);
+        process.exit(1);
+    });

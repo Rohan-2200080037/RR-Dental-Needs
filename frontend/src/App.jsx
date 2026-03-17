@@ -41,7 +41,7 @@ function App() {
 
   useEffect(() => {
     checkAuth();
-  }, [checkAuth]);
+  }, []);
 
   useEffect(() => {
     if (isAuthenticated && token) {
@@ -98,19 +98,19 @@ function App() {
                 <OrderDetails />
              </ProtectedRoute>
           } />
-
-          <Route path="seller/*" element={
-             <ProtectedRoute allowedRoles={['seller']}>
-                <SellerDashboard />
-             </ProtectedRoute>
-          } />
-
-          <Route path="admin/*" element={
-             <ProtectedRoute allowedRoles={['admin']}>
-                <AdminDashboard />
-             </ProtectedRoute>
-          } />
         </Route>
+
+        <Route path="seller/*" element={
+            <ProtectedRoute allowedRoles={['seller']}>
+              <SellerDashboard />
+            </ProtectedRoute>
+        } />
+
+        <Route path="admin/*" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminDashboard />
+            </ProtectedRoute>
+        } />
       </Routes>
     </Router>
   );

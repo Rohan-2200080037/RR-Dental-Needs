@@ -59,7 +59,10 @@ const Cart = () => {
                         </div>
                         <h2 className="text-2xl font-bold text-slate-900 mb-2">Your cart is empty</h2>
                         <p className="text-slate-500 mb-8">Looks like you haven't added any instruments yet. Discover our top quality products for your classes.</p>
-                        <Button onClick={() => navigate('/products')} variant="primary" size="lg">Review Products</Button>
+                        <div className="flex flex-col sm:flex-row justify-center gap-4">
+                            <Button onClick={() => navigate('/products')} variant="primary" size="lg">Review Products</Button>
+                            <Button onClick={() => navigate('/profile?tab=orders')} variant="outline" size="lg">My Orders</Button>
+                        </div>
                     </div>
                 ) : (
                     <div className="lg:grid lg:grid-cols-12 lg:gap-8 items-start">

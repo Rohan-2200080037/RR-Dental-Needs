@@ -37,3 +37,16 @@ exports.createNotification = async (userId, message) => {
         console.error("Error creating notification:", err);
     }
 };
+
+exports.clearAll = async (req, res) => {
+    const userId = req.user.id;
+    try {
+        await pool.query(
+            'DELETE FROM Notifications WHERE user_id = $1',
+            [userId]
+        );
+        res.status(200).json({ message: "All notifications cleared." });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};

@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import useAuthStore from '../../store/authStore';
 import useCartStore from '../../store/cartStore';
-import { ShoppingCartIcon, UserCircleIcon, ArrowRightOnRectangleIcon, HeartIcon, Bars3Icon, XMarkIcon, MagnifyingGlassIcon, BellIcon } from '@heroicons/react/24/outline';
+import { ShoppingCartIcon, UserCircleIcon, ArrowRightOnRectangleIcon, HeartIcon, Bars3Icon, XMarkIcon, MagnifyingGlassIcon, BellIcon, ShoppingBagIcon } from '@heroicons/react/24/outline';
 import Badge from '../ui/Badge';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -19,6 +19,22 @@ const Navbar = () => {
   const [unreadCount, setUnreadCount] = useState(0);
 
   const { token } = useAuthStore();
+  const notificationRef = useRef(null);
+  const profileRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+        setIsNotificationsOpen(false);
+      }
+      if (profileRef.current && !profileRef.current.contains(event.target)) {
+        setIsProfileDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const fetchNotifications = async () => {
     if (!token) return;
@@ -45,9 +61,21 @@ const Navbar = () => {
     }
   };
 
+  const clearAllNotifications = async () => {
+    try {
+      await axios.delete(`${import.meta.env.VITE_API_URL}/api/notifications/clear-all`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setNotifications([]);
+      setUnreadCount(0);
+    } catch (err) {
+      console.error("Failed to clear notifications", err);
+    }
+  };
+
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 60000); // Poll every minute
+    const interval = setInterval(fetchNotifications, 120000); // Poll every 2 minutes
     return () => clearInterval(interval);
   }, [token]);
 
@@ -72,10 +100,10 @@ const Navbar = () => {
         <div className="flex justify-between items-center h-16 gap-4 md:gap-6 lg:gap-8">
           <div className="flex items-center md:space-x-8 lg:space-x-12">
             {/* Logo */}
-            <Link to="/" className="flex items-center space-x-2 flex-shrink-0">
-              <span className="text-2xl">🦷</span>
-              <span className="font-bold text-slate-800 text-lg sm:text-xl">
-                RR <span className="text-primary">Dental Needs</span>
+            <Link to="/" className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
+              <span className="text-xl sm:text-2xl">🦷</span>
+              <span className="font-bold text-slate-800 text-base sm:text-xl">
+                RR <span className="text-primary hidden min-[400px]:inline">Dental Needs</span>
               </span>
             </Link>
 
@@ -114,7 +142,7 @@ const Navbar = () => {
           </form>
 
           {/* Nav Actions */}
-          <div className="flex items-center space-x-2 sm:space-x-4">
+          <div className="flex items-center space-x-1 sm:space-x-4">
             {!isAuthenticated ? (
               <div className="hidden sm:flex space-x-3">
                 <Link to="/login" className="px-4 py-2 text-primary font-medium hover:bg-teal-50 rounded-lg transition-colors">
@@ -125,7 +153,7 @@ const Navbar = () => {
                 </Link>
               </div>
             ) : (
-              <div className="flex items-center space-x-1 sm:space-x-3">
+              <div className="flex items-center space-x-0.5 sm:space-x-3">
                 <Link to="/profile" state={{ tab: 'wishlist' }} className="p-2 text-slate-600 hover:text-primary hover:bg-teal-50 rounded-full transition-colors">
                   <HeartIcon className="w-6 h-6" />
                 </Link>
@@ -144,7 +172,7 @@ const Navbar = () => {
                 </Link>
 
                 {/* Notification Dropdown */}
-                <div className="relative">
+                <div className="relative" ref={notificationRef}>
                   <button
                     onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
                     className="relative p-2 text-slate-600 hover:text-primary hover:bg-teal-50 rounded-full transition-colors focus:outline-none"
@@ -160,10 +188,11 @@ const Navbar = () => {
                   <AnimatePresence>
                     {isNotificationsOpen && (
                       <motion.div
-                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        className="absolute right-0 mt-3 w-80 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 overflow-hidden"
+                        initial={{ opacity: 0, y: 10, x: "-50%", scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, x: "-50%", scale: 1 }}
+                        exit={{ opacity: 0, y: 10, x: "-50%", scale: 0.95 }}
+                        style={{ left: "50%" }}
+                        className="fixed top-20 w-[90vw] sm:absolute sm:left-auto sm:right-0 sm:inset-auto sm:translate-x-0 sm:mt-3 sm:w-80 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 overflow-hidden"
                       >
                         <div className="px-4 py-3 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
                           <h3 className="font-bold text-slate-800">Notifications</h3>
@@ -193,7 +222,12 @@ const Navbar = () => {
                           )}
                         </div>
                         <div className="px-4 py-2 border-t border-slate-50 text-center">
-                           <button className="text-xs font-bold text-primary hover:underline">Clear all</button>
+                           <button 
+                             onClick={clearAllNotifications}
+                             className="text-xs font-bold text-primary hover:underline"
+                           >
+                             Clear all
+                           </button>
                         </div>
                       </motion.div>
                     )}
@@ -201,7 +235,7 @@ const Navbar = () => {
                 </div>
 
                 {/* Profile Dropdown */}
-                <div className="relative">
+                <div className="relative" ref={profileRef}>
                   <button
                     onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
                     className="flex items-center space-x-2 p-1.5 rounded-full hover:bg-slate-100 transition-colors focus:outline-none"
@@ -229,6 +263,7 @@ const Navbar = () => {
                           <Link to="/seller" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary">Seller Dashboard</Link>
                         )}
                         <Link to="/profile" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary">My Profile</Link>
+                        <Link to="/profile?tab=orders" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary">My Orders</Link>
                         <hr className="my-1 border-slate-100" />
                         <button
                           onClick={handleLogout}
@@ -299,6 +334,56 @@ const Navbar = () => {
                   {link.name}
                 </Link>
               ))}
+              {isAuthenticated && (
+                <div className="pt-4 mt-4 border-t border-slate-100 space-y-1">
+                  {user.role === 'admin' && (
+                    <Link
+                      to="/admin"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-primary hover:bg-teal-50 flex items-center"
+                    >
+                      <UserCircleIcon className="w-5 h-5 mr-3 text-red-500" />
+                      Admin Dashboard
+                    </Link>
+                  )}
+                  {user.role === 'seller' && (
+                    <Link
+                      to="/seller"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-primary hover:bg-teal-50 flex items-center"
+                    >
+                      <UserCircleIcon className="w-5 h-5 mr-3 text-amber-500" />
+                      Seller Dashboard
+                    </Link>
+                  )}
+                  <Link
+                    to="/profile"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-primary hover:bg-teal-50 flex items-center"
+                  >
+                    <UserCircleIcon className="w-5 h-5 mr-3" />
+                    My Profile
+                  </Link>
+                  <Link
+                    to="/profile?tab=orders"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-primary hover:bg-teal-50 flex items-center"
+                  >
+                    <ShoppingBagIcon className="w-5 h-5 mr-3" />
+                    My Orders
+                  </Link>
+                  <button
+                    onClick={() => {
+                        handleLogout();
+                        setIsMobileMenuOpen(false);
+                    }}
+                    className="w-full text-left px-3 py-2 rounded-md text-base font-medium text-danger hover:bg-red-50 flex items-center"
+                  >
+                    <ArrowRightOnRectangleIcon className="w-5 h-5 mr-3" />
+                    Logout
+                  </button>
+                </div>
+              )}
               {!isAuthenticated && (
                 <div className="mt-4 grid grid-cols-2 gap-4">
                   <Link

@@ -7,5 +7,6 @@ router.use(verifyToken);
 
 router.get('/', notificationController.getNotifications);
 router.put('/read/:id', notificationController.markAsRead);
+router.delete('/clear-all', notificationController.clearAll);
 
 module.exports = router;

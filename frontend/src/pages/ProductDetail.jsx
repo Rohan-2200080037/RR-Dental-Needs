@@ -202,7 +202,7 @@ const ProductDetail = () => {
                                     {[1, 2, 3, 4, 5].map((star) => (
                                         <StarIcon key={star} className={`w-5 h-5 ${star <= Math.round(averageRating) ? 'text-amber-400' : 'text-slate-200'}`} />
                                     ))}
-                                    <span className="ml-2 text-sm font-medium text-slate-600">{averageRating.toFixed(1)}</span>
+                                    <span className="ml-2 text-sm font-medium text-slate-600">{Number(averageRating).toFixed(1)}</span>
                                 </div>
                                 <span className="text-slate-300">|</span>
                                 <a href="#reviews" className="text-sm font-medium text-primary hover:underline">{reviews.length} Reviews</a>
@@ -267,7 +267,7 @@ const ProductDetail = () => {
                                     title={isInWishlist ? "Remove from wishlist" : "Add to wishlist"}
                                 >
                                     {isInWishlist ? <HeartSolid className="w-6 h-6 text-danger" /> : <HeartOutline className="w-6 h-6" />}
-                                    <span className="hidden sm:inline sm:ml-2">{isInWishlist ? 'Saved' : 'Save'}</span>
+                                    <span className="hidden sm:inline sm:ml-2">{isInWishlist ? 'Saved' : 'Add to Wishlist'}</span>
                                 </Button>
                             </div>
 

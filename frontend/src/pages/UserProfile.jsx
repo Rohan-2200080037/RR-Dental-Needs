@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import useAuthStore from '../store/authStore';
-import { ShoppingBagIcon, HeartIcon, UserCircleIcon, XMarkIcon, CheckCircleIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import { ShoppingBagIcon, HeartIcon, UserCircleIcon, XMarkIcon, CheckCircleIcon, ArrowPathIcon, MapPinIcon, PencilSquareIcon, TrashIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from 'framer-motion';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
+import Input from '../components/ui/Input';
 import { PageLoader } from '../components/ui/Loader';
+import { indiaData } from '../utils/indiaData';
 
 const UserProfile = () => {
     const { user, token } = useAuthStore();
@@ -15,20 +17,34 @@ const UserProfile = () => {
     const [wishlist, setWishlist] = useState([]);
     const location = useLocation();
     const navigate = useNavigate();
-    const [activeTab, setActiveTab] = useState(location.state?.tab || 'orders');
+    const [activeTab, setActiveTab] = useState(() => {
+        const params = new URLSearchParams(location.search);
+        return params.get('tab') || location.state?.tab || 'orders';
+    });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [feedback, setFeedback] = useState('');
+    const [addresses, setAddresses] = useState([]);
+    const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+    const [editingAddress, setEditingAddress] = useState(null);
+    const [addressFormData, setAddressFormData] = useState({
+        name: '', phone: '', address: '', city: '', state: '', pincode: ''
+    });
+    const [states] = useState(Object.keys(indiaData));
+    const [cities, setCities] = useState([]);
     const successMessage = location.state?.message;
 
     useEffect(() => {
         const fetchUserData = async () => {
             try {
-                const [ordersResult, wishlistResult] = await Promise.allSettled([
+                const [ordersResult, wishlistResult, addressesResult] = await Promise.allSettled([
                     axios.get(`${import.meta.env.VITE_API_URL}/api/orders/my-orders`, {
                         headers: { Authorization: `Bearer ${token}` }
                     }),
                     axios.get(`${import.meta.env.VITE_API_URL}/api/wishlist`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    }),
+                    axios.get(`${import.meta.env.VITE_API_URL}/api/addresses`, {
                         headers: { Authorization: `Bearer ${token}` }
                     })
                 ]);
@@ -41,6 +57,10 @@ const UserProfile = () => {
 
                 if (wishlistResult.status === 'fulfilled') {
                     setWishlist(wishlistResult.value.data);
+                }
+
+                if (addressesResult.status === 'fulfilled') {
+                    setAddresses(addressesResult.value.data);
                 }
             } catch (err) {
                 setError('Failed to fetch user data.');
@@ -55,6 +75,22 @@ const UserProfile = () => {
              navigate('/login');
         }
     }, [token, navigate]);
+
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const tab = params.get('tab') || location.state?.tab;
+        if (tab && tab !== activeTab) {
+            setActiveTab(tab);
+        }
+    }, [location.search, location.state]);
+
+    useEffect(() => {
+        if (addressFormData.state && indiaData[addressFormData.state]) {
+            setCities(indiaData[addressFormData.state]);
+        } else {
+            setCities([]);
+        }
+    }, [addressFormData.state]);
 
     const handleCancelOrder = async (orderId) => {
         if (!window.confirm("Are you sure you want to cancel this order?")) return;
@@ -97,6 +133,56 @@ const UserProfile = () => {
         } catch (err) {
             setFeedback(err.response?.data?.message || 'Failed to remove from wishlist');
             setTimeout(() => setFeedback(''), 3000);
+        }
+    };
+
+    const handleDeleteAddress = async (id) => {
+        if (!window.confirm("Delete this address?")) return;
+        try {
+            await axios.delete(`${import.meta.env.VITE_API_URL}/api/addresses/${id}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setAddresses(addresses.filter(a => a.id !== id));
+            setFeedback('Address deleted successfully.');
+            setTimeout(() => setFeedback(''), 3000);
+        } catch (err) {
+            setFeedback(err.response?.data?.message || 'Failed to delete address');
+            setTimeout(() => setFeedback(''), 3000);
+        }
+    };
+
+    const handleEditAddress = (addr) => {
+        setEditingAddress(addr);
+        setAddressFormData({
+            name: addr.name,
+            phone: addr.phone,
+            address: addr.address,
+            city: addr.city,
+            state: addr.state,
+            pincode: addr.pincode
+        });
+        setIsAddressModalOpen(true);
+    };
+
+    const handleUpdateAddress = async (e) => {
+        e.preventDefault();
+        try {
+            await axios.put(`${import.meta.env.VITE_API_URL}/api/addresses/${editingAddress.id}`, addressFormData, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setAddresses(addresses.map(a => a.id === editingAddress.id ? { ...a, ...addressFormData } : a));
+            setIsAddressModalOpen(false);
+            setFeedback('Address updated successfully!');
+            setTimeout(() => setFeedback(''), 3000);
+        } catch (err) {
+            setFeedback(err.response?.data?.message || 'Failed to update address');
+        }
+    };
+
+    const handleAddressFormChange = (e) => {
+        setAddressFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+        if (e.target.name === 'state') {
+            setAddressFormData(prev => ({ ...prev, city: '' }));
         }
     };
 
@@ -214,6 +300,7 @@ const UserProfile = () => {
                         <div className="flex px-4 min-w-max">
                             <TabButton id="orders" label="Order History" icon={ShoppingBagIcon} count={orders.length} />
                             <TabButton id="wishlist" label="My Wishlist" icon={HeartIcon} count={wishlist.length} />
+                            <TabButton id="addresses" label="Saved Addresses" icon={MapPinIcon} count={addresses.length} />
                             {/* Additional tabs can be added here easily */}
                         </div>
                     </div>
@@ -347,9 +434,140 @@ const UserProfile = () => {
                                 )}
                             </motion.div>
                         )}
+
+                        {activeTab === 'addresses' && (
+                            <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="space-y-6">
+                                {addresses.length === 0 ? (
+                                    <div className="text-center py-16 bg-white rounded-xl border border-slate-200 border-dashed">
+                                        <MapPinIcon className="w-16 h-16 mx-auto text-slate-300 mb-4" />
+                                        <h3 className="text-lg font-bold text-slate-900 mb-2">No saved addresses</h3>
+                                        <p className="text-slate-500 mb-6 font-medium">Addresses you save during checkout will appear here.</p>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        {addresses.map(addr => (
+                                            <Card key={addr.id} className="p-6 border-slate-200 hover:border-primary/30 transition-all relative group">
+                                                <div className="flex justify-between items-start mb-4">
+                                                    <div className="flex items-center space-x-3">
+                                                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                                                            <MapPinIcon className="w-6 h-6" />
+                                                        </div>
+                                                        <div>
+                                                            <h3 className="font-bold text-slate-900">{addr.name}</h3>
+                                                            <p className="text-xs font-black text-slate-400 uppercase tracking-widest">{addr.phone}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <button 
+                                                            onClick={() => handleEditAddress(addr)}
+                                                            className="p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-all"
+                                                            title="Edit Address"
+                                                        >
+                                                            <PencilSquareIcon className="w-5 h-5" />
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => handleDeleteAddress(addr.id)}
+                                                            className="p-2 text-slate-400 hover:text-danger hover:bg-danger/5 rounded-lg transition-all"
+                                                            title="Delete Address"
+                                                        >
+                                                            <TrashIcon className="w-5 h-5" />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <p className="text-sm text-slate-600 font-medium">{addr.address}</p>
+                                                    <p className="text-sm text-slate-800 font-bold">{addr.city}, {addr.state} - {addr.pincode}</p>
+                                                </div>
+                                            </Card>
+                                        ))}
+                                    </div>
+                                )}
+                            </motion.div>
+                        )}
                     </div>
                 </div>
             </div>
+
+            {/* Edit Address Modal */}
+            <AnimatePresence>
+                {isAddressModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                        <motion.div 
+                            initial={{ opacity: 0 }} 
+                            animate={{ opacity: 1 }} 
+                            exit={{ opacity: 0 }}
+                            onClick={() => setIsAddressModalOpen(false)}
+                            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+                        />
+                        <motion.div 
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            className="relative bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden"
+                        >
+                            <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                                <h3 className="text-xl font-bold text-slate-900">Edit Delivery Address</h3>
+                                <button onClick={() => setIsAddressModalOpen(false)} className="p-2 hover:bg-slate-200 rounded-full transition-colors">
+                                    <XMarkIcon className="w-6 h-6 text-slate-500" />
+                                </button>
+                            </div>
+                            
+                            <form onSubmit={handleUpdateAddress} className="p-8">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
+                                    <Input label="Full Name" name="name" value={addressFormData.name} onChange={handleAddressFormChange} required />
+                                    <Input label="Phone Number" name="phone" value={addressFormData.phone} onChange={handleAddressFormChange} required />
+                                </div>
+                                <div className="mb-6">
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Address (Area and Street)</label>
+                                    <textarea 
+                                        name="address"
+                                        className="w-full rounded-xl border-slate-300 shadow-sm focus:border-primary focus:ring focus:ring-primary/20 transition-all font-medium py-2.5 px-3.5 text-slate-900 border"
+                                        rows="3"
+                                        value={addressFormData.address}
+                                        onChange={handleAddressFormChange}
+                                        required
+                                    />
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
+                                    <div>
+                                        <label className="block text-sm font-bold text-slate-700 mb-2">State</label>
+                                        <select
+                                            name="state"
+                                            value={addressFormData.state}
+                                            onChange={handleAddressFormChange}
+                                            required
+                                            className="w-full rounded-xl border-slate-300 shadow-sm focus:border-primary focus:ring focus:ring-primary/20 transition-all font-medium py-2.5 px-3.5 text-slate-900 border bg-white"
+                                        >
+                                            <option value="">Select State</option>
+                                            {states.map(s => <option key={s} value={s}>{s}</option>)}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-slate-700 mb-2">City/District</label>
+                                        <select
+                                            name="city"
+                                            value={addressFormData.city}
+                                            onChange={handleAddressFormChange}
+                                            required
+                                            disabled={!addressFormData.state}
+                                            className="w-full rounded-xl border-slate-300 shadow-sm focus:border-primary focus:ring focus:ring-primary/20 transition-all font-medium py-2.5 px-3.5 text-slate-900 border bg-white disabled:bg-slate-50"
+                                        >
+                                            <option value="">Select City</option>
+                                            {cities.map(c => <option key={c} value={c}>{c}</option>)}
+                                        </select>
+                                    </div>
+                                    <Input label="Pincode" name="pincode" value={addressFormData.pincode} onChange={handleAddressFormChange} required />
+                                </div>
+                                
+                                <div className="flex space-x-4">
+                                    <Button type="button" variant="outline" className="flex-1" onClick={() => setIsAddressModalOpen(false)}>Cancel</Button>
+                                    <Button type="submit" variant="primary" className="flex-1">Update Address</Button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

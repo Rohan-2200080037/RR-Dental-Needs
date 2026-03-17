@@ -234,7 +234,7 @@ const UserProfile = () => {
                                             <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                                                 <div>
                                                     <div className="flex items-center space-x-3 mb-1">
-                                                        <span className="font-bold text-slate-900 text-lg">Order #{order.id}</span>
+                                                        <span className="font-bold text-slate-900 text-lg">Order</span>
                                                         <Badge variant={order.order_status === 'Delivered' ? 'success' : order.order_status === 'Cancelled' ? 'danger' : 'warning'}>
                                                             {order.order_status}
                                                         </Badge>

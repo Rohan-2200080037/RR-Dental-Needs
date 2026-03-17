@@ -6,7 +6,7 @@ import useCartStore from '../store/cartStore';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import Input from '../components/ui/Input';
-import { ShieldCheckIcon, TruckIcon, BanknotesIcon } from '@heroicons/react/24/outline';
+import { ShieldCheckIcon, TruckIcon, BanknotesIcon, CreditCardIcon } from '@heroicons/react/24/outline';
 import { motion } from 'framer-motion';
 
 const Checkout = () => {
@@ -46,17 +46,62 @@ const Checkout = () => {
         setError(null);
 
         try {
-            await axios.post(`${import.meta.env.VITE_API_URL}/api/orders/create`, 
-                { ...formData, paymentMethod },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-            
-            clearCartState();
-            navigate('/profile', { state: { message: 'Order placed successfully!', tab: 'orders' } });
+            if (paymentMethod === 'Razorpay') {
+                // 1. Create Razorpay order on backend
+                const totalAmount = calculateTotal();
+                const { data: orderData } = await axios.post(`${import.meta.env.VITE_API_URL}/api/payment/create-order`, 
+                    { amount: totalAmount },
+                    { headers: { Authorization: `Bearer ${token}` } }
+                );
+
+                // 2. Open Razorpay modal
+                const options = {
+                    key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+                    amount: orderData.amount,
+                    currency: orderData.currency,
+                    name: "RR Dental Needs",
+                    description: "Purchase instruments",
+                    order_id: orderData.id,
+                    handler: async (response) => {
+                        try {
+                            // 3. Verify payment and create final order
+                            await axios.post(`${import.meta.env.VITE_API_URL}/api/payment/verify`, {
+                                razorpay_order_id: response.razorpay_order_id,
+                                razorpay_payment_id: response.razorpay_payment_id,
+                                razorpay_signature: response.razorpay_signature,
+                                orderDetails: { ...formData, paymentMethod: 'Razorpay' }
+                            }, { headers: { Authorization: `Bearer ${token}` } });
+
+                            clearCartState();
+                            navigate('/profile', { state: { message: 'Order placed successfully!', tab: 'orders' } });
+                        } catch (err) {
+                            setError(err.response?.data?.message || 'Payment verification failed.');
+                        }
+                    },
+                    prefill: {
+                        name: formData.name,
+                        contact: formData.phone
+                    },
+                    theme: { color: "#0d9488" }
+                };
+
+                const rzp = new window.Razorpay(options);
+                rzp.open();
+                setLoading(false);
+            } else {
+                // COD Flow
+                await axios.post(`${import.meta.env.VITE_API_URL}/api/orders`, 
+                    { ...formData, paymentMethod },
+                    { headers: { Authorization: `Bearer ${token}` } }
+                );
+                
+                clearCartState();
+                navigate('/profile', { state: { message: 'Order placed successfully!', tab: 'orders' } });
+            }
         } catch (err) {
              setError(err.response?.data?.message || 'Failed to place order.');
         } finally {
-            setLoading(false);
+            if (paymentMethod !== 'Razorpay') setLoading(false);
         }
     };
 
@@ -139,18 +184,25 @@ const Checkout = () => {
                                         </div>
                                     </label>
                                     
-                                    <div className="block relative border border-slate-200 rounded-xl p-4 opacity-60 cursor-not-allowed bg-slate-50">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center">
-                                                <input type="radio" disabled className="h-5 w-5 border-slate-300" />
-                                                <div className="ml-4 flex flex-col">
-                                                    <span className="block text-sm font-bold text-slate-500">Online Payment / UPI</span>
-                                                    <span className="block text-sm font-medium text-slate-400 mt-1">Coming soon.</span>
-                                                </div>
+                                    <label className={`block relative border rounded-xl p-4 cursor-pointer transition-all ${paymentMethod === 'Razorpay' ? 'border-primary ring-1 ring-primary bg-primary/5' : 'border-slate-200 hover:border-slate-300'}`}>
+                                        <div className="flex items-center">
+                                            <input 
+                                                type="radio" 
+                                                name="payment" 
+                                                value="Razorpay" 
+                                                checked={paymentMethod === 'Razorpay'} 
+                                                onChange={(e) => setPaymentMethod(e.target.value)} 
+                                                className="h-5 w-5 text-primary border-slate-300 focus:ring-primary"
+                                            />
+                                            <div className="ml-4 flex flex-col">
+                                                <span className="block text-sm font-bold text-slate-900 flex items-center">
+                                                    <CreditCardIcon className="w-5 h-5 mr-2 text-primary" />
+                                                    Online Payment (Razorpay)
+                                                </span>
+                                                <span className="block text-sm font-medium text-slate-500 mt-1">Cards, UPI, Netbanking & more.</span>
                                             </div>
-                                            <span className="text-xs font-bold px-2 py-1 bg-slate-200 text-slate-600 rounded">Soon</span>
                                         </div>
-                                    </div>
+                                    </label>
                                 </div>
                             </Card>
                         </form>

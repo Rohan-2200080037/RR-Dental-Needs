@@ -19,6 +19,8 @@ import AdminDashboard from './pages/AdminDashboard';
 
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import OrderHistory from './pages/OrderHistory';
+import OrderDetails from './pages/OrderDetails';
 
 import AboutUs from './pages/AboutUs';
 import FAQ from './pages/FAQ';
@@ -57,9 +59,9 @@ function App() {
           <Route path="forgot-password" element={<ForgotPassword />} />
           <Route path="reset-password" element={<ResetPassword />} />
           <Route path="products" element={<Products />} />
+          <Route path="search" element={<Search />} />
           <Route path="category/:category" element={<Category />} />
           <Route path="product/:id" element={<ProductDetail />} />
-          <Route path="search" element={<Search />} />
           
           <Route path="about" element={<AboutUs />} />
           <Route path="faq" element={<FAQ />} />
@@ -82,6 +84,18 @@ function App() {
           <Route path="profile" element={
              <ProtectedRoute>
                 <UserProfile />
+             </ProtectedRoute>
+          } />
+
+          <Route path="orders" element={
+             <ProtectedRoute>
+                <OrderHistory />
+             </ProtectedRoute>
+          } />
+
+          <Route path="order/:id" element={
+             <ProtectedRoute>
+                <OrderDetails />
              </ProtectedRoute>
           } />
 

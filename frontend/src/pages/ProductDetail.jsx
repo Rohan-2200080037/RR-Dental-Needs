@@ -16,10 +16,11 @@ const ProductDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const [product, setProduct] = useState(null);
+    const [recommendations, setRecommendations] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [addingToCart, setAddingToCart] = useState(false);
     const [quantity, setQuantity] = useState(1);
-    const [cartFeedback, setCartFeedback] = useState('');
     const [isInWishlist, setIsInWishlist] = useState(false);
     const [wishlistLoading, setWishlistLoading] = useState(false);
     
@@ -35,18 +36,21 @@ const ProductDetail = () => {
 
     useEffect(() => {
         window.scrollTo(0, 0);
-        const fetchProduct = async () => {
+        const fetchData = async () => {
+            setLoading(true);
             try {
-                const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/products/${id}`);
-                setProduct(res.data);
-                
-                // Fetch reviews
-                const revRes = await axios.get(`${import.meta.env.VITE_API_URL}/api/reviews/product/${id}`);
-                setReviews(revRes.data.reviews || []);
-                setAverageRating(revRes.data.averageRating || 0);
+                const [prodRes, reviewsRes, recRes] = await Promise.all([
+                    axios.get(`${import.meta.env.VITE_API_URL}/api/products/${id}`),
+                    axios.get(`${import.meta.env.VITE_API_URL}/api/reviews/product/${id}`),
+                    axios.get(`${import.meta.env.VITE_API_URL}/api/products/recommend/${id}`)
+                ]);
+                setProduct(prodRes.data);
+                setReviews(reviewsRes.data.reviews || []);
+                setAverageRating(reviewsRes.data.averageRating || 0);
+                setRecommendations(recRes.data);
 
-                // Fetch Related Products
-                const relRes = await axios.get(`${import.meta.env.VITE_API_URL}/api/products/category/${res.data.category}`);
+                // Fetch Related Products based on category from prodRes
+                const relRes = await axios.get(`${import.meta.env.VITE_API_URL}/api/products/category/${prodRes.data.category}`);
                 setRelatedProducts(relRes.data.filter(p => p.id !== parseInt(id)).slice(0, 4));
 
                 if (isAuthenticated && token) {
@@ -64,12 +68,13 @@ const ProductDetail = () => {
 
                 setError(null);
             } catch (err) {
-                setError('Failed to load product details');
+                setError(err.response?.data?.message || 'Failed to load product details');
             } finally {
                 setLoading(false);
             }
         };
-        fetchProduct();
+
+        fetchData();
     }, [id, isAuthenticated, token]);
 
     const handleQuantityChange = (type) => {
@@ -82,13 +87,16 @@ const ProductDetail = () => {
 
     const handleAddToCart = async () => {
         if (!isAuthenticated) return navigate('/login');
+        setAddingToCart(true);
         try {
             await addToCart(product.id, quantity, token);
-            setCartFeedback('Added to cart successfully!');
-            setTimeout(() => setCartFeedback(''), 3000);
+            setReviewFeedback('Added to cart successfully!'); // Reusing reviewFeedback for cart feedback
+            setTimeout(() => setReviewFeedback(''), 3000);
         } catch (err) {
-            setCartFeedback(err.response?.data?.message || 'Failed to add to cart');
-            setTimeout(() => setCartFeedback(''), 3000);
+            setReviewFeedback(err.response?.data?.message || 'Failed to add to cart');
+            setTimeout(() => setReviewFeedback(''), 3000);
+        } finally {
+            setAddingToCart(false);
         }
     };
 
@@ -101,19 +109,19 @@ const ProductDetail = () => {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setIsInWishlist(false);
-                setCartFeedback('Removed from wishlist');
+                setReviewFeedback('Removed from wishlist'); // Reusing reviewFeedback for wishlist feedback
             } else {
                 await axios.post(`${import.meta.env.VITE_API_URL}/api/wishlist/add`, { productId: id }, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setIsInWishlist(true);
-                setCartFeedback('Added to wishlist');
+                setReviewFeedback('Added to wishlist'); // Reusing reviewFeedback for wishlist feedback
             }
         } catch (err) {
-            setCartFeedback('Failed to update wishlist');
+            setReviewFeedback('Failed to update wishlist'); // Reusing reviewFeedback for wishlist feedback
         } finally {
             setWishlistLoading(false);
-            setTimeout(() => setCartFeedback(''), 3000);
+            setTimeout(() => setReviewFeedback(''), 3000);
         }
     };
 
@@ -211,16 +219,24 @@ const ProductDetail = () => {
                                 {product.description}
                             </p>
 
-                            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-8">
-                                <div className="flex flex-col sm:flex-row gap-4 justify-between sm:items-center">
+                            {/* Stock Status */}
+                            <div className="mb-6">
+                                {product.stock_quantity > 0 ? (
                                     <div className="flex items-center space-x-2">
-                                        <div className={`w-3 h-3 rounded-full ${isOutOfStock ? 'bg-danger' : product.stock_quantity > 10 ? 'bg-success' : 'bg-warning'}`}></div>
-                                        <span className={`font-semibold ${isOutOfStock ? 'text-danger' : 'text-slate-700'}`}>
-                                            {isOutOfStock ? 'Out of Stock' : `${product.stock_quantity} units available in stock`}
-                                        </span>
+                                        <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
+                                        <span className="text-sm font-bold text-emerald-600 uppercase tracking-wider">In Stock</span>
+                                        {product.stock_quantity <= (product.low_stock_threshold || 5) && (
+                                            <span className="text-xs font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-100 animate-pulse">
+                                                Only {product.stock_quantity} left!
+                                            </span>
+                                        )}
                                     </div>
-                                    <div className="text-sm text-slate-500">Seller ID: #{product.seller_id}</div>
-                                </div>
+                                ) : (
+                                    <div className="flex items-center space-x-2">
+                                        <span className="flex h-2.5 w-2.5 rounded-full bg-red-500"></span>
+                                        <span className="text-sm font-bold text-red-600 uppercase tracking-wider">Out of Stock</span>
+                                    </div>
+                                )}
                             </div>
 
                             <hr className="border-slate-100 mb-8" />
@@ -235,7 +251,7 @@ const ProductDetail = () => {
                                 <Button 
                                     size="lg" 
                                     className="flex-1 h-12 text-lg shadow-md hover:shadow-lg" 
-                                    isLoading={cartLoading}
+                                    isLoading={addingToCart}
                                     disabled={isOutOfStock}
                                     onClick={handleAddToCart}
                                 >
@@ -255,10 +271,11 @@ const ProductDetail = () => {
                                 </Button>
                             </div>
 
+                            {/* Feedback for cart/wishlist actions */}
                             <AnimatePresence>
-                                {cartFeedback && (
-                                    <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className={`p-3 rounded-lg text-sm font-medium text-center ${cartFeedback.includes('successfully') || cartFeedback.includes('Added') ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
-                                        {cartFeedback}
+                                {reviewFeedback && (
+                                    <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className={`p-3 rounded-lg text-sm font-medium text-center ${reviewFeedback.includes('successfully') || reviewFeedback.includes('Added') ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+                                        {reviewFeedback}
                                     </motion.div>
                                 )}
                             </AnimatePresence>
@@ -351,7 +368,7 @@ const ProductDetail = () => {
                                     
                                     <AnimatePresence>
                                         {reviewFeedback && (
-                                            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-2 text-sm text-emerald-600 bg-emerald-50 p-2 rounded text-center font-medium">
+                                            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0 }} className="mt-2 text-sm text-emerald-600 bg-emerald-50 p-2 rounded text-center font-medium">
                                                 {reviewFeedback}
                                             </motion.div>
                                         )}
@@ -374,6 +391,17 @@ const ProductDetail = () => {
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                             {relatedProducts.map(p => (
                                 <ProductCard key={p.id} product={p} />
+                            ))}
+                        </div>
+                    </div>
+                )}
+                {/* Recommendations Section */}
+                {recommendations.length > 0 && (
+                    <div className="mt-20 border-t border-slate-200 pt-16">
+                        <h2 className="text-2xl font-bold text-slate-900 mb-8">You May Also Like</h2>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                            {recommendations.map(rec => (
+                                <ProductCard key={rec.id} product={rec} />
                             ))}
                         </div>
                     </div>

@@ -7,6 +7,7 @@ import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 const AdminDashboard = () => {
     const { token } = useAuthStore();
@@ -201,6 +202,83 @@ const AdminDashboard = () => {
                                         <Card className="p-6 border-l-4 border-l-primary">
                                             <p className="text-sm font-medium text-slate-500 mb-1">Platform Revenue</p>
                                             <p className="text-3xl font-bold text-primary">₹{Number(analytics.totalRevenue).toLocaleString()}</p>
+                                        </Card>
+                                    </div>
+
+                                    {/* Charts Section */}
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
+                                        <Card className="p-6">
+                                            <h3 className="text-lg font-bold text-slate-900 mb-6">Top Selling Products</h3>
+                                            <div className="h-80 w-full">
+                                                <ResponsiveContainer width="100%" height="100%">
+                                                    <BarChart
+                                                        data={analytics.topProducts || []}
+                                                        layout="vertical"
+                                                        margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
+                                                    >
+                                                        <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                                                        <XAxis type="number" hide />
+                                                        <YAxis 
+                                                            dataKey="name" 
+                                                            type="category" 
+                                                            width={100}
+                                                            tick={{ fontSize: 12, fontWeight: 600, fill: '#64748b' }}
+                                                        />
+                                                        <Tooltip 
+                                                            cursor={{ fill: '#f8fafc' }}
+                                                            contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                                                        />
+                                                        <Bar dataKey="total_sold" radius={[0, 4, 4, 0]}>
+                                                            {(analytics.topProducts || []).map((entry, index) => (
+                                                                <Cell key={`cell-${index}`} fill={['#0d9488', '#0ea5e9', '#6366f1', '#8b5cf6', '#ec4899'][index % 5]} />
+                                                            ))}
+                                                        </Bar>
+                                                    </BarChart>
+                                                </ResponsiveContainer>
+                                            </div>
+                                        </Card>
+
+                                        <Card className="p-6">
+                                            <h3 className="text-lg font-bold text-slate-900 mb-6">Sales Distribution</h3>
+                                            <div className="space-y-4">
+                                                {(analytics.topProducts || []).map((item, idx) => (
+                                                    <div key={idx} className="flex items-center justify-between">
+                                                        <div className="flex items-center">
+                                                            <div className={`w-3 h-3 rounded-full mr-3`} style={{ backgroundColor: ['#0d9488', '#0ea5e9', '#6366f1', '#8b5cf6', '#ec4899'][idx % 5] }}></div>
+                                                            <span className="text-sm font-medium text-slate-700 truncate max-w-[150px]">{item.name}</span>
+                                                        </div>
+                                                        <div className="flex items-center space-x-4">
+                                                            <span className="text-xs font-bold text-slate-400">{item.total_sold} Sold</span>
+                                                            <span className="text-sm font-bold text-slate-900">₹{Number(item.revenue).toLocaleString()}</span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                                {(!analytics.topProducts || analytics.topProducts.length === 0) && (
+                                                    <p className="text-slate-500 text-center py-10">No sales data available yet.</p>
+                                                )}
+                                            </div>
+                                        </Card>
+                                        <Card className="p-6">
+                                            <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center">
+                                                <div className="w-2 h-2 rounded-full bg-red-500 mr-2 animate-pulse"></div>
+                                                Low Stock Alerts
+                                            </h3>
+                                            <div className="space-y-4">
+                                                {(analytics.lowStockProducts || []).map((item, idx) => (
+                                                    <div key={idx} className="flex items-center justify-between p-3 bg-red-50 rounded-xl border border-red-100">
+                                                        <div className="flex flex-col">
+                                                            <span className="text-sm font-bold text-slate-800">{item.name}</span>
+                                                            <span className="text-xs text-slate-500">Threshold: {item.low_stock_threshold}</span>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <span className="text-sm font-extrabold text-red-600">{item.stock_quantity} available</span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                                {(!analytics.lowStockProducts || analytics.lowStockProducts.length === 0) && (
+                                                    <p className="text-slate-500 text-center py-10 italic">Inventory levels are healthy.</p>
+                                                )}
+                                            </div>
                                         </Card>
                                     </div>
                                 </div>

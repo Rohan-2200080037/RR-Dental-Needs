@@ -415,20 +415,26 @@ const AdminDashboard = () => {
                                                     <td className="px-6 py-4 text-slate-600 font-medium">{o.user_email}</td>
                                                     <td className="px-6 py-4 font-semibold text-primary">₹{Number(o.total_price).toLocaleString()}</td>
                                                     <td className="px-6 py-4">
-                                                        <select 
-                                                            className={`block w-full text-sm rounded-lg border-slate-300 py-1.5 pl-3 pr-8 focus:border-primary focus:ring-primary ${
-                                                                o.order_status === 'Delivered' ? 'bg-emerald-50 text-emerald-800' : 
-                                                                o.order_status === 'Shipped' ? 'bg-blue-50 text-blue-800' :
-                                                                'bg-slate-50 text-slate-800'
-                                                            }`}
-                                                            value={o.order_status}
-                                                            onChange={(e) => handleOrderStatusUpdate(o.id, e.target.value)}
-                                                        >
-                                                            <option value="Pending">Pending</option>
-                                                            <option value="Packed">Packed</option>
-                                                            <option value="Shipped">Shipped</option>
-                                                            <option value="Delivered">Delivered</option>
-                                                        </select>
+                                                        {o.order_status === 'Cancelled' ? (
+                                                            <div className="px-3 py-1.5 bg-red-50 text-red-700 font-bold text-xs uppercase rounded-lg border border-red-100 text-center">
+                                                                Cancelled
+                                                            </div>
+                                                        ) : (
+                                                            <select 
+                                                                className={`block w-full text-sm rounded-lg border-slate-300 py-1.5 pl-3 pr-8 focus:border-primary focus:ring-primary ${
+                                                                    o.order_status === 'Delivered' ? 'bg-emerald-50 text-emerald-800' : 
+                                                                    o.order_status === 'Shipped' ? 'bg-blue-50 text-blue-800' :
+                                                                    'bg-slate-50 text-slate-800'
+                                                                }`}
+                                                                value={o.order_status}
+                                                                onChange={(e) => handleOrderStatusUpdate(o.id, e.target.value)}
+                                                            >
+                                                                <option value="Pending">Pending</option>
+                                                                <option value="Packed">Packed</option>
+                                                                <option value="Shipped">Shipped</option>
+                                                                <option value="Delivered">Delivered</option>
+                                                            </select>
+                                                        )}
                                                     </td>
                                                 </tr>
                                             ))}

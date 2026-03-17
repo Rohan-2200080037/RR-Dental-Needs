@@ -56,16 +56,18 @@ exports.getAnalytics = async (req, res) => {
         const totalSellersResult = await pool.query("SELECT COUNT(*) as totalSellers FROM Users WHERE role = 'seller'");
         const totalSellers = parseInt(totalSellersResult.rows[0].totalsellers);
         
-        const totalOrdersResult = await pool.query("SELECT COUNT(*) as totalOrders FROM Orders");
+        const totalOrdersResult = await pool.query("SELECT COUNT(*) as totalOrders FROM Orders WHERE order_status != 'Cancelled'");
         const totalOrders = parseInt(totalOrdersResult.rows[0].totalorders);
         
-        const totalRevenueResult = await pool.query("SELECT SUM(total_price) as totalRevenue FROM Orders WHERE order_status != 'Pending'");
+        const totalRevenueResult = await pool.query("SELECT SUM(total_price) as totalRevenue FROM Orders WHERE order_status = 'Delivered'");
         const totalRevenue = totalRevenueResult.rows[0].totalrevenue || 0;
 
         const topProductsResult = await pool.query(`
             SELECT p.id, p.name, p.price, p.image, SUM(oi.quantity) as total_sold
             FROM Order_Items oi
             JOIN Products p ON oi.product_id = p.id
+            JOIN Orders o ON oi.order_id = o.id
+            WHERE o.order_status = 'Delivered'
             GROUP BY p.id
             ORDER BY total_sold DESC
             LIMIT 5

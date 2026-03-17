@@ -16,6 +16,7 @@ const SellerDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [feedback, setFeedback] = useState('');
+    const [orderSubTab, setOrderSubTab] = useState('to-deliver'); // 'to-deliver' or 'delivered'
 
     // Product Form State
     const [showForm, setShowForm] = useState(false);
@@ -150,12 +151,15 @@ const SellerDashboard = () => {
     }
 
     // Calculate Analytics
-    const totalOrders = orders.length;
-    const totalRevenue = orders.reduce((acc, order) => {
+    const activeOrders = orders.filter(o => o.order_status !== 'Cancelled');
+    const deliveredOrders = orders.filter(o => o.order_status === 'Delivered');
+    
+    const totalOrders = activeOrders.length;
+    const totalRevenue = deliveredOrders.reduce((acc, order) => {
         const orderTotal = order.items.reduce((sum, item) => sum + (item.quantity * item.price), 0);
         return acc + orderTotal;
     }, 0);
-    const productsSold = orders.reduce((acc, order) => {
+    const productsSold = deliveredOrders.reduce((acc, order) => {
         const itemsSold = order.items.reduce((sum, item) => sum + item.quantity, 0);
         return acc + itemsSold;
     }, 0);
@@ -340,13 +344,29 @@ const SellerDashboard = () => {
                             )}
                         </div>
                     ) : (
-                        <div className="orders-view">
-                            {loading ? (
-                                <div className="flex justify-center py-20">
-                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                                </div>
-                            ) : (
-                                <Card className="overflow-x-auto">
+                                <div className="space-y-4">
+                                    <div className="flex space-x-2 border-b border-slate-200 pb-2">
+                                        <button 
+                                            onClick={() => setOrderSubTab('to-deliver')}
+                                            className={`px-4 py-2 text-sm font-semibold rounded-t-lg transition-colors ${orderSubTab === 'to-deliver' ? 'bg-primary text-white' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'}`}
+                                        >
+                                            Yet to Deliver
+                                        </button>
+                                        <button 
+                                            onClick={() => setOrderSubTab('delivered')}
+                                            className={`px-4 py-2 text-sm font-semibold rounded-t-lg transition-colors ${orderSubTab === 'delivered' ? 'bg-primary text-white' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'}`}
+                                        >
+                                            Delivered
+                                        </button>
+                                        <button 
+                                            onClick={() => setOrderSubTab('cancelled')}
+                                            className={`px-4 py-2 text-sm font-semibold rounded-t-lg transition-colors ${orderSubTab === 'cancelled' ? 'bg-primary text-white' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'}`}
+                                        >
+                                            Cancelled
+                                        </button>
+                                    </div>
+
+                                    <Card className="overflow-x-auto">
                                     <table className="min-w-full divide-y divide-slate-200 text-sm">
                                         <thead className="bg-slate-50">
                                             <tr>
@@ -358,7 +378,13 @@ const SellerDashboard = () => {
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-200 bg-white">
-                                            {orders.map(o => (
+                                            {orders
+                                                .filter(o => {
+                                                    if (orderSubTab === 'delivered') return o.order_status === 'Delivered';
+                                                    if (orderSubTab === 'cancelled') return o.order_status === 'Cancelled';
+                                                    return ['Pending', 'Packed', 'Shipped'].includes(o.order_status);
+                                                })
+                                                .map(o => (
                                                 <tr key={o.order_id} className="hover:bg-slate-50 transition-colors">
                                                     <td className="px-6 py-4 text-slate-500 font-medium whitespace-nowrap">#{o.order_id}</td>
                                                     <td className="px-6 py-4 text-slate-500 whitespace-nowrap">{new Date(o.order_date).toLocaleDateString()}</td>
@@ -378,20 +404,26 @@ const SellerDashboard = () => {
                                                         </ul>
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap">
-                                                        <select 
-                                                            className={`block w-full text-sm rounded-lg border border-slate-300 py-1.5 pl-3 pr-8 focus:border-primary focus:ring-primary ${
-                                                                o.order_status === 'Delivered' ? 'bg-emerald-50 text-emerald-800' : 
-                                                                o.order_status === 'Shipped' ? 'bg-blue-50 text-blue-800' :
-                                                                'bg-slate-50 text-slate-800'
-                                                            }`}
-                                                            value={o.order_status}
-                                                            onChange={(e) => handleOrderStatusUpdate(o.order_id, e.target.value)}
-                                                        >
-                                                            <option value="Pending">Pending</option>
-                                                            <option value="Packed">Packed</option>
-                                                            <option value="Shipped">Shipped</option>
-                                                            <option value="Delivered">Delivered</option>
-                                                        </select>
+                                                        {o.order_status === 'Cancelled' ? (
+                                                            <div className="px-3 py-1.5 bg-red-50 text-red-700 font-bold text-xs uppercase rounded-lg border border-red-100 text-center">
+                                                                Cancelled
+                                                            </div>
+                                                        ) : (
+                                                            <select 
+                                                                className={`block w-full text-sm rounded-lg border border-slate-300 py-1.5 pl-3 pr-8 focus:border-primary focus:ring-primary ${
+                                                                    o.order_status === 'Delivered' ? 'bg-emerald-50 text-emerald-800' : 
+                                                                    o.order_status === 'Shipped' ? 'bg-blue-50 text-blue-800' :
+                                                                    'bg-slate-50 text-slate-800'
+                                                                }`}
+                                                                value={o.order_status}
+                                                                onChange={(e) => handleOrderStatusUpdate(o.order_id, e.target.value)}
+                                                            >
+                                                                <option value="Pending">Pending</option>
+                                                                <option value="Packed">Packed</option>
+                                                                <option value="Shipped">Shipped</option>
+                                                                <option value="Delivered">Delivered</option>
+                                                            </select>
+                                                        )}
                                                     </td>
                                                 </tr>
                                             ))}
@@ -405,9 +437,8 @@ const SellerDashboard = () => {
                                         </tbody>
                                     </table>
                                 </Card>
-                            )}
-                        </div>
-                    )}
+                            </div>
+                        )}
                 </div>
             </div>
         </DashboardLayout>

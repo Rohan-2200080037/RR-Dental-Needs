@@ -13,6 +13,17 @@ exports.addReview = async (req, res) => {
     }
 
     try {
+        // Advanced: Only allow users who purchased to review
+        const purchaseCheck = await pool.query(`
+            SELECT 1 FROM Orders o
+            JOIN Order_Items oi ON o.id = oi.order_id
+            WHERE o.user_id = $1 AND oi.product_id = $2 AND o.order_status = 'Delivered'
+        `, [userId, productId]);
+
+        if (purchaseCheck.rows.length === 0) {
+            return res.status(403).json({ message: "Only users who purchased and received this product can review it." });
+        }
+
         const result = await pool.query('SELECT id FROM Reviews WHERE user_id = $1 AND product_id = $2', [userId, productId]);
         if (result.rows.length > 0) return res.status(400).json({ message: "You already reviewed this product." });
 
@@ -77,6 +88,22 @@ exports.deleteReview = async (req, res) => {
 
         await pool.query('DELETE FROM Reviews WHERE id = $1', [id]);
         res.status(200).json({ message: "Review deleted successfully." });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
+
+exports.getAllReviews = async (req, res) => {
+    try {
+        const query = `
+            SELECT r.id, r.rating, r.comment, r.review_date, r.product_id, p.name as product_name, u.name as user_name 
+            FROM Reviews r
+            JOIN Users u ON r.user_id = u.id
+            JOIN Products p ON r.product_id = p.id
+            ORDER BY r.review_date DESC
+        `;
+        const { rows } = await pool.query(query);
+        res.status(200).json(rows);
     } catch (err) {
         res.status(500).json({ message: err.message });
     }

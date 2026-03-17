@@ -1,85 +1,97 @@
 const pool = require('../db');
+const notificationController = require('./notificationController');
+const logger = require('../services/loggingService');
 
 exports.createOrder = async (req, res) => {
     const userId = req.user.id;
     const { 
-        name, phone, address, city, state, pincode
+        name, phone, address, city, state, pincode, paymentMethod = 'COD'
     } = req.body;
-    const paymentMethod = 'COD';
 
     if (!name || !phone || !address || !city || !state || !pincode) {
         return res.status(400).json({ message: "All address fields are required." });
     }
 
     const client = await pool.connect();
-
     try {
         await client.query('BEGIN');
-
-        // 1. Get Cart Items
-        const cartResult = await client.query(`
-            SELECT c.product_id, c.quantity, p.price, p.stock_quantity, p.seller_id
-            FROM Cart c 
-            JOIN Products p ON c.product_id = p.id 
-            WHERE c.user_id = $1
-        `, [userId]);
-        const cartItems = cartResult.rows;
-
-        if (cartItems.length === 0) {
-            await client.query('ROLLBACK');
-            return res.status(400).json({ message: "Cart is empty." });
-        }
-
-        // 2. Validate Stock and Calculate Total Price
-        let totalPrice = 0;
-        for (let item of cartItems) {
-            if (item.quantity > item.stock_quantity) {
-                 await client.query('ROLLBACK');
-                 return res.status(400).json({ message: `Insufficient stock for product ID ${item.product_id}.` });
-            }
-            totalPrice += item.price * item.quantity;
-        }
-
-        // 3. Save Address
-        const addressResult = await client.query(
-            'INSERT INTO Addresses (user_id, name, phone, address, city, state, pincode) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
-            [userId, name, phone, address, city, state, pincode]
-        );
-        const addressId = addressResult.rows[0].id;
-
-        // 4. Create Order
-        const orderResult = await client.query(
-            'INSERT INTO Orders (user_id, address_id, total_price, payment_method, order_status) VALUES ($1, $2, $3, $4, $5) RETURNING id',
-            [userId, addressId, totalPrice, paymentMethod, 'Pending']
-        );
-        const orderId = orderResult.rows[0].id;
-
-        // 5. Create Order Items & Update Stock
-        for (let item of cartItems) {
-             await client.query(
-                 'INSERT INTO Order_Items (order_id, product_id, quantity, price) VALUES ($1, $2, $3, $4)',
-                 [orderId, item.product_id, item.quantity, item.price]
-             );
-
-             // Deduct stock
-             await client.query(
-                 'UPDATE Products SET stock_quantity = stock_quantity - $1 WHERE id = $2',
-                 [item.quantity, item.product_id]
-             );
-        }
-
-        // 6. Clear Cart
-        await client.query('DELETE FROM Cart WHERE user_id = $1', [userId]);
-
+        const { orderId, totalPrice } = await exports.processOrderCreation(client, userId, {
+            name, phone, address, city, state, pincode, paymentMethod,
+            paymentStatus: 'Pending'
+        });
         await client.query('COMMIT');
-        res.status(201).json({ message: "Order placed successfully.", orderId });
 
+        // Trigger notification
+        await notificationController.createNotification(userId, `Order #${orderId} has been placed successfully. Amount: ₹${totalPrice}`);
+        logger.info(`Order ${orderId} placed by user ${userId}`);
+
+        res.status(201).json({ message: "Order placed successfully.", orderId });
     } catch (err) {
         await client.query('ROLLBACK');
         res.status(500).json({ message: err.message });
     } finally {
         client.release();
     }
+};
+
+// Core logic extracted for reuse (e.g., by paymentController)
+exports.processOrderCreation = async (client, userId, orderDetails) => {
+    const { name, phone, address, city, state, pincode, paymentMethod, paymentStatus = 'Pending', rzpOrderId = null, rzpPaymentId = null } = orderDetails;
+
+    // 1. Get Cart Items
+    const cartResult = await client.query(`
+        SELECT c.product_id, c.quantity, p.price, p.stock_quantity, p.seller_id
+        FROM Cart c 
+        JOIN Products p ON c.product_id = p.id 
+        WHERE c.user_id = $1
+    `, [userId]);
+    const cartItems = cartResult.rows;
+
+    if (cartItems.length === 0) {
+        throw new Error("Cart is empty.");
+    }
+
+    // 2. Validate Stock and Calculate Total Price
+    let totalPrice = 0;
+    for (let item of cartItems) {
+        if (item.quantity > item.stock_quantity) {
+             throw new Error(`Insufficient stock for product ID ${item.product_id}.`);
+        }
+        totalPrice += item.price * item.quantity;
+    }
+
+    // 3. Save Address
+    const addressResult = await client.query(
+        'INSERT INTO Addresses (user_id, name, phone, address, city, state, pincode) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
+        [userId, name, phone, address, city, state, pincode]
+    );
+    const addressId = addressResult.rows[0].id;
+
+    // 4. Create Order
+    const orderResult = await client.query(
+        'INSERT INTO Orders (user_id, address_id, total_price, payment_method, order_status, payment_status, razorpay_order_id, razorpay_payment_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id',
+        [userId, addressId, totalPrice, paymentMethod, 'Pending', paymentStatus, rzpOrderId, rzpPaymentId]
+    );
+    const orderId = orderResult.rows[0].id;
+
+    // 5. Create Order Items & Update Stock
+    for (let item of cartItems) {
+         await client.query(
+             'INSERT INTO Order_Items (order_id, product_id, quantity, price) VALUES ($1, $2, $3, $4)',
+             [orderId, item.product_id, item.quantity, item.price]
+         );
+
+         // Deduct stock
+         await client.query(
+             'UPDATE Products SET stock_quantity = stock_quantity - $1 WHERE id = $2',
+             [item.quantity, item.product_id]
+         );
+    }
+
+    // 6. Clear Cart
+    await client.query('DELETE FROM Cart WHERE user_id = $1', [userId]);
+
+    return { orderId, totalPrice };
 };
 
 exports.getUserOrders = async (req, res) => {
@@ -172,6 +184,11 @@ exports.cancelOrder = async (req, res) => {
         }
 
         await pool.query('UPDATE Orders SET order_status = $1 WHERE id = $2', ['Cancelled', id]);
+        
+        // Trigger notification
+        await notificationController.createNotification(userId, `Your order #${id} has been cancelled.`);
+        logger.info(`Order ${id} cancelled by user ${userId}`);
+
         res.status(200).json({ message: "Order cancelled successfully." });
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -235,6 +252,91 @@ exports.deleteOrderAsAdmin = async (req, res) => {
     try {
         await pool.query('DELETE FROM Orders WHERE id = $1', [id]);
         res.status(200).json({ message: "Order deleted by admin." });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
+exports.getOrderById = async (req, res) => {
+    const { id } = req.params;
+    const userId = req.user.id;
+    const role = req.user.role;
+
+    try {
+        const result = await pool.query(`
+            SELECT o.*, a.name as delivery_name, a.phone, a.address, a.city, a.state, a.pincode
+            FROM Orders o
+            JOIN Addresses a ON o.address_id = a.id
+            WHERE o.id = $1
+        `, [id]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: "Order not found." });
+        }
+
+        const order = result.rows[0];
+
+        // Authorization check: User can only see their own, Admin/Seller check logic
+        if (role !== 'admin' && order.user_id !== userId) {
+             // If seller, check if they have items in this order
+             if (role === 'seller') {
+                 const itemCheck = await pool.query(`
+                     SELECT 1 FROM Order_Items oi 
+                     JOIN Products p ON oi.product_id = p.id 
+                     WHERE oi.order_id = $1 AND p.seller_id = $2
+                 `, [id, req.user.sellerId]);
+                 if (itemCheck.rows.length === 0) {
+                     return res.status(403).json({ message: "Unauthorized." });
+                 }
+             } else {
+                 return res.status(403).json({ message: "Unauthorized." });
+             }
+        }
+
+        const itemsResult = await pool.query(`
+            SELECT oi.*, p.name, p.image
+            FROM Order_Items oi
+            JOIN Products p ON oi.product_id = p.id
+            WHERE oi.order_id = $1
+        `, [id]);
+
+        order.items = itemsResult.rows;
+        res.status(200).json(order);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
+
+exports.getUserOrdersById = async (req, res) => {
+    const { id: userId } = req.params;
+    const currentUserId = req.user.id;
+    const role = req.user.role;
+
+    // Only allow admin or the user themselves
+    if (role !== 'admin' && parseInt(userId) !== currentUserId) {
+        return res.status(403).json({ message: "Unauthorized." });
+    }
+
+    try {
+        const result = await pool.query(`
+            SELECT o.*, a.name as delivery_name, a.address, a.city, a.state, a.pincode
+            FROM Orders o
+            JOIN Addresses a ON o.address_id = a.id
+            WHERE o.user_id = $1
+            ORDER BY o.order_date DESC
+        `, [userId]);
+        
+        const orders = result.rows;
+        for (let order of orders) {
+            const items = await pool.query(`
+                SELECT oi.*, p.name, p.image 
+                FROM Order_Items oi
+                JOIN Products p ON oi.product_id = p.id
+                WHERE oi.order_id = $1
+            `, [order.id]);
+            order.items = items.rows;
+        }
+
+        res.status(200).json(orders);
     } catch (err) {
         res.status(500).json({ message: err.message });
     }

@@ -4,7 +4,7 @@ exports.createProduct = async (req, res) => {
     const { name, description, price, stock_quantity, category } = req.body;
     let image = req.body.image;
     if (req.file) {
-        image = `/uploads/${req.file.filename}`;
+        image = req.file.path; // Cloudinary returns the full URL in .path
     }
 
     // Auth middleware attaches req.user (which contains sellerId if they are an approved seller)
@@ -70,7 +70,7 @@ exports.updateProduct = async (req, res) => {
     
     let image = req.body.image;
     if (req.file) {
-        image = `/uploads/${req.file.filename}`;
+        image = req.file.path; // Cloudinary returns the full URL in .path
     }
     
     try {
@@ -127,6 +127,68 @@ exports.getSellerProducts = async (req, res) => {
     
     try {
         const result = await pool.query('SELECT * FROM Products WHERE seller_id = $1', [req.user.sellerId]);
+        res.status(200).json(result.rows);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
+
+exports.getRecommendedProducts = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const productResult = await pool.query('SELECT category FROM Products WHERE id = $1', [id]);
+        if (productResult.rows.length === 0) {
+            return res.status(404).json({ message: "Product not found." });
+        }
+        const category = productResult.rows[0].category;
+        const result = await pool.query('SELECT * FROM Products WHERE category = $1 AND id != $2 LIMIT 4', [category, id]);
+        res.status(200).json(result.rows);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
+
+exports.searchProducts = async (req, res) => {
+    const { q, minPrice, maxPrice, category } = req.query;
+    let query = 'SELECT * FROM Products WHERE 1=1';
+    let queryParams = [];
+    let paramCount = 1;
+
+    if (q) {
+        query += ` AND (name ILIKE $${paramCount} OR description ILIKE $${paramCount})`;
+        queryParams.push(`%${q}%`);
+        paramCount++;
+    }
+
+    if (minPrice) {
+        query += ` AND price >= $${paramCount}`;
+        queryParams.push(minPrice);
+        paramCount++;
+    }
+
+    if (maxPrice) {
+        query += ` AND price <= $${paramCount}`;
+        queryParams.push(maxPrice);
+        paramCount++;
+    }
+
+    if (category) {
+        query += ` AND category = $${paramCount}`;
+        queryParams.push(category);
+        paramCount++;
+    }
+
+    try {
+        const result = await pool.query(query, queryParams);
+        res.status(200).json(result.rows);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
+
+exports.getLowStockProducts = async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM Products WHERE stock_quantity <= low_stock_threshold');
         res.status(200).json(result.rows);
     } catch (err) {
         res.status(500).json({ message: err.message });

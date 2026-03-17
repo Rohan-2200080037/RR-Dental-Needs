@@ -6,7 +6,9 @@ const upload = require('../middlewares/uploadMiddleware');
 
 // Public routes
 router.get('/', productController.getAllProducts);
+router.get('/search', productController.searchProducts);
 router.get('/:id', productController.getProductById);
+router.get('/recommend/:id', productController.getRecommendedProducts);
 router.get('/category/:category', productController.getProductsByCategory);
 
 // Protected routes (Seller/Admin)
@@ -14,5 +16,6 @@ router.post('/', [verifyToken, isRole(['seller']), upload.single('image')], prod
 router.put('/:id', [verifyToken, isRole(['seller', 'admin']), upload.single('image')], productController.updateProduct);
 router.delete('/:id', [verifyToken, isRole(['seller', 'admin'])], productController.deleteProduct);
 router.get('/seller/my-products', [verifyToken, isRole(['seller'])], productController.getSellerProducts);
+router.get('/admin/low-stock', [verifyToken, isRole(['admin'])], productController.getLowStockProducts);
 
 module.exports = router;

@@ -61,12 +61,26 @@ exports.getAnalytics = async (req, res) => {
         
         const totalRevenueResult = await pool.query("SELECT SUM(total_price) as totalRevenue FROM Orders WHERE order_status != 'Pending'");
         const totalRevenue = totalRevenueResult.rows[0].totalrevenue || 0;
+
+        const topProductsResult = await pool.query(`
+            SELECT p.id, p.name, p.price, p.image, SUM(oi.quantity) as total_sold
+            FROM Order_Items oi
+            JOIN Products p ON oi.product_id = p.id
+            GROUP BY p.id
+            ORDER BY total_sold DESC
+            LIMIT 5
+        `);
+        const topProducts = topProductsResult.rows;
         
+        const lowStockRes = await pool.query('SELECT * FROM Products WHERE stock_quantity <= low_stock_threshold');
+
         res.status(200).json({
             totalUsers,
             totalSellers,
             totalOrders,
-            totalRevenue
+            totalRevenue,
+            topProducts,
+            lowStockProducts: lowStockRes.rows
         });
     } catch (err) {
         res.status(500).json({ message: err.message });

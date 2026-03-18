@@ -127,7 +127,7 @@
   }
 
   .print-grid-1 {
-    grid-template-cols: 1fr !important;
+    grid-template-columns: 1fr !important;
   }
 }
 

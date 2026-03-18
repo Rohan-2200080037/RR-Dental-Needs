@@ -25,7 +25,7 @@ const ProductDetail = () => {
     const [quantity, setQuantity] = useState(1);
     const [isInWishlist, setIsInWishlist] = useState(false);
     const [wishlistLoading, setWishlistLoading] = useState(false);
-    
+
     // Reviews & Related Products States
     const [reviews, setReviews] = useState([]);
     const [averageRating, setAverageRating] = useState(0);
@@ -149,14 +149,14 @@ const ProductDetail = () => {
                 rating: reviewForm.rating,
                 comment: reviewForm.comment
             }, { headers: { Authorization: `Bearer ${token}` } });
-            
+
             setReviewFeedback('Review submitted successfully!');
             setReviewForm({ rating: 5, comment: '' });
-            
+
             const revRes = await axios.get(`${import.meta.env.VITE_API_URL}/api/reviews/product/${id}`);
             setReviews(revRes.data.reviews || []);
             setAverageRating(revRes.data.averageRating || 0);
-            
+
             setTimeout(() => setReviewFeedback(''), 3000);
         } catch (err) {
             setReviewFeedback(err.response?.data?.message || 'Failed to submit review');
@@ -182,7 +182,7 @@ const ProductDetail = () => {
     return (
         <div className="bg-slate-50 min-h-screen pb-20 pt-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                
+
                 {/* Breadcrumbs */}
                 <nav className="flex text-sm text-slate-500 mb-8 font-medium">
                     <Link to="/" className="hover:text-primary transition-colors">Home</Link>
@@ -196,7 +196,7 @@ const ProductDetail = () => {
 
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-12">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 p-6 lg:p-12">
-                        
+
                         {/* Image Gallery */}
                         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="flex flex-col space-y-4">
                             <div className="aspect-[4/3] rounded-xl overflow-hidden bg-slate-100 border border-slate-200">
@@ -210,7 +210,7 @@ const ProductDetail = () => {
                             <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-2 leading-tight">
                                 {product.name}
                             </h1>
-                            
+
                             <div className="flex items-center space-x-4 mb-6">
                                 <div className="flex items-center">
                                     {[1, 2, 3, 4, 5].map((star) => (
@@ -251,7 +251,9 @@ const ProductDetail = () => {
                                         <span className="text-sm font-bold text-red-600 uppercase tracking-wider">Out of Stock</span>
                                     </div>
                                 )}
-                            </di                             {/* Delivery Estimation */}
+                            </div>
+
+                            {/* Delivery Estimation */}
                             <div className="mb-8 p-4 sm:p-6 bg-slate-50 rounded-2xl border border-slate-200">
                                 <div className="flex items-center justify-between mb-4">
                                     <div className="flex items-center text-slate-800 font-extrabold text-sm uppercase tracking-wider">
@@ -262,12 +264,12 @@ const ProductDetail = () => {
                                         {deliveryEstimate.range}
                                     </div>
                                 </div>
-                                
+
                                 <div className="flex flex-col sm:flex-row gap-4 items-center sm:items-stretch">
                                     <div className="w-full sm:flex-1">
-                                        <input 
-                                            type="text" 
-                                            placeholder="Enter Pincode" 
+                                        <input
+                                            type="text"
+                                            placeholder="Enter Pincode"
                                             className="w-full px-4 py-3 text-sm border border-slate-300 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all outline-none bg-white font-medium shadow-sm"
                                             value={pincode}
                                             onChange={handlePincodeChange}
@@ -294,9 +296,9 @@ const ProductDetail = () => {
                                     <button onClick={() => handleQuantityChange('inc')} disabled={quantity >= product.stock_quantity || isOutOfStock} className="w-12 h-full flex items-center justify-center text-slate-400 hover:text-primary disabled:opacity-30 transition-colors font-bold text-xl">+</button>
                                 </div>
 
-                                <Button 
-                                    size="lg" 
-                                    className="flex-1 h-14 text-lg font-black shadow-lg shadow-primary/20 hover:shadow-xl hover:translate-y-[-2px] transition-all" 
+                                <Button
+                                    size="lg"
+                                    className="flex-1 h-14 text-lg font-black shadow-lg shadow-primary/20 hover:shadow-xl hover:translate-y-[-2px] transition-all"
                                     isLoading={addingToCart}
                                     disabled={isOutOfStock}
                                     onClick={handleAddToCart}
@@ -305,8 +307,8 @@ const ProductDetail = () => {
                                     {isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
                                 </Button>
 
-                                <Button 
-                                    variant={isInWishlist ? 'secondary' : 'outline'} 
+                                <Button
+                                    variant={isInWishlist ? 'secondary' : 'outline'}
                                     className="h-14 w-full xl:w-auto px-6 flex-shrink-0 flex items-center justify-center shadow-sm"
                                     onClick={handleWishlistToggle}
                                     disabled={wishlistLoading}
@@ -326,7 +328,7 @@ const ProductDetail = () => {
                                     </AnimatePresence>
                                 </Button>
                             </div>
-iv>
+
 
                             {/* Feedback for cart/wishlist actions */}
                             <AnimatePresence>
@@ -354,7 +356,7 @@ iv>
                     <div className="lg:col-span-2 space-y-8">
                         <Card className="p-6 sm:p-8">
                             <h2 className="text-2xl font-bold text-slate-900 mb-6">Customer Reviews</h2>
-                            
+
                             <div className="space-y-6">
                                 {reviews.length === 0 ? (
                                     <div className="text-center py-8 bg-slate-50 rounded-xl border border-slate-100 border-dashed">
@@ -398,10 +400,10 @@ iv>
                                 <form onSubmit={handleReviewSubmit} className="space-y-4">
                                     <div>
                                         <label className="block text-sm font-medium text-slate-700 mb-2">Rating</label>
-                                        <select 
+                                        <select
                                             className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
                                             value={reviewForm.rating}
-                                            onChange={(e) => setReviewForm({...reviewForm, rating: e.target.value})}
+                                            onChange={(e) => setReviewForm({ ...reviewForm, rating: e.target.value })}
                                         >
                                             <option value={5}>⭐⭐⭐⭐⭐ - Excellent</option>
                                             <option value={4}>⭐⭐⭐⭐ - Very Good</option>
@@ -412,17 +414,17 @@ iv>
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-slate-700 mb-2">Review Comment</label>
-                                        <textarea 
-                                            className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none resize-none" 
+                                        <textarea
+                                            className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none resize-none"
                                             rows="4"
                                             placeholder="What did you like or dislike?"
                                             value={reviewForm.comment}
-                                            onChange={(e) => setReviewForm({...reviewForm, comment: e.target.value})}
+                                            onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
                                             required
                                         ></textarea>
                                     </div>
                                     <Button type="submit" variant="primary" className="w-full">Submit Review</Button>
-                                    
+
                                     <AnimatePresence>
                                         {reviewFeedback && (
                                             <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0 }} className="mt-2 text-sm text-emerald-600 bg-emerald-50 p-2 rounded text-center font-medium">

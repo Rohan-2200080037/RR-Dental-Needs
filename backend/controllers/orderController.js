@@ -154,7 +154,7 @@ exports.getSellerOrders = async (req, res) => {
     try {
         // Find order items that belong to the seller's products
         const result = await pool.query(`
-            SELECT DISTINCT o.id as order_id, o.order_date, o.order_status, o.payment_method,
+            SELECT DISTINCT o.id as order_id, o.order_date, o.order_status, o.payment_method, o.payment_status,
                    u.email as customer_email, a.name as customer_name, a.phone, a.address, a.city, a.state, a.pincode
             FROM Orders o
             JOIN Addresses a ON o.address_id = a.id
@@ -248,6 +248,49 @@ exports.updateOrderStatus = async (req, res) => {
 
         await pool.query('UPDATE Orders SET order_status = $1 WHERE id = $2', [status, id]);
         res.status(200).json({ message: "Order status updated." });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
+
+exports.updatePaymentStatus = async (req, res) => {
+    const { id } = req.params;
+    const { status } = req.body; // Expecting 'Completed'
+    const sellerId = req.user.sellerId;
+    const role = req.user.role;
+
+    if (status !== 'Completed') {
+        return res.status(400).json({ message: "Invalid payment status. Only 'Completed' is allowed." });
+    }
+
+    try {
+        // 1. Check if order exists and current status
+        const orderResult = await pool.query('SELECT payment_status FROM Orders WHERE id = $1', [id]);
+        if (orderResult.rows.length === 0) return res.status(404).json({ message: "Order not found." });
+        
+        const currentStatus = orderResult.rows[0].payment_status;
+        if (currentStatus === 'Completed') {
+            return res.status(400).json({ message: "Payment is already completed and cannot be changed back." });
+        }
+
+        // 2. Authorization: Admin can update any. Seller can only update if they have items in this order.
+        if (role !== 'admin') {
+            const itemCheck = await pool.query(`
+                SELECT 1 FROM Order_Items oi 
+                JOIN Products p ON oi.product_id = p.id 
+                WHERE oi.order_id = $1 AND p.seller_id = $2
+            `, [id, sellerId]);
+            
+            if (itemCheck.rows.length === 0) {
+                return res.status(403).json({ message: "Unauthorized. You don't have products in this order." });
+            }
+        }
+
+        // 3. Update Status
+        await pool.query('UPDATE Orders SET payment_status = $1 WHERE id = $2', [status, id]);
+        
+        logger.info(`Payment status for order ${id} updated to ${status} by ${role} ${req.user.id}`);
+        res.status(200).json({ message: "Payment status updated to Completed." });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }

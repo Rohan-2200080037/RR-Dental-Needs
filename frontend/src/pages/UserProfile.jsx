@@ -362,15 +362,35 @@ const UserProfile = () => {
                                                         <p className="text-xs text-slate-400 mt-1 uppercase">Payment: {order.payment_method}</p>
                                                     </div>
                                                     
-                                                    {(order.order_status === 'Pending' || order.order_status === 'Packed') && (
+                                                    <div className="flex flex-wrap gap-3">
+                                                        {order.order_status === 'Delivered' && (
+                                                            <Button 
+                                                                variant="outline" 
+                                                                size="sm"
+                                                                className="text-xs font-bold uppercase tracking-widest px-4"
+                                                                onClick={() => navigate(`/order/${order.id}`)}
+                                                            >
+                                                                Receipt
+                                                            </Button>
+                                                        )}
+                                                        {(order.order_status === 'Pending' || order.order_status === 'Packed') && (
+                                                            <Button 
+                                                                variant="outline-danger" 
+                                                                size="sm"
+                                                                onClick={() => handleCancelOrder(order.id)}
+                                                            >
+                                                                Cancel Order
+                                                            </Button>
+                                                        )}
                                                         <Button 
-                                                            variant="outline-danger" 
+                                                            variant="ghost" 
                                                             size="sm"
-                                                            onClick={() => handleCancelOrder(order.id)}
+                                                            className="text-slate-500 font-bold text-xs uppercase"
+                                                            onClick={() => navigate(`/order/${order.id}`)}
                                                         >
-                                                            Cancel Order
+                                                            View Details
                                                         </Button>
-                                                    )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </Card>

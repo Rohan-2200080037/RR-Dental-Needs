@@ -26,7 +26,7 @@ const Footer = () => {
                     <h3>Contact Us</h3>
                     <ul className="footer-contact">
                         <li><strong>Email:</strong> rrdentalneeds@gmail.com</li>
-                        <li><strong>Phone:</strong> +91 98765 43210</li>
+                        <li><strong>Phone:</strong> +91 9948533315</li>
                     </ul>
                 </div>
             </div>

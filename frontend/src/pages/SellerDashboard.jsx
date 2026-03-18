@@ -136,6 +136,22 @@ const SellerDashboard = () => {
             setTimeout(() => setFeedback(''), 3000);
         } catch (err) {
              setFeedback('Failed to update status');
+             setTimeout(() => setFeedback(''), 3000);
+        }
+    };
+
+    const handlePaymentStatusUpdate = async (orderId) => {
+        if (!window.confirm("Mark this order as Paid? This action cannot be reversed.")) return;
+        try {
+            await axios.put(`${import.meta.env.VITE_API_URL}/api/orders/${orderId}/payment-status`, { status: 'Completed' }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setOrders(orders.map(o => o.order_id === orderId ? { ...o, payment_status: 'Completed' } : o));
+            setFeedback("Payment marked as Completed");
+            setTimeout(() => setFeedback(''), 3000);
+        } catch (err) {
+            setFeedback(err.response?.data?.message || 'Failed to update payment status');
+            setTimeout(() => setFeedback(''), 3000);
         }
     };
 
@@ -492,25 +508,45 @@ const SellerDashboard = () => {
                                                                 {o.order_status === 'Cancelled' ? (
                                                                     <Badge variant="danger" className="rounded-lg font-black uppercase tracking-widest text-[10px] px-3">Voided</Badge>
                                                                 ) : (
-                                                                    <div className="relative inline-block w-full min-w-[120px]">
-                                                                        <select 
-                                                                            className={`w-full text-[10px] font-black uppercase tracking-widest rounded-xl border border-slate-200 py-2.5 pl-3 pr-8 focus:ring-4 focus:ring-primary/10 transition-all appearance-none cursor-pointer shadow-sm ${
-                                                                                o.order_status === 'Delivered' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 
-                                                                                o.order_status === 'Shipped' ? 'bg-blue-50 text-blue-700 border-blue-100' :
-                                                                                'bg-white text-slate-700'
-                                                                            }`}
-                                                                            value={o.order_status}
-                                                                            onChange={(e) => handleOrderStatusUpdate(o.order_id, e.target.value)}
-                                                                        >
-                                                                            <option value="Pending">Pending</option>
-                                                                            <option value="Packed">Packed</option>
-                                                                            <option value="Shipped">Shipped</option>
-                                                                            <option value="Delivered">Delivered</option>
-                                                                        </select>
-                                                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                                                                            <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                                                            </svg>
+                                                                    <div className="flex flex-col items-end gap-3">
+                                                                        {/* Order Status Select */}
+                                                                        <div className="relative inline-block w-full min-w-[120px]">
+                                                                            <select 
+                                                                                className={`w-full text-[10px] font-black uppercase tracking-widest rounded-xl border border-slate-200 py-2 pl-3 pr-8 focus:ring-4 focus:ring-primary/10 transition-all appearance-none cursor-pointer shadow-sm ${
+                                                                                    o.order_status === 'Delivered' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 
+                                                                                    o.order_status === 'Shipped' ? 'bg-blue-50 text-blue-700 border-blue-100' :
+                                                                                    'bg-white text-slate-700'
+                                                                                }`}
+                                                                                value={o.order_status}
+                                                                                onChange={(e) => handleOrderStatusUpdate(o.order_id, e.target.value)}
+                                                                            >
+                                                                                <option value="Pending">Pending</option>
+                                                                                <option value="Packed">Packed</option>
+                                                                                <option value="Shipped">Shipped</option>
+                                                                                <option value="Delivered">Delivered</option>
+                                                                            </select>
+                                                                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                                                                                <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                                                </svg>
+                                                                            </div>
+                                                                        </div>
+
+                                                                        {/* Payment Status Management */}
+                                                                        <div className="flex flex-wrap items-center gap-2 mt-2 sm:mt-0">
+                                                                            <Badge variant={o.payment_status === 'Completed' ? 'success' : 'warning'} className="text-[9px] px-2 py-0.5 uppercase tracking-tighter whitespace-nowrap">
+                                                                                {o.payment_status || 'Pending'}
+                                                                            </Badge>
+                                                                            {o.payment_status !== 'Completed' && (
+                                                                                <Button 
+                                                                                    variant="primary" 
+                                                                                    size="sm" 
+                                                                                    className="text-[9px] font-black uppercase tracking-widest h-7 px-3 bg-indigo-600 hover:bg-indigo-700 shadow-sm whitespace-nowrap flex-shrink-0"
+                                                                                    onClick={() => handlePaymentStatusUpdate(o.order_id)}
+                                                                                >
+                                                                                    Mark as Paid
+                                                                                </Button>
+                                                                            )}
                                                                         </div>
                                                                     </div>
                                                                 )}

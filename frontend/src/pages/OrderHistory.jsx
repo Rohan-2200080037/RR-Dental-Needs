@@ -106,8 +106,23 @@ const OrderHistory = () => {
                                                     <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">Total</p>
                                                     <p className="text-xl font-black text-primary">₹{Number(order.total_price).toLocaleString()}</p>
                                                 </div>
-                                                <div className="p-2 transition-transform group-hover:translate-x-1">
-                                                    <ChevronRightIcon className="w-6 h-6 text-slate-400" />
+                                                <div className="flex flex-col sm:flex-row items-center gap-3">
+                                                    {order.order_status === 'Delivered' && (
+                                                        <Button 
+                                                            variant="outline" 
+                                                            size="sm" 
+                                                            className="text-[10px] font-bold uppercase tracking-widest h-8 px-3"
+                                                            onClick={(e) => {
+                                                                e.preventDefault();
+                                                                navigate(`/order/${order.id}`);
+                                                            }}
+                                                        >
+                                                            Receipt
+                                                        </Button>
+                                                    )}
+                                                    <div className="p-2 transition-transform group-hover:translate-x-1">
+                                                        <ChevronRightIcon className="w-6 h-6 text-slate-400" />
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>

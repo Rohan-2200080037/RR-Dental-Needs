@@ -251,34 +251,34 @@ const ProductDetail = () => {
                                         <span className="text-sm font-bold text-red-600 uppercase tracking-wider">Out of Stock</span>
                                     </div>
                                 )}
-                            </div>
-
-                            {/* Delivery Estimation */}
-                            <div className="mb-8 p-4 bg-slate-50 rounded-xl border border-slate-200">
-                                <div className="flex items-center justify-between mb-3">
-                                    <div className="flex items-center text-slate-700 font-bold text-sm">
+                            </di                             {/* Delivery Estimation */}
+                            <div className="mb-8 p-4 sm:p-6 bg-slate-50 rounded-2xl border border-slate-200">
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="flex items-center text-slate-800 font-extrabold text-sm uppercase tracking-wider">
                                         <TruckIcon className="w-5 h-5 mr-2 text-primary" />
-                                        Delivery Estimate
+                                        Delivery Info
                                     </div>
-                                    <div className="text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded">
+                                    <div className="text-xs font-black text-primary bg-primary/10 px-3 py-1 rounded-full border border-primary/20">
                                         {deliveryEstimate.range}
                                     </div>
                                 </div>
                                 
-                                <div className="flex gap-2">
-                                    <input 
-                                        type="text" 
-                                        placeholder="Enter Pincode" 
-                                        className="flex-1 px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary/20 outline-none"
-                                        value={pincode}
-                                        onChange={handlePincodeChange}
-                                        maxLength={6}
-                                    />
-                                    <div className="flex-[2] flex flex-col justify-center">
-                                        <p className="text-xs font-bold text-slate-900">
+                                <div className="flex flex-col sm:flex-row gap-4 items-center sm:items-stretch">
+                                    <div className="w-full sm:flex-1">
+                                        <input 
+                                            type="text" 
+                                            placeholder="Enter Pincode" 
+                                            className="w-full px-4 py-3 text-sm border border-slate-300 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all outline-none bg-white font-medium shadow-sm"
+                                            value={pincode}
+                                            onChange={handlePincodeChange}
+                                            maxLength={6}
+                                        />
+                                    </div>
+                                    <div className="w-full sm:flex-[1.5] flex flex-col justify-center bg-white/50 px-4 py-2 rounded-xl border border-slate-100">
+                                        <p className="text-sm font-black text-slate-900">
                                             {deliveryEstimate.dateRange}
                                         </p>
-                                        <p className="text-[10px] text-slate-500">
+                                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">
                                             {pincode.length === 6 ? `Estimated for ${pincode}` : 'Standard delivery time'}
                                         </p>
                                     </div>
@@ -287,35 +287,46 @@ const ProductDetail = () => {
 
                             <hr className="border-slate-100 mb-8" />
 
-                            <div className="flex flex-col sm:flex-row gap-4 mb-4">
-                                <div className="flex items-center border border-slate-300 rounded-xl h-12 bg-white w-full sm:w-32 flex-shrink-0">
-                                    <button onClick={() => handleQuantityChange('dec')} disabled={quantity <= 1 || isOutOfStock} className="w-10 h-full flex items-center justify-center text-slate-600 hover:text-primary disabled:opacity-50 transition-colors">-</button>
-                                    <input type="text" readOnly value={quantity} className="flex-1 w-8 text-center font-semibold text-slate-900 bg-transparent border-none focus:ring-0 p-0" />
-                                    <button onClick={() => handleQuantityChange('inc')} disabled={quantity >= product.stock_quantity || isOutOfStock} className="w-10 h-full flex items-center justify-center text-slate-600 hover:text-primary disabled:opacity-50 transition-colors">+</button>
+                            <div className="flex flex-col xl:flex-row gap-4 mb-4">
+                                <div className="flex items-center border border-slate-300 rounded-xl h-14 bg-white w-full xl:w-40 flex-shrink-0 shadow-sm">
+                                    <button onClick={() => handleQuantityChange('dec')} disabled={quantity <= 1 || isOutOfStock} className="w-12 h-full flex items-center justify-center text-slate-400 hover:text-primary disabled:opacity-30 transition-colors font-bold text-xl">-</button>
+                                    <input type="text" readOnly value={quantity} className="flex-1 w-8 text-center font-black text-slate-900 bg-transparent border-none focus:ring-0 p-0 text-lg" />
+                                    <button onClick={() => handleQuantityChange('inc')} disabled={quantity >= product.stock_quantity || isOutOfStock} className="w-12 h-full flex items-center justify-center text-slate-400 hover:text-primary disabled:opacity-30 transition-colors font-bold text-xl">+</button>
                                 </div>
 
                                 <Button 
                                     size="lg" 
-                                    className="flex-1 h-12 text-lg shadow-md hover:shadow-lg" 
+                                    className="flex-1 h-14 text-lg font-black shadow-lg shadow-primary/20 hover:shadow-xl hover:translate-y-[-2px] transition-all" 
                                     isLoading={addingToCart}
                                     disabled={isOutOfStock}
                                     onClick={handleAddToCart}
                                 >
-                                    <ShoppingCartIcon className="w-5 h-5 mr-2" />
+                                    <ShoppingCartIcon className="w-6 h-6 mr-2" />
                                     {isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
                                 </Button>
 
                                 <Button 
                                     variant={isInWishlist ? 'secondary' : 'outline'} 
-                                    className="h-12 w-12 sm:w-auto px-0 sm:px-6 flex-shrink-0 flex items-center justify-center p-0"
+                                    className="h-14 w-full xl:w-auto px-6 flex-shrink-0 flex items-center justify-center shadow-sm"
                                     onClick={handleWishlistToggle}
                                     disabled={wishlistLoading}
                                     title={isInWishlist ? "Remove from wishlist" : "Add to wishlist"}
                                 >
-                                    {isInWishlist ? <HeartSolid className="w-6 h-6 text-danger" /> : <HeartOutline className="w-6 h-6" />}
-                                    <span className="hidden sm:inline sm:ml-2">{isInWishlist ? 'Saved' : 'Add to Wishlist'}</span>
+                                    <AnimatePresence mode="wait">
+                                        <motion.div
+                                            key={isInWishlist ? 'saved' : 'save'}
+                                            initial={{ scale: 0.8, opacity: 0 }}
+                                            animate={{ scale: 1, opacity: 1 }}
+                                            exit={{ scale: 0.8, opacity: 0 }}
+                                            className="flex items-center"
+                                        >
+                                            {isInWishlist ? <HeartSolid className="w-6 h-6 text-red-500" /> : <HeartOutline className="w-6 h-6" />}
+                                            <span className="ml-2 font-bold">{isInWishlist ? 'Saved' : 'Wishlist'}</span>
+                                        </motion.div>
+                                    </AnimatePresence>
                                 </Button>
                             </div>
+iv>
 
                             {/* Feedback for cart/wishlist actions */}
                             <AnimatePresence>

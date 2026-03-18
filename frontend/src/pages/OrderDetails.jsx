@@ -147,64 +147,35 @@ const OrderDetails = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 print:hidden">
                     {/* Main Order Info */}
                     <div className="lg:col-span-2 space-y-8">
-                        {/* Vertical Timeline Card */}
-                        <Card className="p-10 no-print">
-                            <h2 className="text-xl font-black text-slate-900 mb-10 flex items-center">
-                                <span className="w-2 h-8 bg-primary rounded-full mr-3"></span>
-                                Order Journey
-                            </h2>
+                        {/* Timeline Card */}
+                        <Card className="p-8 no-print">
+                            <h2 className="text-xl font-bold text-slate-900 mb-8">Order Status</h2>
                             {isCancelled ? (
                                 <div className="p-6 bg-red-50 rounded-2xl border border-red-100 flex items-center text-red-800 font-bold">
                                     <XMarkIcon className="w-8 h-8 mr-4" /> This order has been cancelled.
                                 </div>
                             ) : (
-                                <div className="space-y-0 relative">
-                                    {/* Vertical Connecting Line */}
-                                    <div className="absolute left-[23px] top-2 bottom-2 w-1 bg-slate-100 rounded-full"></div>
-                                    <div 
-                                        className="absolute left-[23px] top-2 w-1 bg-primary rounded-full transition-all duration-1000 ease-in-out"
-                                        style={{ height: `${(Math.max(0, currentIdx) / (steps.length - 1)) * 100}%` }}
+                                <div className="relative">
+                                    <div className="absolute top-6 left-6 right-6 h-1 bg-slate-200 rounded-full hidden sm:block"></div>
+                                    <div
+                                        className="absolute top-6 left-6 h-1 bg-primary rounded-full transition-all duration-700 ease-out hidden sm:block"
+                                        style={{ width: `${(Math.max(0, currentIdx) / (steps.length - 1)) * 100}%` }}
                                     ></div>
-                                    
-                                    <div className="flex flex-col gap-10">
+
+                                    <div className="flex flex-col sm:flex-row justify-between relative z-10 gap-8 sm:gap-0">
                                         {steps.map((step, idx) => {
                                             const isCompleted = idx <= currentIdx;
                                             const isActive = idx === currentIdx;
-                                            
-                                            return (
-                                                <div key={step.name} className="flex items-start relative z-10 group">
-                                                    {/* Timeline Icon Node */}
-                                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-md transition-all duration-500 border-4 border-white flex-shrink-0 ${
-                                                        isCompleted ? 'bg-primary text-white' : 'bg-slate-50 text-slate-300'
-                                                    } ${isActive ? 'scale-110 ring-4 ring-primary/10' : ''}`}>
-                                                        <step.icon className={`w-6 h-6 ${isActive ? 'animate-pulse' : ''}`} />
-                                                    </div>
 
-                                                    {/* Status Content */}
-                                                    <div className="ml-6 pt-1">
-                                                        <p className={`font-black text-lg transition-colors duration-500 ${
-                                                            isCompleted ? 'text-slate-900' : 'text-slate-300'
-                                                        }`}>
-                                                            {step.name}
-                                                        </p>
-                                                        <p className={`text-sm font-bold tracking-tight transition-colors duration-500 ${
-                                                            isCompleted ? 'text-primary' : 'text-slate-400'
-                                                        }`}>
-                                                            {step.label}
-                                                        </p>
-                                                        {isActive && (
-                                                            <motion.div 
-                                                                initial={{ opacity: 0, x: -10 }}
-                                                                animate={{ opacity: 1, x: 0 }}
-                                                                className="mt-3 px-4 py-2 bg-primary/5 border border-primary/10 rounded-xl inline-flex items-center"
-                                                            >
-                                                                <span className="relative flex h-2 w-2 mr-2">
-                                                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                                                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-                                                                </span>
-                                                                <span className="text-[10px] font-black uppercase text-primary tracking-widest">Currently processing</span>
-                                                            </motion.div>
-                                                        )}
+                                            return (
+                                                <div key={step.name} className="flex sm:flex-col items-center sm:w-1/4">
+                                                    <div className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all duration-500 border-4 border-white ${isCompleted ? 'bg-primary text-white' : 'bg-slate-100 text-slate-400'
+                                                        } ${isActive ? 'scale-110 ring-4 ring-primary/20' : ''}`}>
+                                                        <step.icon className="w-6 h-6" />
+                                                    </div>
+                                                    <div className="ml-4 sm:ml-0 sm:mt-4 text-left sm:text-center">
+                                                        <p className={`font-bold text-sm ${isCompleted ? 'text-slate-900' : 'text-slate-400'}`}>{step.name}</p>
+                                                        <p className="text-xs text-slate-500 font-medium">{step.label}</p>
                                                     </div>
                                                 </div>
                                             );
@@ -224,8 +195,8 @@ const OrderDetails = () => {
                                 {order.items.map((item, idx) => (
                                     <div key={idx} className="p-6 sm:p-8 flex items-center space-x-6 hover:bg-slate-50/50 transition-colors bg-white">
                                         <div className="w-20 h-20 flex-shrink-0">
-                                            <img 
-                                                src={item.image?.startsWith('/uploads') ? `${import.meta.env.VITE_API_URL}${item.image}` : (item.image || 'https://via.placeholder.com/150')} 
+                                            <img
+                                                src={item.image?.startsWith('/uploads') ? `${import.meta.env.VITE_API_URL}${item.image}` : (item.image || 'https://via.placeholder.com/150')}
                                                 alt={item.name}
                                                 className="w-full h-full object-cover rounded-xl shadow-sm border border-slate-200"
                                             />
@@ -287,9 +258,9 @@ const OrderDetails = () => {
 
                         <div className="space-y-4">
                             {order.order_status === 'Delivered' ? (
-                                <Button 
-                                    className="w-full text-lg h-14 shadow-xl shadow-primary/20" 
-                                    variant="primary" 
+                                <Button
+                                    className="w-full text-lg h-14 shadow-xl shadow-primary/20"
+                                    variant="primary"
                                     onClick={() => window.print()}
                                 >
                                     <TruckIcon className="w-6 h-6 mr-2" />
@@ -300,10 +271,10 @@ const OrderDetails = () => {
                                     Invoice will be available once the order is delivered.
                                 </div>
                             )}
-                            
-                            <Button 
-                                className="w-full h-12 text-slate-500" 
-                                variant="ghost" 
+
+                            <Button
+                                className="w-full h-12 text-slate-500"
+                                variant="ghost"
                                 onClick={() => navigate('/orders')}
                             >
                                 Back to All Orders

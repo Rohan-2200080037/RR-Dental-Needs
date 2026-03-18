@@ -37,8 +37,8 @@ const Home = () => {
 
     const categories = [
         { name: '1st Year', desc: 'Pre-clinical Prosthodontics & Dental Anatomy', icon: '🦷', color: 'bg-blue-50 text-blue-600 border-blue-100 hover:border-blue-300' },
-        { name: '2nd Year', desc: 'Pre-clinical Conservative & Orthodontics', icon: '🔧', color: 'bg-emerald-50 text-emerald-600 border-emerald-100 hover:border-emerald-300' },
-        { name: '3rd Year', desc: 'Clinical Postings & Advanced Lab', icon: '💉', color: 'bg-violet-50 text-violet-600 border-violet-100 hover:border-violet-300' },
+        { name: '2nd Year', desc: 'Pre-clinical Conservative & Orthodontics', icon: '🔬', color: 'bg-emerald-50 text-emerald-600 border-emerald-100 hover:border-emerald-300' },
+        { name: '3rd Year', desc: 'Clinical Postings & Advanced Lab', icon: '🩺', color: 'bg-violet-50 text-violet-600 border-violet-100 hover:border-violet-300' },
         { name: '4th Year', desc: 'Final Year Comprehensive Care', icon: '🎓', color: 'bg-rose-50 text-rose-600 border-rose-100 hover:border-rose-300' }
     ];
 

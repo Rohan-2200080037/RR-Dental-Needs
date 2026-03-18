@@ -449,8 +449,8 @@ const SellerDashboard = () => {
                                                     <tr className="bg-slate-200/50 text-slate-800">
                                                         <th className="px-8 py-5 text-left font-bold uppercase tracking-widest text-[11px]">S.No</th>
                                                         <th className="px-8 py-5 text-left font-bold uppercase tracking-widest text-[11px]">Reference</th>
-                                                        <th className="px-8 py-5 text-left font-bold uppercase tracking-widest text-[11px]">Customer</th>
                                                         <th className="px-8 py-5 text-left font-bold uppercase tracking-widest text-[11px]">Items</th>
+                                                        <th className="px-8 py-5 text-left font-bold uppercase tracking-widest text-[11px]">Delivery Location</th>
                                                         <th className="px-8 py-5 text-right font-bold uppercase tracking-widest text-[11px]">Management</th>
                                                     </tr>
                                                 </thead>
@@ -466,32 +466,35 @@ const SellerDashboard = () => {
                                                             <td className="px-8 py-5 font-bold text-slate-500 bg-slate-200/50 group-hover:bg-transparent transition-colors">
                                                                 {idx + 1}
                                                             </td>
-                                                            <td className="px-8 py-5 bg-white group-hover:bg-transparent transition-colors">
+                                                            <td className="px-8 py-5 bg-white group-hover:bg-transparent transition-colors text-center sm:text-left">
                                                                 <div className="font-black text-slate-900 tracking-tight">#{o.order_id}</div>
                                                                 <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
                                                                     {new Date(o.order_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                                                                 </div>
                                                             </td>
-                                                            <td className="px-8 py-5">
-                                                                <div className="font-bold text-slate-900 group-hover:text-primary transition-colors">{o.customer_name}</div>
-                                                                <div className="text-xs text-slate-500 mt-0.5">{o.phone}</div>
-                                                            </td>
-                                                            <td className="px-8 py-5 bg-teal-100/10 group-hover:bg-transparent transition-colors">
+                                                            <td className="px-8 py-5 bg-teal-50/30 group-hover:bg-transparent transition-colors">
                                                                 <div className="flex flex-wrap gap-1">
-                                                                    {o.items?.map((i, idx) => (
-                                                                        <span key={idx} className="inline-block px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[10px] font-bold">
+                                                                    {o.items?.map((i, itemIdx) => (
+                                                                        <span key={itemIdx} className="inline-block px-2 py-0.5 bg-white border border-teal-100 text-teal-700 rounded text-[10px] font-bold shadow-sm">
                                                                             {i.quantity}x {i.name}
                                                                         </span>
                                                                     ))}
                                                                 </div>
                                                             </td>
-                                                            <td className="px-8 py-5 text-right bg-blue-100/40 group-hover:bg-transparent transition-colors">
+                                                            <td className="px-8 py-5 bg-slate-50 group-hover:bg-transparent transition-colors">
+                                                                <div className="font-bold text-slate-900 group-hover:text-primary transition-colors">{o.customer_name}</div>
+                                                                <div className="text-xs text-slate-600 font-medium mt-1">{o.phone}</div>
+                                                                <div className="text-[11px] text-slate-500 leading-tight mt-1 max-w-[200px]">
+                                                                    {o.address}, {o.city}, {o.state} - <span className="font-bold">{o.pincode}</span>
+                                                                </div>
+                                                            </td>
+                                                            <td className="px-8 py-5 text-right bg-blue-50/30 group-hover:bg-transparent transition-colors">
                                                                 {o.order_status === 'Cancelled' ? (
                                                                     <Badge variant="danger" className="rounded-lg font-black uppercase tracking-widest text-[10px] px-3">Voided</Badge>
                                                                 ) : (
-                                                                    <div className="relative inline-block w-40">
+                                                                    <div className="relative inline-block w-full min-w-[120px]">
                                                                         <select 
-                                                                            className={`w-full text-[10px] font-black uppercase tracking-widest rounded-xl border border-slate-200 py-2.5 pl-3 pr-8 focus:ring-4 focus:ring-primary/10 transition-all appearance-none cursor-pointer ${
+                                                                            className={`w-full text-[10px] font-black uppercase tracking-widest rounded-xl border border-slate-200 py-2.5 pl-3 pr-8 focus:ring-4 focus:ring-primary/10 transition-all appearance-none cursor-pointer shadow-sm ${
                                                                                 o.order_status === 'Delivered' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 
                                                                                 o.order_status === 'Shipped' ? 'bg-blue-50 text-blue-700 border-blue-100' :
                                                                                 'bg-white text-slate-700'
@@ -516,7 +519,7 @@ const SellerDashboard = () => {
                                                     ))}
                                                     {orders.length === 0 && (
                                                         <tr>
-                                                            <td colSpan="4" className="px-8 py-24 text-center">
+                                                            <td colSpan="5" className="px-8 py-24 text-center">
                                                                 <div className="flex flex-col items-center">
                                                                      <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-3">
                                                                         <ClipboardDocumentListIcon className="w-8 h-8 text-slate-200" />

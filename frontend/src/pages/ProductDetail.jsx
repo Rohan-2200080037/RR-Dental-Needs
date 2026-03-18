@@ -11,6 +11,8 @@ import Badge from '../components/ui/Badge';
 import Card from '../components/ui/Card';
 import ProductCard from '../components/ui/ProductCard';
 import { PageLoader } from '../components/ui/Loader';
+import { getEstimatedDelivery } from '../utils/deliveryLogic';
+import Input from '../components/ui/Input';
 
 const ProductDetail = () => {
     const { id } = useParams();
@@ -30,6 +32,8 @@ const ProductDetail = () => {
     const [relatedProducts, setRelatedProducts] = useState([]);
     const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '' });
     const [reviewFeedback, setReviewFeedback] = useState('');
+    const [pincode, setPincode] = useState('');
+    const [deliveryEstimate, setDeliveryEstimate] = useState(getEstimatedDelivery(''));
 
     const { isAuthenticated, token, user } = useAuthStore();
     const { addToCart, loading: cartLoading } = useCartStore();
@@ -122,6 +126,16 @@ const ProductDetail = () => {
         } finally {
             setWishlistLoading(false);
             setTimeout(() => setReviewFeedback(''), 3000);
+        }
+    };
+
+    const handlePincodeChange = (e) => {
+        const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+        setPincode(value);
+        if (value.length === 6) {
+            setDeliveryEstimate(getEstimatedDelivery(value));
+        } else if (value.length === 0) {
+            setDeliveryEstimate(getEstimatedDelivery(''));
         }
     };
 
@@ -237,6 +251,38 @@ const ProductDetail = () => {
                                         <span className="text-sm font-bold text-red-600 uppercase tracking-wider">Out of Stock</span>
                                     </div>
                                 )}
+                            </div>
+
+                            {/* Delivery Estimation */}
+                            <div className="mb-8 p-4 bg-slate-50 rounded-xl border border-slate-200">
+                                <div className="flex items-center justify-between mb-3">
+                                    <div className="flex items-center text-slate-700 font-bold text-sm">
+                                        <TruckIcon className="w-5 h-5 mr-2 text-primary" />
+                                        Delivery Estimate
+                                    </div>
+                                    <div className="text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded">
+                                        {deliveryEstimate.range}
+                                    </div>
+                                </div>
+                                
+                                <div className="flex gap-2">
+                                    <input 
+                                        type="text" 
+                                        placeholder="Enter Pincode" 
+                                        className="flex-1 px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary/20 outline-none"
+                                        value={pincode}
+                                        onChange={handlePincodeChange}
+                                        maxLength={6}
+                                    />
+                                    <div className="flex-[2] flex flex-col justify-center">
+                                        <p className="text-xs font-bold text-slate-900">
+                                            {deliveryEstimate.dateRange}
+                                        </p>
+                                        <p className="text-[10px] text-slate-500">
+                                            {pincode.length === 6 ? `Estimated for ${pincode}` : 'Standard delivery time'}
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
 
                             <hr className="border-slate-100 mb-8" />

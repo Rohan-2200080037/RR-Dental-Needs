@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import MainLayout from './MainLayout';
 import useAuthStore from './store/authStore';
@@ -41,6 +41,12 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 function App() {
   const { checkAuth, isAuthenticated, token } = useAuthStore();
   const { fetchCart } = useCartStore();
+  const { pathname } = useLocation();
+
+  // Scroll to top on route change
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
 
   // Initialize auto logout (5 minutes)
   useAutoLogout(5);

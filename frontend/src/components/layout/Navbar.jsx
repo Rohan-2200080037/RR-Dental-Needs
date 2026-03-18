@@ -153,8 +153,8 @@ const Navbar = () => {
                 </Link>
               </div>
             ) : (
-              <div className="flex items-center space-x-0.5 sm:space-x-3">
-                <Link to="/profile" state={{ tab: 'wishlist' }} className="hidden sm:flex p-2 text-slate-600 hover:text-primary hover:bg-teal-50 rounded-full transition-colors">
+              <div className="flex items-center space-x-1 sm:space-x-3">
+                <Link to="/profile" state={{ tab: 'wishlist' }} className="hidden sm:flex p-1.5 sm:p-2 text-slate-600 hover:text-primary hover:bg-teal-50 rounded-full transition-colors">
                   <HeartIcon className="w-6 h-6" />
                 </Link>
 
@@ -172,7 +172,7 @@ const Navbar = () => {
                 </Link>
 
                 {/* Notification Dropdown */}
-                <div className="hidden sm:block relative" ref={notificationRef}>
+                <div className="relative" ref={notificationRef}>
                   <button
                     onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
                     className="relative p-2 text-slate-600 hover:text-primary hover:bg-teal-50 rounded-full transition-colors focus:outline-none"

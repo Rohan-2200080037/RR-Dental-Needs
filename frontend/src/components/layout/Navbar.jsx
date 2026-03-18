@@ -103,7 +103,7 @@ const Navbar = () => {
             <Link to="/" className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
               <span className="text-xl sm:text-2xl">🦷</span>
               <span className="font-bold text-slate-800 text-base sm:text-xl">
-                RR <span className="text-primary hidden min-[400px]:inline">Dental Needs</span>
+                RR <span className="text-primary hidden min-[350px]:inline">Dental Needs</span>
               </span>
             </Link>
 
@@ -154,7 +154,7 @@ const Navbar = () => {
               </div>
             ) : (
               <div className="flex items-center space-x-0.5 sm:space-x-3">
-                <Link to="/profile" state={{ tab: 'wishlist' }} className="p-2 text-slate-600 hover:text-primary hover:bg-teal-50 rounded-full transition-colors">
+                <Link to="/profile" state={{ tab: 'wishlist' }} className="hidden sm:flex p-2 text-slate-600 hover:text-primary hover:bg-teal-50 rounded-full transition-colors">
                   <HeartIcon className="w-6 h-6" />
                 </Link>
 
@@ -172,7 +172,7 @@ const Navbar = () => {
                 </Link>
 
                 {/* Notification Dropdown */}
-                <div className="relative" ref={notificationRef}>
+                <div className="hidden sm:block relative" ref={notificationRef}>
                   <button
                     onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
                     className="relative p-2 text-slate-600 hover:text-primary hover:bg-teal-50 rounded-full transition-colors focus:outline-none"
@@ -356,6 +356,15 @@ const Navbar = () => {
                       Seller Dashboard
                     </Link>
                   )}
+                  <Link
+                    to="/profile"
+                    state={{ tab: 'wishlist' }}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-primary hover:bg-teal-50 flex items-center"
+                  >
+                    <HeartIcon className="w-5 h-5 mr-3 text-red-400" />
+                    My Wishlist
+                  </Link>
                   <Link
                     to="/profile"
                     onClick={() => setIsMobileMenuOpen(false)}

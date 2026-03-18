@@ -5,7 +5,7 @@ const logger = require('../services/loggingService');
 exports.createOrder = async (req, res) => {
     const userId = req.user.id;
     const { 
-        name, phone, address, city, state, pincode, paymentMethod = 'COD'
+        name, phone, address, city, state, pincode, paymentMethod = 'COD', shouldSaveAddress = false
     } = req.body;
 
     if (!name || !phone || !address || !city || !state || !pincode) {
@@ -17,7 +17,7 @@ exports.createOrder = async (req, res) => {
         await client.query('BEGIN');
         const { orderId, totalPrice } = await exports.processOrderCreation(client, userId, {
             name, phone, address, city, state, pincode, paymentMethod,
-            paymentStatus: 'Pending'
+            shouldSaveAddress, paymentStatus: 'Pending'
         });
         await client.query('COMMIT');
 
@@ -36,7 +36,12 @@ exports.createOrder = async (req, res) => {
 
 // Core logic extracted for reuse (e.g., by paymentController)
 exports.processOrderCreation = async (client, userId, orderDetails) => {
-    const { name, phone, address, city, state, pincode, paymentMethod, paymentStatus = 'Pending', rzpOrderId = null, rzpPaymentId = null } = orderDetails;
+    const { 
+        name, phone, address, city, state, pincode, 
+        paymentMethod, paymentStatus = 'Pending', 
+        rzpOrderId = null, rzpPaymentId = null,
+        shouldSaveAddress = false 
+    } = orderDetails;
 
     // 1. Get Cart Items
     const cartResult = await client.query(`
@@ -60,12 +65,28 @@ exports.processOrderCreation = async (client, userId, orderDetails) => {
         totalPrice += item.price * item.quantity;
     }
 
-    // 3. Save Address
-    const addressResult = await client.query(
-        'INSERT INTO Addresses (user_id, name, phone, address, city, state, pincode) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
+    // 3. Find or Create Address
+    // Check if an identical address already exists for this user
+    const existingAddrResult = await client.query(
+        'SELECT id FROM Addresses WHERE user_id = $1 AND name = $2 AND phone = $3 AND address = $4 AND city = $5 AND state = $6 AND pincode = $7',
         [userId, name, phone, address, city, state, pincode]
     );
-    const addressId = addressResult.rows[0].id;
+
+    let addressId;
+    if (existingAddrResult.rows.length > 0) {
+        addressId = existingAddrResult.rows[0].id;
+        // If it exists and user wants to save it, ensure is_saved is TRUE
+        if (shouldSaveAddress) {
+            await client.query('UPDATE Addresses SET is_saved = TRUE, is_active = TRUE WHERE id = $1', [addressId]);
+        }
+    } else {
+        // Create new address - is_saved depends on shouldSaveAddress checkbox
+        const addressResult = await client.query(
+            'INSERT INTO Addresses (user_id, name, phone, address, city, state, pincode, is_saved) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id',
+            [userId, name, phone, address, city, state, pincode, shouldSaveAddress]
+        );
+        addressId = addressResult.rows[0].id;
+    }
 
     // 4. Create Order
     const orderResult = await client.query(

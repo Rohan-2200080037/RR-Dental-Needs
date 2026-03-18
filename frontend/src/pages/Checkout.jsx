@@ -23,7 +23,7 @@ const Checkout = () => {
         state: '',
         pincode: ''
     });
-    const [paymentMethod, setPaymentMethod] = useState('COD');
+    const [paymentMethod, setPaymentMethod] = useState('PhonePe');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [savedAddresses, setSavedAddresses] = useState([]);
@@ -96,78 +96,34 @@ const Checkout = () => {
         setError(null);
 
         try {
-            if (paymentMethod === 'Razorpay') {
-                // 1. Create Razorpay order on backend
+            if (paymentMethod === 'PhonePe') {
                 const totalAmount = calculateTotal();
-                const { data: orderData } = await axios.post(`${import.meta.env.VITE_API_URL}/api/payment/create-order`, 
-                    { amount: totalAmount },
+                const { data } = await axios.post(`${import.meta.env.VITE_API_URL}/api/payment/phonepe-initiate`, 
+                    { 
+                        amount: totalAmount,
+                        orderDetails: { ...formData, shouldSaveAddress }
+                    },
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
 
-                // 2. Open Razorpay modal
-                const options = {
-                    key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-                    amount: orderData.amount,
-                    currency: orderData.currency,
-                    name: "RR Dental Needs",
-                    description: "Purchase instruments",
-                    order_id: orderData.id,
-                    handler: async (response) => {
-                        try {
-                            // 3. Verify payment and create final order
-                            await axios.post(`${import.meta.env.VITE_API_URL}/api/payment/verify`, {
-                                razorpay_order_id: response.razorpay_order_id,
-                                razorpay_payment_id: response.razorpay_payment_id,
-                                razorpay_signature: response.razorpay_signature,
-                                orderDetails: { ...formData, paymentMethod: 'Razorpay' }
-                            }, { headers: { Authorization: `Bearer ${token}` } });
+                // Store orderDetails in localStorage so we can retrieve them on the return page
+                localStorage.setItem('pendingOrder', JSON.stringify({
+                    ...formData,
+                    items,
+                    totalAmount,
+                    shouldSaveAddress
+                }));
 
-                            // Save address if requested
-                            if (shouldSaveAddress) {
-                                try {
-                                    await axios.post(`${import.meta.env.VITE_API_URL}/api/addresses`, formData, {
-                                        headers: { Authorization: `Bearer ${token}` }
-                                    });
-                                } catch (addrErr) {
-                                    console.error("Address save failed:", addrErr);
-                                }
-                            }
-
-                            setOrderPlaced(true);
-                            clearCartState();
-                            navigate('/profile?tab=orders', { state: { message: 'Order placed successfully!' } });
-                        } catch (err) {
-                            setError(err.response?.data?.message || 'Payment verification failed.');
-                        }
-                    },
-                    prefill: {
-                        name: formData.name,
-                        contact: formData.phone
-                    },
-                    theme: { color: "#0d9488" }
-                };
-
-                const rzp = new window.Razorpay(options);
-                rzp.open();
-                setLoading(false);
-            } else {
+                // Redirect to PhonePe
+                window.location.href = data.url;
+                return;
+            } else if (paymentMethod === 'COD') {
                 // COD Flow
                 await axios.post(`${import.meta.env.VITE_API_URL}/api/orders`, 
-                    { ...formData, paymentMethod },
+                    { ...formData, paymentMethod, shouldSaveAddress },
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
                 
-                // Save address if requested
-                if (shouldSaveAddress) {
-                    try {
-                        await axios.post(`${import.meta.env.VITE_API_URL}/api/addresses`, formData, {
-                            headers: { Authorization: `Bearer ${token}` }
-                        });
-                    } catch (addrErr) {
-                        console.error("Address save failed:", addrErr);
-                    }
-                }
-
                 setOrderPlaced(true);
                 clearCartState();
                 navigate('/profile?tab=orders', { state: { message: 'Order placed successfully!' } });
@@ -175,7 +131,7 @@ const Checkout = () => {
         } catch (err) {
              setError(err.response?.data?.message || 'Failed to place order.');
         } finally {
-            if (paymentMethod !== 'Razorpay') setLoading(false);
+            if (paymentMethod !== 'Razorpay' && paymentMethod !== 'PhonePe') setLoading(false);
         }
     };
 
@@ -330,46 +286,64 @@ const Checkout = () => {
                                     <h2 className="text-xl font-bold text-slate-900">Payment Options</h2>
                                 </div>
                                 
-                                <div className="space-y-4">
-                                    <label className={`block relative border rounded-xl p-4 cursor-pointer transition-all ${paymentMethod === 'COD' ? 'border-primary ring-1 ring-primary bg-primary/5' : 'border-slate-200 hover:border-slate-300'}`}>
-                                        <div className="flex items-center">
-                                            <input 
-                                                type="radio" 
-                                                name="payment" 
-                                                value="COD" 
-                                                checked={paymentMethod === 'COD'} 
-                                                onChange={(e) => setPaymentMethod(e.target.value)} 
-                                                className="h-5 w-5 text-primary border-slate-300 focus:ring-primary"
-                                            />
-                                            <div className="ml-4 flex flex-col">
-                                                <span className="block text-sm font-bold text-slate-900 flex items-center">
-                                                    <BanknotesIcon className="w-5 h-5 mr-2 text-primary" />
-                                                    Cash on Delivery (COD)
-                                                </span>
-                                                <span className="block text-sm font-medium text-slate-500 mt-1">Pay when your order is delivered.</span>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <label 
+                                        onClick={() => setPaymentMethod('PhonePe')}
+                                        className={`group relative flex flex-col p-5 rounded-2xl cursor-pointer transition-all duration-300 border-2 ${
+                                            paymentMethod === 'PhonePe' 
+                                            ? 'border-primary bg-primary/5 shadow-md shadow-primary/10' 
+                                            : 'border-slate-100 hover:border-slate-200 bg-white hover:shadow-sm'
+                                        }`}
+                                    >
+                                        <div className="flex items-center justify-between mb-3">
+                                            <div className="p-2 rounded-xl bg-primary/10 text-primary group-hover:scale-110 transition-transform">
+                                                <CreditCardIcon className="w-6 h-6" />
+                                            </div>
+                                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                                                paymentMethod === 'PhonePe' ? 'border-primary' : 'border-slate-200'
+                                            }`}>
+                                                {paymentMethod === 'PhonePe' && <div className="w-2.5 h-2.5 rounded-full bg-primary" />}
                                             </div>
                                         </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-sm font-black text-slate-900 tracking-tight">PhonePe</span>
+                                            <span className="text-[11px] font-bold text-slate-500 mt-1 leading-tight">Fastest & Secure: UPI, Cards, Wallets</span>
+                                        </div>
+                                        {paymentMethod === 'PhonePe' && (
+                                            <motion.div layoutId="selection" className="absolute -top-2 -right-2 bg-primary text-white p-1 rounded-full shadow-lg">
+                                                <CheckIcon className="w-3 h-3 border-2 border-white rounded-full" />
+                                            </motion.div>
+                                        )}
                                     </label>
                                     
-                                    <label className={`block relative border rounded-xl p-4 cursor-pointer transition-all ${paymentMethod === 'Razorpay' ? 'border-primary ring-1 ring-primary bg-primary/5' : 'border-slate-200 hover:border-slate-300'}`}>
-                                        <div className="flex items-center">
-                                            <input 
-                                                type="radio" 
-                                                name="payment" 
-                                                value="Razorpay" 
-                                                checked={paymentMethod === 'Razorpay'} 
-                                                onChange={(e) => setPaymentMethod(e.target.value)} 
-                                                className="h-5 w-5 text-primary border-slate-300 focus:ring-primary"
-                                            />
-                                            <div className="ml-4 flex flex-col">
-                                                <span className="block text-sm font-bold text-slate-900 flex items-center">
-                                                    <CreditCardIcon className="w-5 h-5 mr-2 text-primary" />
-                                                    Online Payment (Razorpay)
-                                                </span>
-                                                <span className="block text-sm font-medium text-slate-500 mt-1">Cards, UPI, Netbanking & more.</span>
+                                    <label 
+                                        onClick={() => setPaymentMethod('COD')}
+                                        className={`group relative flex flex-col p-5 rounded-2xl cursor-pointer transition-all duration-300 border-2 ${
+                                            paymentMethod === 'COD' 
+                                            ? 'border-slate-800 bg-slate-50 shadow-md shadow-slate-200' 
+                                            : 'border-slate-100 hover:border-slate-200 bg-white hover:shadow-sm'
+                                        }`}
+                                    >
+                                        <div className="flex items-center justify-between mb-3">
+                                            <div className="p-2 rounded-xl bg-slate-100 text-slate-600 group-hover:scale-110 transition-transform">
+                                                <BanknotesIcon className="w-6 h-6" />
+                                            </div>
+                                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                                                paymentMethod === 'COD' ? 'border-slate-800' : 'border-slate-200'
+                                            }`}>
+                                                {paymentMethod === 'COD' && <div className="w-2.5 h-2.5 rounded-full bg-slate-800" />}
                                             </div>
                                         </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-sm font-black text-slate-900 tracking-tight">Cash on Delivery</span>
+                                            <span className="text-[11px] font-bold text-slate-500 mt-1 leading-tight">Pay at your doorstep</span>
+                                        </div>
                                     </label>
+                                </div>
+                                <div className="mt-6 flex items-center justify-center space-x-4 opacity-50 grayscale transition-all hover:grayscale-0">
+                                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/UPI-Logo-vector.svg/1200px-UPI-Logo-vector.svg.png" alt="UPI" className="h-4" />
+                                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Visa_Inc._logo.svg/2560px-Visa_Inc._logo.svg.png" alt="Visa" className="h-3" />
+                                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Mastercard-logo.svg/1280px-Mastercard-logo.svg.png" alt="Mastercard" className="h-5" />
                                 </div>
                             </Card>
                         </form>

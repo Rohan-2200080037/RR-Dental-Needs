@@ -37,7 +37,7 @@ exports.createAddress = async (req, res) => {
 exports.getAddresses = async (req, res) => {
     const userId = req.user.id;
     try {
-        const result = await pool.query('SELECT * FROM Addresses WHERE user_id = $1 AND (is_active = TRUE OR is_active IS NULL)', [userId]);
+        const result = await pool.query('SELECT * FROM Addresses WHERE user_id = $1 AND (is_active = TRUE OR is_active IS NULL) AND (is_saved = TRUE OR is_saved IS NULL)', [userId]);
         res.status(200).json(result.rows);
     } catch (err) {
         res.status(500).json({ message: err.message });

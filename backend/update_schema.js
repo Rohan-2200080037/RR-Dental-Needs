@@ -1,20 +1,14 @@
-const pool = require('./db');
 require('dotenv').config();
+const pool = require('./db');
 
 async function updateSchema() {
     try {
-        // Check nullability of user_id
-        const nullCheck = await pool.query(`
-            SELECT is_nullable 
-            FROM information_schema.columns 
-            WHERE lower(table_name) = 'addresses' AND lower(column_name) = 'user_id';
+        // Add is_saved column to Addresses if it doesn't exist
+        await pool.query(`
+            ALTER TABLE Addresses 
+            ADD COLUMN IF NOT EXISTS is_saved BOOLEAN DEFAULT TRUE;
         `);
-
-        if (nullCheck.rows.length > 0) {
-            console.log("SCHEMA_INFO: user_id is_nullable =", nullCheck.rows[0].is_nullable);
-        } else {
-            console.log("SCHEMA_INFO: user_id column not found or table name different.");
-        }
+        console.log("SCHEMA_INFO: is_saved column ensured on Addresses table.");
 
         process.exit(0);
     } catch (err) {

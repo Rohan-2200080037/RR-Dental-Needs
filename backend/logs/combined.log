@@ -1233,3 +1233,10 @@
 {"level":"info","message":"GET /api/notifications","timestamp":"2026-03-18T03:59:46.002Z"}
 {"level":"info","message":"GET /api/notifications","timestamp":"2026-03-18T04:01:45.974Z"}
 {"level":"info","message":"GET /api/notifications","timestamp":"2026-03-18T04:03:45.983Z"}
+{"level":"info","message":"GET /api/notifications","timestamp":"2026-03-18T04:05:46.000Z"}
+{"level":"info","message":"GET /api/notifications","timestamp":"2026-03-18T04:12:36.472Z"}
+{"level":"info","message":"GET /api/notifications","timestamp":"2026-03-18T04:13:45.996Z"}
+{"level":"info","message":"GET /api/products","timestamp":"2026-03-18T04:16:46.017Z"}
+{"level":"info","message":"GET /api/notifications","timestamp":"2026-03-18T04:16:46.186Z"}
+{"level":"info","message":"GET /api/cart","timestamp":"2026-03-18T04:16:46.191Z"}
+{"level":"info","message":"GET /api/products","timestamp":"2026-03-18T04:16:47.660Z"}

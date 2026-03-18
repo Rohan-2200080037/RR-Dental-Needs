@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import MainLayout from './MainLayout';
 import useAuthStore from './store/authStore';
@@ -58,75 +58,73 @@ function App() {
   return (
     <>
       <Toaster position="top-center" reverseOrder={false} />
-      <Router>
-        <Routes>
-          <Route path="/" element={<MainLayout />}>
-            <Route index element={<Home />} />
-            <Route path="login" element={<Login />} />
-            <Route path="register" element={<Register />} />
-            <Route path="forgot-password" element={<ForgotPassword />} />
-            <Route path="reset-password" element={<ResetPassword />} />
-            <Route path="products" element={<Products />} />
-            <Route path="search" element={<Search />} />
-            <Route path="category/:category" element={<Category />} />
-            <Route path="product/:id" element={<ProductDetail />} />
-            
-            <Route path="about" element={<AboutUs />} />
-            <Route path="faq" element={<FAQ />} />
-            <Route path="terms" element={<TermsConditions />} />
-            <Route path="privacy" element={<PrivacyPolicy />} />
-            <Route path="contact" element={<ContactUs />} />
-            
-            <Route path="cart" element={
-               <ProtectedRoute>
-                  <Cart />
-               </ProtectedRoute>
-            } />
-            
-            <Route path="checkout" element={
-               <ProtectedRoute>
-                  <Checkout />
-               </ProtectedRoute>
-            } />
-
-            <Route path="payment-status" element={
-               <ProtectedRoute>
-                  <PaymentStatus />
-               </ProtectedRoute>
-            } />
-            
-            <Route path="profile" element={
-               <ProtectedRoute>
-                  <UserProfile />
-               </ProtectedRoute>
-            } />
-
-            <Route path="orders" element={
-               <ProtectedRoute>
-                  <OrderHistory />
-               </ProtectedRoute>
-            } />
-
-            <Route path="order/:id" element={
-               <ProtectedRoute>
-                  <OrderDetails />
-               </ProtectedRoute>
-            } />
-          </Route>
-
-          <Route path="seller/*" element={
-              <ProtectedRoute allowedRoles={['seller']}>
-                <SellerDashboard />
+      <Routes>
+        <Route path="/" element={<MainLayout />}>
+          <Route index element={<Home />} />
+          <Route path="login" element={<Login />} />
+          <Route path="register" element={<Register />} />
+          <Route path="forgot-password" element={<ForgotPassword />} />
+          <Route path="reset-password" element={<ResetPassword />} />
+          <Route path="products" element={<Products />} />
+          <Route path="search" element={<Search />} />
+          <Route path="category/:category" element={<Category />} />
+          <Route path="product/:id" element={<ProductDetail />} />
+          
+          <Route path="about" element={<AboutUs />} />
+          <Route path="faq" element={<FAQ />} />
+          <Route path="terms" element={<TermsConditions />} />
+          <Route path="privacy" element={<PrivacyPolicy />} />
+          <Route path="contact" element={<ContactUs />} />
+          
+          <Route path="cart" element={
+              <ProtectedRoute>
+                <Cart />
+              </ProtectedRoute>
+          } />
+          
+          <Route path="checkout" element={
+              <ProtectedRoute>
+                <Checkout />
               </ProtectedRoute>
           } />
 
-          <Route path="admin/*" element={
-              <ProtectedRoute allowedRoles={['admin']}>
-                <AdminDashboard />
+          <Route path="payment-status" element={
+              <ProtectedRoute>
+                <PaymentStatus />
               </ProtectedRoute>
           } />
-        </Routes>
-      </Router>
+          
+          <Route path="profile" element={
+              <ProtectedRoute>
+                <UserProfile />
+              </ProtectedRoute>
+          } />
+
+          <Route path="orders" element={
+              <ProtectedRoute>
+                <OrderHistory />
+              </ProtectedRoute>
+          } />
+
+          <Route path="order/:id" element={
+              <ProtectedRoute>
+                <OrderDetails />
+              </ProtectedRoute>
+          } />
+        </Route>
+
+        <Route path="seller/*" element={
+            <ProtectedRoute allowedRoles={['seller']}>
+              <SellerDashboard />
+            </ProtectedRoute>
+        } />
+
+        <Route path="admin/*" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminDashboard />
+            </ProtectedRoute>
+        } />
+      </Routes>
     </>
   );
 }

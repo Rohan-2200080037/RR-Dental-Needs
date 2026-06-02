@@ -6,8 +6,10 @@ import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 import Card from './Card';
 import Badge from './Badge';
 import Button from './Button';
+import useAuthStore from '../../store/authStore';
 
 const ProductCard = ({ product }) => {
+  const { user } = useAuthStore();
   // Mock rating if not available
   const rating = product.rating || 4.5;
   const reviewCount = product.reviews_count || Math.floor(Math.random() * 50) + 10;
@@ -23,7 +25,9 @@ const ProductCard = ({ product }) => {
         <div className="absolute top-3 right-3 flex flex-col gap-2">
            <Badge variant="primary" className="shadow-sm">{product.category}</Badge>
            {product.stock_quantity < 5 && product.stock_quantity > 0 && (
-             <Badge variant="warning" className="shadow-sm">Only {product.stock_quantity} left</Badge>
+             <Badge variant="warning" className="shadow-sm">
+               {(user?.role === 'admin' || user?.role === 'seller') ? `Only ${product.stock_quantity} left` : 'Low Stock'}
+             </Badge>
            )}
            {product.stock_quantity === 0 && (
              <Badge variant="danger" className="shadow-sm">Out of Stock</Badge>

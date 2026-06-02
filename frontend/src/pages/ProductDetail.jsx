@@ -241,7 +241,7 @@ const ProductDetail = () => {
                                         <span className="text-sm font-bold text-emerald-600 uppercase tracking-wider">In Stock</span>
                                         {product.stock_quantity <= (product.low_stock_threshold || 5) && (
                                             <span className="text-xs font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-100 animate-pulse">
-                                                Only {product.stock_quantity} left!
+                                                {(user?.role === 'admin' || user?.role === 'seller') ? `Only ${product.stock_quantity} left!` : 'Low Stock'}
                                             </span>
                                         )}
                                     </div>

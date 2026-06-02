@@ -1,0 +1,15 @@
+{
+  "short_name": "RR Dental Needs",
+  "name": "RR Dental Needs - Advanced E-commerce Platform",
+  "icons": [
+    {
+      "src": "https://thumbs.dreamstime.com/b/dachdecker-426622104.jpg",
+      "type": "image/jpeg",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "background_color": "#ffffff",
+  "theme_color": "#0ea5e9",
+  "display": "standalone"
+}

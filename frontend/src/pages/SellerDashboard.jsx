@@ -397,7 +397,7 @@ const SellerDashboard = () => {
                                                                 </div>
                                                             </td>
                                                             <td className="px-8 py-5 text-right bg-slate-200/30 group-hover:bg-transparent transition-colors">
-                                                                <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                                                <div className="flex justify-end gap-2">
                                                                     <button 
                                                                         onClick={() => handleEdit(p)}
                                                                         className="p-2.5 rounded-xl bg-teal-50 text-teal-600 hover:bg-teal-600 hover:text-white transition-all shadow-sm active:scale-90"

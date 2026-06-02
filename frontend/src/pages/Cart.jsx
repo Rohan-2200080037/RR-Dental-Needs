@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const Cart = () => {
     const { items, loading, error, fetchCart, updateQuantity, removeFromCart } = useCartStore();
-    const { token } = useAuthStore();
+    const { token, user } = useAuthStore();
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -94,7 +94,11 @@ const Cart = () => {
                                                             <h3 className="text-lg font-bold text-slate-900 line-clamp-2 mb-1 pl-1">
                                                                 <Link to={`/product/${item.product_id}`} className="hover:text-primary transition-colors">{item.name}</Link>
                                                             </h3>
-                                                            <p className="text-sm text-slate-500 mb-2 pl-1">In stock: {item.stock_quantity}</p>
+                                                            {(user?.role === 'admin' || user?.role === 'seller') ? (
+                                                                <p className="text-sm text-slate-500 mb-2 pl-1">In stock: {item.stock_quantity}</p>
+                                                            ) : (
+                                                                <p className="text-sm text-emerald-600 mb-2 pl-1 font-semibold">In Stock</p>
+                                                            )}
                                                         </div>
                                                         <div className="text-right">
                                                             <p className="text-lg font-extrabold text-primary whitespace-nowrap">₹{Number(item.price).toLocaleString()}</p>

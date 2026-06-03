@@ -1907,3 +1907,11 @@
 {"level":"info","message":"GET /api/reviews/product/97","timestamp":"2026-06-03T14:12:12.316Z"}
 {"level":"info","message":"GET /api/products/category/1st%20Year","timestamp":"2026-06-03T14:12:12.328Z"}
 {"level":"info","message":"GET /api/products/category/1st%20Year","timestamp":"2026-06-03T14:12:12.806Z"}
+{"level":"info","message":"GET /api/products/97","timestamp":"2026-06-03T15:16:59.939Z"}
+{"level":"info","message":"GET /api/reviews/product/97","timestamp":"2026-06-03T15:16:59.959Z"}
+{"level":"info","message":"GET /api/products/recommend/97","timestamp":"2026-06-03T15:17:00.127Z"}
+{"level":"info","message":"GET /api/products/97","timestamp":"2026-06-03T15:17:00.424Z"}
+{"level":"info","message":"GET /api/reviews/product/97","timestamp":"2026-06-03T15:17:00.435Z"}
+{"level":"info","message":"GET /api/products/recommend/97","timestamp":"2026-06-03T15:17:00.601Z"}
+{"level":"info","message":"GET /api/products","timestamp":"2026-06-03T15:17:22.783Z"}
+{"level":"info","message":"GET /api/products","timestamp":"2026-06-03T15:17:22.832Z"}

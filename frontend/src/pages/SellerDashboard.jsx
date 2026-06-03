@@ -6,7 +6,7 @@ import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
-import { PencilSquareIcon, TrashIcon, ShoppingBagIcon, ClipboardDocumentListIcon } from '@heroicons/react/24/outline';
+import { PencilSquareIcon, TrashIcon, ShoppingBagIcon, ClipboardDocumentListIcon, MagnifyingGlassIcon, FunnelIcon } from '@heroicons/react/24/outline';
 
 const SellerDashboard = () => {
     const { token, user } = useAuthStore();
@@ -17,6 +17,10 @@ const SellerDashboard = () => {
     const [error, setError] = useState(null);
     const [feedback, setFeedback] = useState('');
     const [orderSubTab, setOrderSubTab] = useState('to-deliver'); // 'to-deliver' or 'delivered'
+
+    // Product Filter State
+    const [searchQuery, setSearchQuery] = useState('');
+    const [yearFilter, setYearFilter] = useState('all');
 
     // Product Form State
     const [showForm, setShowForm] = useState(false);
@@ -401,10 +405,70 @@ const SellerDashboard = () => {
                                 </div>
                             ) : (
                                 <div className="space-y-4">
+                                    {/* Search & Year Filter Bar */}
+                                    <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+                                        <div className="relative flex-1">
+                                            <MagnifyingGlassIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
+                                            <input
+                                                type="text"
+                                                placeholder="Search products by name or ID..."
+                                                value={searchQuery}
+                                                onChange={(e) => setSearchQuery(e.target.value)}
+                                                className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary/30 bg-white text-sm font-medium text-slate-800 placeholder:text-slate-400 transition-all shadow-sm"
+                                            />
+                                            {searchQuery && (
+                                                <button
+                                                    onClick={() => setSearchQuery('')}
+                                                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                                                >
+                                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                                </button>
+                                            )}
+                                        </div>
+                                        <div className="relative">
+                                            <FunnelIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                                            <select
+                                                value={yearFilter}
+                                                onChange={(e) => setYearFilter(e.target.value)}
+                                                className={`w-full sm:w-auto pl-10 pr-10 py-3 rounded-xl border text-sm font-bold appearance-none cursor-pointer transition-all shadow-sm focus:outline-none focus:ring-4 focus:ring-primary/10 ${
+                                                    yearFilter !== 'all'
+                                                        ? 'bg-primary/5 border-primary/20 text-primary'
+                                                        : 'bg-white border-slate-200 text-slate-700'
+                                                }`}
+                                            >
+                                                <option value="all">All Years</option>
+                                                <option value="1st Year">1st Year</option>
+                                                <option value="2nd Year">2nd Year</option>
+                                                <option value="3rd Year">3rd Year</option>
+                                                <option value="4th Year">4th Year</option>
+                                            </select>
+                                            <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none">
+                                                <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <div className="flex justify-between items-center px-2">
                                         <h3 className="font-black text-slate-800 tracking-tight">Inventory Status</h3>
-                                        <div className="text-[10px] font-black text-primary uppercase tracking-[0.2em] bg-primary/5 px-3 py-1.5 rounded-full border border-primary/10">
-                                            {products.length} Products Active
+                                        <div className="flex items-center gap-2">
+                                            {(searchQuery || yearFilter !== 'all') && (
+                                                <button
+                                                    onClick={() => { setSearchQuery(''); setYearFilter('all'); }}
+                                                    className="text-[10px] font-black text-red-500 uppercase tracking-[0.15em] bg-red-50 px-3 py-1.5 rounded-full border border-red-100 hover:bg-red-100 transition-colors cursor-pointer"
+                                                >
+                                                    Clear Filters
+                                                </button>
+                                            )}
+                                            <div className="text-[10px] font-black text-primary uppercase tracking-[0.2em] bg-primary/5 px-3 py-1.5 rounded-full border border-primary/10">
+                                                {products
+                                                    .filter(p => {
+                                                        const matchesSearch = !searchQuery || 
+                                                            p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                                            String(p.id).includes(searchQuery);
+                                                        const matchesYear = yearFilter === 'all' || p.category === yearFilter;
+                                                        return matchesSearch && matchesYear;
+                                                    }).length} / {products.length} Products
+                                            </div>
                                         </div>
                                     </div>
                                     <Card className="premium-card overflow-hidden animate-premium">
@@ -420,7 +484,15 @@ const SellerDashboard = () => {
                                                     </tr>
                                                 </thead>
                                                 <tbody className="divide-y divide-slate-200">
-                                                    {products.map((p, idx) => (
+                                                    {products
+                                                    .filter(p => {
+                                                        const matchesSearch = !searchQuery || 
+                                                            p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                                            String(p.id).includes(searchQuery);
+                                                        const matchesYear = yearFilter === 'all' || p.category === yearFilter;
+                                                        return matchesSearch && matchesYear;
+                                                    })
+                                                    .map((p, idx) => (
                                                         <tr key={p.id} className="hover:bg-blue-50/50 transition-colors group even:bg-slate-100/80 border-b border-slate-200 last:border-0">
                                                             <td className="px-8 py-5 font-bold text-slate-500 bg-slate-200/50 group-hover:bg-transparent transition-colors shadow-inner">
                                                                 {idx + 1}
@@ -475,15 +547,39 @@ const SellerDashboard = () => {
                                                             </td>
                                                         </tr>
                                                     ))}
-                                                    {products.length === 0 && (
+                                                    {products.filter(p => {
+                                                        const matchesSearch = !searchQuery || 
+                                                            p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                                            String(p.id).includes(searchQuery);
+                                                        const matchesYear = yearFilter === 'all' || p.category === yearFilter;
+                                                        return matchesSearch && matchesYear;
+                                                    }).length === 0 && (
                                                         <tr>
-                                                            <td colSpan="4" className="px-8 py-24 text-center">
+                                                            <td colSpan="5" className="px-8 py-24 text-center">
                                                                 <div className="flex flex-col items-center">
                                                                     <div className="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center mb-4 border border-slate-100">
-                                                                        <ShoppingBagIcon className="w-8 h-8 text-slate-200" />
+                                                                        {(searchQuery || yearFilter !== 'all') ? (
+                                                                            <MagnifyingGlassIcon className="w-8 h-8 text-slate-200" />
+                                                                        ) : (
+                                                                            <ShoppingBagIcon className="w-8 h-8 text-slate-200" />
+                                                                        )}
                                                                     </div>
-                                                                    <h4 className="font-black text-slate-400 uppercase tracking-widest text-sm">Inventory Empty</h4>
-                                                                    <p className="text-slate-300 text-xs mt-1">Start by adding your first dental product</p>
+                                                                    <h4 className="font-black text-slate-400 uppercase tracking-widest text-sm">
+                                                                        {(searchQuery || yearFilter !== 'all') ? 'No Matches Found' : 'Inventory Empty'}
+                                                                    </h4>
+                                                                    <p className="text-slate-300 text-xs mt-1">
+                                                                        {(searchQuery || yearFilter !== 'all') 
+                                                                            ? 'Try adjusting your search or filter criteria' 
+                                                                            : 'Start by adding your first dental product'}
+                                                                    </p>
+                                                                    {(searchQuery || yearFilter !== 'all') && (
+                                                                        <button
+                                                                            onClick={() => { setSearchQuery(''); setYearFilter('all'); }}
+                                                                            className="mt-4 text-xs font-bold text-primary hover:text-primary/80 underline underline-offset-4 transition-colors"
+                                                                        >
+                                                                            Clear all filters
+                                                                        </button>
+                                                                    )}
                                                                 </div>
                                                             </td>
                                                         </tr>

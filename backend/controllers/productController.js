@@ -4,7 +4,11 @@ exports.createProduct = async (req, res) => {
     const { name, description, price, stock_quantity, category } = req.body;
     let image = req.body.image;
     if (req.file) {
-        image = req.file.path; // Cloudinary returns the full URL in .path
+        if (req.file.path.startsWith('http://') || req.file.path.startsWith('https://')) {
+            image = req.file.path; // Cloudinary returns the full URL in .path
+        } else {
+            image = `/uploads/${req.file.filename}`;
+        }
     }
 
     // Auth middleware attaches req.user (which contains sellerId if they are an approved seller)
@@ -70,7 +74,11 @@ exports.updateProduct = async (req, res) => {
     
     let image = req.body.image;
     if (req.file) {
-        image = req.file.path; // Cloudinary returns the full URL in .path
+        if (req.file.path.startsWith('http://') || req.file.path.startsWith('https://')) {
+            image = req.file.path; // Cloudinary returns the full URL in .path
+        } else {
+            image = `/uploads/${req.file.filename}`;
+        }
     }
     
     try {

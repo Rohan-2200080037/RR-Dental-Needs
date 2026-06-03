@@ -65,6 +65,16 @@ app.use((req, res, next) => {
 // Serve static files for uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// Fallback for missing upload files - redirect to production server
+app.use('/uploads', (req, res, next) => {
+  if (req.method === 'GET') {
+    const productionBackendUrl = process.env.PRODUCTION_BACKEND_URL || 'https://odontic-backend.onrender.com';
+    const deployedUrl = `${productionBackendUrl}/uploads${req.url}`;
+    return res.redirect(deployedUrl);
+  }
+  next();
+});
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);

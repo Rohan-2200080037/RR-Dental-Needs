@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import useAuthStore from '../store/authStore';
 import useCartStore from '../store/cartStore';
-import { HeartIcon as HeartOutline, ShoppingCartIcon, ShieldCheckIcon, TruckIcon } from '@heroicons/react/24/outline';
+import { HeartIcon as HeartOutline, ShoppingCartIcon, ShieldCheckIcon, TruckIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartSolid, StarIcon } from '@heroicons/react/24/solid';
 import { motion, AnimatePresence } from 'framer-motion';
 import Button from '../components/ui/Button';
@@ -25,6 +25,28 @@ const ProductDetail = () => {
     const [quantity, setQuantity] = useState(1);
     const [isInWishlist, setIsInWishlist] = useState(false);
     const [wishlistLoading, setWishlistLoading] = useState(false);
+    const [isImageOpen, setIsImageOpen] = useState(false);
+
+    // Prevent background scrolling and handle escape key when lightbox is open
+    useEffect(() => {
+        if (isImageOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') {
+                setIsImageOpen(false);
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => {
+            document.body.style.overflow = '';
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [isImageOpen]);
 
     // Reviews & Related Products States
     const [reviews, setReviews] = useState([]);
@@ -199,8 +221,13 @@ const ProductDetail = () => {
 
                         {/* Image Gallery */}
                         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="flex flex-col space-y-4">
-                            <div className="aspect-[4/3] rounded-xl overflow-hidden bg-slate-100 border border-slate-200">
-                                <img src={imageUrl} alt={product.name} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500 cursor-zoom-in" />
+                            <div className="aspect-[4/3] rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                                <img 
+                                    src={imageUrl} 
+                                    alt={product.name} 
+                                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-500 cursor-zoom-in"
+                                    onClick={() => setIsImageOpen(true)}
+                                />
                             </div>
                             {/* Thumbnails could go here if the API supported multiple images */}
                         </motion.div>
@@ -466,6 +493,57 @@ const ProductDetail = () => {
                     </div>
                 )}
             </div>
+
+            {/* Full-Screen Image Lightbox */}
+            <AnimatePresence>
+                {isImageOpen && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-4 sm:p-6 md:p-8"
+                        onClick={() => setIsImageOpen(false)}
+                    >
+                        {/* Close button with premium look and micro-animations */}
+                        <motion.button
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.8 }}
+                            onClick={() => setIsImageOpen(false)}
+                            className="absolute top-4 right-4 text-white hover:text-primary p-3 rounded-full bg-slate-900/65 hover:bg-slate-900 border border-slate-800 transition-all z-50 shadow-lg cursor-pointer focus:outline-none"
+                            aria-label="Close image viewer"
+                        >
+                            <XMarkIcon className="h-6 w-6 sm:h-7 sm:w-7" />
+                        </motion.button>
+
+                        {/* Image wrapper to prevent clicks on image from closing modal */}
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            transition={{ type: "spring", damping: 25, stiffness: 220 }}
+                            className="relative max-w-full max-h-[85vh] flex flex-col items-center justify-center"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <img
+                                src={imageUrl}
+                                alt={product.name}
+                                className="max-w-full max-h-[80vh] object-contain rounded-xl shadow-2xl border border-slate-800 select-none"
+                            />
+                            {/* Product Title Badge */}
+                            <motion.div 
+                                initial={{ y: 10, opacity: 0 }}
+                                animate={{ y: 0, opacity: 1 }}
+                                transition={{ delay: 0.1 }}
+                                className="mt-4 text-center text-white text-sm sm:text-base font-bold bg-slate-900/80 px-4 py-2 rounded-xl border border-slate-800 backdrop-blur-sm max-w-max mx-auto shadow-md truncate"
+                            >
+                                {product.name}
+                            </motion.div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

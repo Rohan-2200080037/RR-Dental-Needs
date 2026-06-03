@@ -108,6 +108,22 @@ app.get('/', (req, res) => {
 app.use(notFound);
 app.use(errorHandler);
 
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+// Auto-run schema migrations on startup
+const pool = require('./db');
+async function runMigrations() {
+  try {
+    await pool.query(`
+      ALTER TABLE Addresses 
+      ADD COLUMN IF NOT EXISTS is_saved BOOLEAN DEFAULT TRUE;
+    `);
+    console.log('Schema migration: is_saved column ensured on Addresses table.');
+  } catch (err) {
+    console.error('Schema migration error:', err.message);
+  }
+}
+
+runMigrations().then(() => {
+  app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
+  });
 });

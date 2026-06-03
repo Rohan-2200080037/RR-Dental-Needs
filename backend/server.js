@@ -66,9 +66,21 @@ app.use((req, res, next) => {
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Fallback for missing upload files - redirect to production server
+// IMPORTANT: Only redirect if we are NOT already on the production server.
+// If we are on the production host and the file is missing, return 404 directly
+// to prevent an infinite redirect loop (production → production → ...).
 app.use('/uploads', (req, res, next) => {
   if (req.method === 'GET') {
     const productionBackendUrl = process.env.PRODUCTION_BACKEND_URL || 'https://odontic-backend.onrender.com';
+    const productionHost = new URL(productionBackendUrl).hostname; // e.g. 'odontic-backend.onrender.com'
+    const requestHost = (req.headers.host || '').split(':')[0]; // strip port if present
+
+    // If we are already on the production server, the file is genuinely missing — return 404
+    if (requestHost === productionHost) {
+      return next();
+    }
+
+    // Otherwise (local dev, staging, etc.) redirect to the production copy
     const deployedUrl = `${productionBackendUrl}/uploads${req.url}`;
     return res.redirect(deployedUrl);
   }

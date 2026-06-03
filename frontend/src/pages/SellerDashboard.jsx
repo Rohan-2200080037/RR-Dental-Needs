@@ -24,6 +24,28 @@ const SellerDashboard = () => {
     const [formData, setFormData] = useState({
         name: '', description: '', price: '', stock_quantity: '', category: '1st Year', image: ''
     });
+    const [imageFile, setImageFile] = useState(null);
+    const [imagePreviewUrl, setImagePreviewUrl] = useState('');
+
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setImageFile(file);
+            setImagePreviewUrl(URL.createObjectURL(file));
+        }
+    };
+
+    const getPreviewSrc = () => {
+        if (imagePreviewUrl) {
+            return imagePreviewUrl;
+        }
+        if (formData.image) {
+            return formData.image.startsWith('/uploads') 
+                ? `${import.meta.env.VITE_API_URL}${formData.image}` 
+                : formData.image;
+        }
+        return '';
+    };
 
     useEffect(() => {
         if (!user?.sellerId) {
@@ -44,6 +66,8 @@ const SellerDashboard = () => {
                         setShowForm(true);
                         setEditingId(null);
                         setFormData({ name: '', description: '', price: '', stock_quantity: '', category: '1st Year', image: ''});
+                        setImageFile(null);
+                        setImagePreviewUrl('');
                     } else {
                         setShowForm(false);
                     }
@@ -71,14 +95,33 @@ const SellerDashboard = () => {
         e.preventDefault();
         setFeedback('');
         try {
+            const submitData = new FormData();
+            submitData.append('name', formData.name);
+            submitData.append('description', formData.description);
+            submitData.append('price', formData.price);
+            submitData.append('stock_quantity', formData.stock_quantity);
+            submitData.append('category', formData.category);
+            
+            if (imageFile) {
+                submitData.append('image', imageFile);
+            } else if (formData.image) {
+                submitData.append('image', formData.image);
+            }
+
             if (editingId) {
-                 await axios.put(`${import.meta.env.VITE_API_URL}/api/products/${editingId}`, formData, {
-                     headers: { Authorization: `Bearer ${token}` }
+                 await axios.put(`${import.meta.env.VITE_API_URL}/api/products/${editingId}`, submitData, {
+                     headers: { 
+                         Authorization: `Bearer ${token}`,
+                         'Content-Type': 'multipart/form-data'
+                     }
                  });
                  setFeedback("Product updated successfully");
             } else {
-                 await axios.post(`${import.meta.env.VITE_API_URL}/api/products`, formData, {
-                     headers: { Authorization: `Bearer ${token}` }
+                 await axios.post(`${import.meta.env.VITE_API_URL}/api/products`, submitData, {
+                     headers: { 
+                         Authorization: `Bearer ${token}`,
+                         'Content-Type': 'multipart/form-data'
+                     }
                  });
                  setFeedback("Product created successfully");
             }
@@ -86,6 +129,8 @@ const SellerDashboard = () => {
             setShowForm(false);
             setEditingId(null);
             setFormData({ name: '', description: '', price: '', stock_quantity: '', category: '1st Year', image: ''});
+            setImageFile(null);
+            setImagePreviewUrl('');
             
             // Refresh products
             const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/products/seller/my-products`, {
@@ -108,6 +153,8 @@ const SellerDashboard = () => {
             category: product.category,
             image: product.image || ''
         });
+        setImageFile(null);
+        setImagePreviewUrl('');
         setEditingId(product.id);
         setShowForm(true);
     };
@@ -214,6 +261,8 @@ const SellerDashboard = () => {
                                     if (!showForm) {
                                         setEditingId(null);
                                         setFormData({ name: '', description: '', price: '', stock_quantity: '', category: '1st Year', image: ''});
+                                        setImageFile(null);
+                                        setImagePreviewUrl('');
                                     }
                                 }}
                             >
@@ -304,11 +353,17 @@ const SellerDashboard = () => {
                                                 <Input label="Available Stock" type="number" name="stock_quantity" value={formData.stock_quantity} onChange={handleFormChange} required min="0" />
                                             </div>
                                             
-                                            <div className="md:col-span-2 space-y-1">
-                                                <Input label="Image URL" type="url" name="image" value={formData.image} onChange={handleFormChange} placeholder="https://images.unsplash.com/..." />
-                                                {formData.image && (
+                                            <div className="md:col-span-2 space-y-2">
+                                                <label className="block text-sm font-bold text-slate-700 mb-1 ml-1">Product Photo</label>
+                                                <input 
+                                                    type="file" 
+                                                    accept="image/*" 
+                                                    onChange={handleFileChange} 
+                                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-primary/10 bg-white text-slate-900 font-medium transition-all"
+                                                />
+                                                {getPreviewSrc() && (
                                                     <div className="mt-4 p-2 bg-slate-50 rounded-2xl border border-slate-100 inline-block">
-                                                        <img src={formData.image} alt="Preview" className="h-40 w-40 object-cover rounded-xl shadow-lg" onError={(e) => e.target.style.display='none'} />
+                                                        <img src={getPreviewSrc()} alt="Preview" className="h-40 w-40 object-cover rounded-xl shadow-lg" />
                                                     </div>
                                                 )}
                                             </div>
@@ -326,7 +381,11 @@ const SellerDashboard = () => {
                                             </div>
                                         </div>
                                         <div className="flex justify-end pt-6 border-t border-slate-100 gap-4">
-                                            <Button type="button" variant="ghost" className="px-8 rounded-xl font-bold" onClick={() => setShowForm(false)}>Discard</Button>
+                                            <Button type="button" variant="ghost" className="px-8 rounded-xl font-bold" onClick={() => {
+                                                setShowForm(false);
+                                                setImageFile(null);
+                                                setImagePreviewUrl('');
+                                            }}>Discard</Button>
                                             <Button type="submit" variant="primary" className="px-10 rounded-xl font-bold shadow-lg shadow-primary/30">
                                                 {editingId ? 'Update Product' : 'List Product'}
                                             </Button>

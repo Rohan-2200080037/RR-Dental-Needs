@@ -8,15 +8,11 @@ cloudinary.config({
 });
 
 const storage = new CloudinaryStorage({
-    cloudinary: cloudinary,
+    cloudinary,
     params: {
         folder: 'odontic_store',
-        allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
-        transformation: [{ width: 800, height: 800, crop: 'limit' }]
+        allowed_formats: ['jpg', 'jpeg', 'png', 'webp']
     }
 });
 
-module.exports = {
-    cloudinary,
-    storage
-};
+module.exports = { cloudinary, storage };

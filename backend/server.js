@@ -31,21 +31,19 @@ app.use(cors({
     'https://rrdentalneeds.online',
     'https://www.rrdentalneeds.online'
   ],
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "blob:", "http:", "https:"],
-      scriptSrc: ["'self'"],
-      styleSrc: ["'self'", "https:", "'unsafe-inline'"],
-      fontSrc: ["'self'", "https:", "data:"],
-      connectSrc: ["'self'", "http:", "https:"],
-    },
-  },
-  crossOriginResourcePolicy: { policy: "cross-origin" },
-}));
+
+app.options('*', cors());
+
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" }
+  })
+);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

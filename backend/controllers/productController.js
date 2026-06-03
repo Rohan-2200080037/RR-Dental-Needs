@@ -1,14 +1,40 @@
 const pool = require('../db');
+const cloudinary = require('../config/cloudinary');
+const fs = require('fs');
+
+const isCloudinaryConfigured = process.env.CLOUDINARY_CLOUD_NAME && 
+                               process.env.CLOUDINARY_CLOUD_NAME !== 'your_cloud_name' &&
+                               process.env.CLOUDINARY_API_KEY && 
+                               process.env.CLOUDINARY_API_KEY !== 'your_api_key' &&
+                               process.env.CLOUDINARY_API_SECRET && 
+                               process.env.CLOUDINARY_API_SECRET !== 'your_api_secret';
+
+const handleImageUpload = async (file) => {
+    if (!file) return null;
+    if (isCloudinaryConfigured) {
+        try {
+            const uploadResult = await cloudinary.uploader.upload(file.path, {
+                folder: 'odontic_store'
+            });
+            // Delete local file after successful upload to Cloudinary
+            fs.unlink(file.path, (err) => {
+                if (err) console.error("Error deleting local temp file:", err);
+            });
+            return uploadResult.secure_url;
+        } catch (err) {
+            console.error("Cloudinary upload failed, falling back to local file path:", err);
+            return `/uploads/${file.filename}`;
+        }
+    } else {
+        return `/uploads/${file.filename}`;
+    }
+};
 
 exports.createProduct = async (req, res) => {
     const { name, description, price, stock_quantity, category } = req.body;
     let image = req.body.image;
     if (req.file) {
-        if (req.file.path.startsWith('http://') || req.file.path.startsWith('https://')) {
-            image = req.file.path; // Cloudinary returns the full URL in .path
-        } else {
-            image = `/uploads/${req.file.filename}`;
-        }
+        image = await handleImageUpload(req.file);
     }
 
     // Auth middleware attaches req.user (which contains sellerId if they are an approved seller)
@@ -74,11 +100,7 @@ exports.updateProduct = async (req, res) => {
     
     let image = req.body.image;
     if (req.file) {
-        if (req.file.path.startsWith('http://') || req.file.path.startsWith('https://')) {
-            image = req.file.path; // Cloudinary returns the full URL in .path
-        } else {
-            image = `/uploads/${req.file.filename}`;
-        }
+        image = await handleImageUpload(req.file);
     }
     
     try {

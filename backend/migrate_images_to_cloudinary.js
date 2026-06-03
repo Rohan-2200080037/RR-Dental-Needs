@@ -1,6 +1,6 @@
 require('dotenv').config();
 const pool = require('./db');
-const { cloudinary } = require('./config/cloudinary');
+const cloudinary = require('./config/cloudinary');
 const fs = require('fs');
 const path = require('path');
 

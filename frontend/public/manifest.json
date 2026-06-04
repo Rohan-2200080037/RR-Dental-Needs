@@ -1,15 +1,54 @@
 {
-  "short_name": "RR Dental Needs",
-  "name": "RR Dental Needs - Advanced E-commerce Platform",
+  "name": "RR Dental Needs",
+  "short_name": "RR Dental",
+  "description": "The #1 online store for dental students — instruments, kits and supplies for all BDS years at affordable prices.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#0d9488",
+  "background_color": "#f8fafc",
+  "lang": "en",
+  "categories": ["shopping", "education", "medical"],
   "icons": [
     {
-      "src": "https://thumbs.dreamstime.com/b/dachdecker-426622104.jpg",
-      "type": "image/jpeg",
-      "sizes": "512x512"
+      "src": "/pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
-  "start_url": ".",
-  "background_color": "#ffffff",
-  "theme_color": "#0ea5e9",
-  "display": "standalone"
+  "shortcuts": [
+    {
+      "name": "Browse Products",
+      "short_name": "Products",
+      "description": "Browse all dental instruments",
+      "url": "/products",
+      "icons": [{ "src": "/pwa-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "1st Year Supplies",
+      "short_name": "1st Year",
+      "url": "/category/1st%20Year",
+      "icons": [{ "src": "/pwa-192x192.png", "sizes": "192x192" }]
+    }
+  ]
 }

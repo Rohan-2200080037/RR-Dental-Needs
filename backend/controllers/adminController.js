@@ -19,6 +19,26 @@ exports.deleteUser = async (req, res) => {
     }
 };
 
+exports.updateUserRole = async (req, res) => {
+    const { id } = req.params;
+    const { role } = req.body;
+    try {
+        await pool.query('UPDATE Users SET role = $1 WHERE id = $2', [role, id]);
+        
+        if (role === 'seller') {
+            const sellerCheck = await pool.query('SELECT id FROM Sellers WHERE user_id = $1', [id]);
+            if (sellerCheck.rows.length === 0) {
+                await pool.query('INSERT INTO Sellers (user_id, approved_status) VALUES ($1, $2)', [id, 'approved']);
+            } else {
+                await pool.query('UPDATE Sellers SET approved_status = $1 WHERE user_id = $2', ['approved', id]);
+            }
+        }
+        res.status(200).json({ message: `User role updated to ${role}.` });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
+
 exports.getSellers = async (req, res) => {
     try {
         const result = await pool.query(`
@@ -42,6 +62,15 @@ exports.updateSellerStatus = async (req, res) => {
 
     try {
         await pool.query('UPDATE Sellers SET approved_status = $1 WHERE id = $2', [status, id]);
+        
+        if (status === 'rejected') {
+            const sellerRes = await pool.query('SELECT user_id FROM Sellers WHERE id = $1', [id]);
+            if (sellerRes.rows.length > 0) {
+                const userId = sellerRes.rows[0].user_id;
+                await pool.query("UPDATE Users SET role = 'user' WHERE id = $1", [userId]);
+            }
+        }
+        
         res.status(200).json({ message: `Seller status updated to ${status}.` });
     } catch (err) {
         res.status(500).json({ message: err.message });

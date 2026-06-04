@@ -74,7 +74,7 @@ const Login = () => {
                         value={credentials.email}
                         onChange={handleChange}
                         required
-                        placeholder="you@student.com"
+                        placeholder="Your email address"
                     />
                     <Input
                         label="Password"

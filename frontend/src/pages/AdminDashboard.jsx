@@ -81,6 +81,17 @@ const AdminDashboard = () => {
         }
     };
 
+    const handleRoleUpdate = async (id, newRole) => {
+        if (!window.confirm(`Are you sure you want to make this user a ${newRole}?`)) return;
+        try {
+            await axios.put(`${import.meta.env.VITE_API_URL}/api/admin/users/${id}/role`, { role: newRole }, { headers: { Authorization: `Bearer ${token}` }});
+            setUsers(users.map(u => u.id === id ? { ...u, role: newRole } : u));
+            showFeedback(`User promoted to ${newRole} successfully.`);
+        } catch (err) {
+            showFeedback(err.response?.data?.message || 'Role update failed.');
+        }
+    };
+
     const handleSellerStatusUpdate = async (sellerId, newStatus) => {
         try {
             await axios.put(`${import.meta.env.VITE_API_URL}/api/admin/sellers/${sellerId}/status`, 
@@ -374,14 +385,26 @@ const AdminDashboard = () => {
                                                         </td>
                                                         <td className="px-6 py-4 text-right bg-slate-200/30 group-hover:bg-transparent transition-colors">
                                                             {u.role !== 'admin' && (
-                                                                <Button 
-                                                                    variant="ghost" 
-                                                                    size="sm" 
-                                                                    className="text-red-500 hover:text-red-700 hover:bg-red-100 rounded-xl transition-all font-bold" 
-                                                                    onClick={() => handleDeleteUser(u.id)}
-                                                                >
-                                                                    Remove
-                                                                </Button>
+                                                                <div className="flex justify-end space-x-2">
+                                                                    {u.role === 'user' && (
+                                                                        <Button 
+                                                                            variant="outline" 
+                                                                            size="sm" 
+                                                                            className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-xl transition-all font-bold border-emerald-200" 
+                                                                            onClick={() => handleRoleUpdate(u.id, 'seller')}
+                                                                        >
+                                                                            Make Seller
+                                                                        </Button>
+                                                                    )}
+                                                                    <Button 
+                                                                        variant="ghost" 
+                                                                        size="sm" 
+                                                                        className="text-red-500 hover:text-red-700 hover:bg-red-100 rounded-xl transition-all font-bold" 
+                                                                        onClick={() => handleDeleteUser(u.id)}
+                                                                    >
+                                                                        Remove
+                                                                    </Button>
+                                                                </div>
                                                             )}
                                                         </td>
                                                     </tr>

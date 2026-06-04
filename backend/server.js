@@ -117,6 +117,13 @@ async function runMigrations() {
       ADD COLUMN IF NOT EXISTS is_saved BOOLEAN DEFAULT TRUE;
     `);
     console.log('Schema migration: is_saved column ensured on Addresses table.');
+
+    await pool.query(`
+      ALTER TABLE Users 
+      ADD COLUMN IF NOT EXISTS reset_password_token TEXT,
+      ADD COLUMN IF NOT EXISTS reset_password_expire TIMESTAMP;
+    `);
+    console.log('Schema migration: reset_password_token and reset_password_expire columns ensured on Users table.');
   } catch (err) {
     console.error('Schema migration error:', err.message);
   }

@@ -112,7 +112,7 @@ const ContactUs = () => {
                                         onChange={handleChange}
                                         required
                                         className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all bg-slate-50 focus:bg-white"
-                                        placeholder="John Doe"
+                                        placeholder="Your name"
                                     />
                                 </div>
                                 <div>
@@ -125,7 +125,7 @@ const ContactUs = () => {
                                         onChange={handleChange}
                                         required
                                         className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all bg-slate-50 focus:bg-white"
-                                        placeholder="john@example.com"
+                                        placeholder="Your email address"
                                     />
                                 </div>
                             </div>

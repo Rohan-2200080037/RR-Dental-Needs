@@ -161,6 +161,7 @@ const SellerDashboard = () => {
         setImagePreviewUrl('');
         setEditingId(product.id);
         setShowForm(true);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     const handleDeleteProduct = async (id) => {

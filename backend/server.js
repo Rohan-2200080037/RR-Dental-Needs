@@ -124,6 +124,18 @@ async function runMigrations() {
       ADD COLUMN IF NOT EXISTS reset_password_expire TIMESTAMP;
     `);
     console.log('Schema migration: reset_password_token and reset_password_expire columns ensured on Users table.');
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS push_subscriptions (
+          id SERIAL PRIMARY KEY,
+          user_id INT NOT NULL REFERENCES Users(id) ON DELETE CASCADE,
+          endpoint TEXT NOT NULL UNIQUE,
+          p256dh VARCHAR(255) NOT NULL,
+          auth VARCHAR(255) NOT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    console.log('Schema migration: push_subscriptions table ensured.');
   } catch (err) {
     console.error('Schema migration error:', err.message);
   }

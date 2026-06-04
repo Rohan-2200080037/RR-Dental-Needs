@@ -57,7 +57,8 @@ exports.verifyPayment = async (req, res) => {
             await client.query('BEGIN');
             
             // Create the order now that payment is verified
-            const { orderId, totalPrice } = await require('./orderController').processOrderCreation(client, req.user.id, {
+            const orderController = require('./orderController');
+            const { orderId, totalPrice, cartItems, lowStockItems } = await orderController.processOrderCreation(client, req.user.id, {
                 ...req.body.orderDetails,
                 paymentStatus: 'Paid',
                 rzpOrderId: razorpay_order_id,
@@ -66,8 +67,29 @@ exports.verifyPayment = async (req, res) => {
 
             await client.query('COMMIT');
 
-            // Trigger notification
-            await require('./notificationController').createNotification(req.user.id, `Payment verified. Order #${orderId} placed successfully.`);
+            // 1. Trigger notification for user
+            const notificationController = require('./notificationController');
+            await notificationController.createNotification(
+                req.user.id, 
+                `Payment verified. Order #${orderId} placed successfully. Amount: ₹${totalPrice}`,
+                `/profile?tab=orders`
+            );
+            
+            // 2. Notify admin and sellers of new order
+            orderController.notifySellersAndAdminsOfNewOrder(orderId, totalPrice, cartItems, req.user.id);
+
+            // 3. Notify sellers of low stock
+            for (let item of lowStockItems) {
+                const sellerRes = await pool.query('SELECT user_id FROM Sellers WHERE id = $1', [item.seller_id]);
+                if (sellerRes.rows.length > 0) {
+                    const sellerUserId = sellerRes.rows[0].user_id;
+                    await notificationController.createNotification(
+                        sellerUserId,
+                        `Low stock alert: Product "${item.name}" has only ${item.stock_quantity} remaining.`,
+                        `/seller`
+                    );
+                }
+            }
             
             res.status(200).json({ message: "Payment verified and order created successfully.", orderId });
         } catch (err) {

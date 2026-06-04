@@ -15,15 +15,35 @@ exports.createOrder = async (req, res) => {
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
-        const { orderId, totalPrice } = await exports.processOrderCreation(client, userId, {
+        const { orderId, totalPrice, cartItems, lowStockItems } = await exports.processOrderCreation(client, userId, {
             name, phone, address, city, state, pincode, paymentMethod,
             shouldSaveAddress, paymentStatus: 'Pending'
         });
         await client.query('COMMIT');
 
-        // Trigger notification
-        await notificationController.createNotification(userId, `Order #${orderId} has been placed successfully. Amount: ₹${totalPrice}`);
+        // 1. Notify user
+        await notificationController.createNotification(
+            userId, 
+            `Order #${orderId} has been placed successfully. Amount: ₹${totalPrice}`,
+            `/profile?tab=orders`
+        );
         logger.info(`Order ${orderId} placed by user ${userId}`);
+
+        // 2. Notify admin and sellers of new order
+        exports.notifySellersAndAdminsOfNewOrder(orderId, totalPrice, cartItems, userId);
+
+        // 3. Notify sellers of low stock
+        for (let item of lowStockItems) {
+            const sellerRes = await pool.query('SELECT user_id FROM Sellers WHERE id = $1', [item.seller_id]);
+            if (sellerRes.rows.length > 0) {
+                const sellerUserId = sellerRes.rows[0].user_id;
+                await notificationController.createNotification(
+                    sellerUserId,
+                    `Low stock alert: Product "${item.name}" has only ${item.stock_quantity} remaining.`,
+                    `/seller`
+                );
+            }
+        }
 
         res.status(201).json({ message: "Order placed successfully.", orderId });
     } catch (err) {
@@ -112,7 +132,22 @@ exports.processOrderCreation = async (client, userId, orderDetails) => {
     // 6. Clear Cart
     await client.query('DELETE FROM Cart WHERE user_id = $1', [userId]);
 
-    return { orderId, totalPrice };
+    // Check low stock products
+    const lowStockItems = [];
+    for (let item of cartItems) {
+        const prodRes = await client.query(
+            'SELECT name, stock_quantity, low_stock_threshold, seller_id FROM Products WHERE id = $1',
+            [item.product_id]
+        );
+        if (prodRes.rows.length > 0) {
+            const prod = prodRes.rows[0];
+            if (prod.stock_quantity <= prod.low_stock_threshold) {
+                lowStockItems.push(prod);
+            }
+        }
+    }
+
+    return { orderId, totalPrice, cartItems, lowStockItems };
 };
 
 exports.getUserOrders = async (req, res) => {
@@ -241,12 +276,19 @@ exports.updateOrderStatus = async (req, res) => {
     }
 
     try {
-        // Usually, an admin updates status, or a seller updates status of orders containing their items.
-        // For simplicity based on requirements, Admin can update any order status, 
-        // Sellers can update order status for their products.
-        // If order_status is tied to the Order table, updating it affects all items.
-
         await pool.query('UPDATE Orders SET order_status = $1 WHERE id = $2', [status, id]);
+
+        // Get user_id of the order to notify them
+        const orderResult = await pool.query('SELECT user_id FROM Orders WHERE id = $1', [id]);
+        if (orderResult.rows.length > 0) {
+            const userId = orderResult.rows[0].user_id;
+            await notificationController.createNotification(
+                userId, 
+                `Your order #${id} status has been updated to "${status}".`,
+                `/profile?tab=orders`
+            );
+        }
+
         res.status(200).json({ message: "Order status updated." });
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -403,5 +445,38 @@ exports.getUserOrdersById = async (req, res) => {
         res.status(200).json(orders);
     } catch (err) {
         res.status(500).json({ message: err.message });
+    }
+};
+
+exports.notifySellersAndAdminsOfNewOrder = async (orderId, totalPrice, cartItems, userId) => {
+    try {
+        const userRes = await pool.query('SELECT name FROM Users WHERE id = $1', [userId]);
+        const purchaserName = userRes.rows[0]?.name || 'A customer';
+
+        // 1. Notify Admin
+        const adminsResult = await pool.query("SELECT id FROM Users WHERE role = 'admin'");
+        for (let admin of adminsResult.rows) {
+            await notificationController.createNotification(
+                admin.id,
+                `New order #${orderId} of ₹${totalPrice} has been placed by ${purchaserName}.`,
+                `/admin`
+            );
+        }
+
+        // 2. Notify Sellers
+        const uniqueSellerIds = [...new Set(cartItems.map(item => item.seller_id))];
+        for (let sellerId of uniqueSellerIds) {
+            const sellerRes = await pool.query('SELECT user_id FROM Sellers WHERE id = $1', [sellerId]);
+            if (sellerRes.rows.length > 0) {
+                const sellerUserId = sellerRes.rows[0].user_id;
+                await notificationController.createNotification(
+                    sellerUserId,
+                    `New order #${orderId} has been placed containing your products.`,
+                    `/seller`
+                );
+            }
+        }
+    } catch (err) {
+        console.error("Error sending order placement notifications to admins/sellers:", err);
     }
 };

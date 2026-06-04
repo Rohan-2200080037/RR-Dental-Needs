@@ -9,4 +9,9 @@ router.get('/', notificationController.getNotifications);
 router.put('/read/:id', notificationController.markAsRead);
 router.delete('/clear-all', notificationController.clearAll);
 
+// Push subscription endpoints
+router.get('/vapid-key', notificationController.getVapidKey);
+router.post('/subscribe', notificationController.subscribe);
+router.post('/unsubscribe', notificationController.unsubscribe);
+
 module.exports = router;

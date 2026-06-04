@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import useAuthStore from '../store/authStore';
-import { ShoppingBagIcon, HeartIcon, UserCircleIcon, XMarkIcon, CheckCircleIcon, ArrowPathIcon, MapPinIcon, PencilSquareIcon, TrashIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { ShoppingBagIcon, HeartIcon, UserCircleIcon, XMarkIcon, CheckCircleIcon, ArrowPathIcon, MapPinIcon, PencilSquareIcon, TrashIcon, PlusIcon, BellIcon } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from 'framer-motion';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
@@ -10,11 +10,16 @@ import Badge from '../components/ui/Badge';
 import Input from '../components/ui/Input';
 import { PageLoader } from '../components/ui/Loader';
 import { indiaData } from '../utils/indiaData';
+import { isPushSupported, getActiveSubscription, subscribeToPush, unsubscribeFromPush } from '../utils/pushManager';
 
 const UserProfile = () => {
     const { user, token } = useAuthStore();
     const [orders, setOrders] = useState([]);
     const [wishlist, setWishlist] = useState([]);
+    const [notifications, setNotifications] = useState([]);
+    const [isPushEnabled, setIsPushEnabled] = useState(false);
+    const [isPushLoading, setIsPushLoading] = useState(false);
+    const [pushSupported, setPushSupported] = useState(false);
     const location = useLocation();
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState(() => {
@@ -35,9 +40,25 @@ const UserProfile = () => {
     const successMessage = location.state?.message;
 
     useEffect(() => {
+        const checkPushStatus = async () => {
+            const supported = isPushSupported();
+            setPushSupported(supported);
+            if (supported) {
+                try {
+                    const sub = await getActiveSubscription();
+                    setIsPushEnabled(!!sub);
+                } catch (e) {
+                    console.error("Error checking active subscription:", e);
+                }
+            }
+        };
+        checkPushStatus();
+    }, []);
+
+    useEffect(() => {
         const fetchUserData = async () => {
             try {
-                const [ordersResult, wishlistResult, addressesResult] = await Promise.allSettled([
+                const [ordersResult, wishlistResult, addressesResult, notificationsResult] = await Promise.allSettled([
                     axios.get(`${import.meta.env.VITE_API_URL}/api/orders/my-orders`, {
                         headers: { Authorization: `Bearer ${token}` }
                     }),
@@ -45,6 +66,9 @@ const UserProfile = () => {
                         headers: { Authorization: `Bearer ${token}` }
                     }),
                     axios.get(`${import.meta.env.VITE_API_URL}/api/addresses`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    }),
+                    axios.get(`${import.meta.env.VITE_API_URL}/api/notifications`, {
                         headers: { Authorization: `Bearer ${token}` }
                     })
                 ]);
@@ -61,6 +85,10 @@ const UserProfile = () => {
 
                 if (addressesResult.status === 'fulfilled') {
                     setAddresses(addressesResult.value.data);
+                }
+
+                if (notificationsResult.status === 'fulfilled') {
+                    setNotifications(notificationsResult.value.data);
                 }
             } catch (err) {
                 setError('Failed to fetch user data.');
@@ -186,6 +214,55 @@ const UserProfile = () => {
         }
     };
 
+    const handlePushToggle = async () => {
+        if (!pushSupported) return;
+        setIsPushLoading(true);
+        try {
+            if (isPushEnabled) {
+                await unsubscribeFromPush(token);
+                setIsPushEnabled(false);
+                setFeedback("Push notifications disabled.");
+            } else {
+                await subscribeToPush(token);
+                setIsPushEnabled(true);
+                setFeedback("Push notifications enabled!");
+            }
+            setTimeout(() => setFeedback(''), 3000);
+        } catch (err) {
+            console.error(err);
+            setFeedback(err.message || "Failed to update subscription.");
+            setTimeout(() => setFeedback(''), 4000);
+        } finally {
+            setIsPushLoading(false);
+        }
+    };
+
+    const handleMarkAsRead = async (id) => {
+        try {
+            await axios.put(`${import.meta.env.VITE_API_URL}/api/notifications/read/${id}`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setNotifications(notifications.map(n => n.id === id ? { ...n, is_read: true } : n));
+        } catch (err) {
+            console.error("Failed to mark notification as read:", err);
+        }
+    };
+
+    const handleClearAllNotifications = async () => {
+        if (!window.confirm("Clear all notifications?")) return;
+        try {
+            await axios.delete(`${import.meta.env.VITE_API_URL}/api/notifications/clear-all`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setNotifications([]);
+            setFeedback("All notifications cleared.");
+            setTimeout(() => setFeedback(''), 3000);
+        } catch (err) {
+            setFeedback("Failed to clear notifications.");
+            setTimeout(() => setFeedback(''), 3000);
+        }
+    };
+
     const TabButton = ({ id, label, icon: Icon, count }) => (
         <button
             onClick={() => setActiveTab(id)}
@@ -301,7 +378,7 @@ const UserProfile = () => {
                             <TabButton id="orders" label="Order History" icon={ShoppingBagIcon} count={orders.length} />
                             <TabButton id="wishlist" label="My Wishlist" icon={HeartIcon} count={wishlist.length} />
                             <TabButton id="addresses" label="Saved Addresses" icon={MapPinIcon} count={addresses.length} />
-                            {/* Additional tabs can be added here easily */}
+                            <TabButton id="notifications" label="Notifications" icon={BellIcon} count={notifications.filter(n => !n.is_read).length} />
                         </div>
                     </div>
 
@@ -499,6 +576,92 @@ const UserProfile = () => {
                                                     <p className="text-sm text-slate-800 font-bold">{addr.city}, {addr.state} - {addr.pincode}</p>
                                                 </div>
                                             </Card>
+                                        ))}
+                                    </div>
+                                )}
+                            </motion.div>
+                        )}
+
+                        {activeTab === 'notifications' && (
+                            <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="space-y-6">
+                                {/* Push settings */}
+                                <Card className="p-6 border-slate-200 bg-white shadow-sm">
+                                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                                        <div>
+                                            <h3 className="text-lg font-bold text-slate-900 mb-1">Push Notifications</h3>
+                                            <p className="text-sm text-slate-500 font-medium">
+                                                Receive real-time alerts about your orders, account status, and inventory.
+                                            </p>
+                                            {!pushSupported && (
+                                                <p className="text-xs text-red-500 font-semibold mt-1">
+                                                    * Web Push is not supported in this browser or environment (requires HTTPS/Localhost).
+                                                </p>
+                                            )}
+                                        </div>
+                                        <div className="flex items-center space-x-3 self-end sm:self-center">
+                                            {isPushLoading && (
+                                                <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent"></div>
+                                            )}
+                                            <button
+                                                disabled={!pushSupported || isPushLoading}
+                                                onClick={handlePushToggle}
+                                                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
+                                                    isPushEnabled ? 'bg-primary' : 'bg-slate-200'
+                                                } disabled:opacity-50 disabled:cursor-not-allowed`}
+                                            >
+                                                <span
+                                                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                                        isPushEnabled ? 'translate-x-5' : 'translate-x-0'
+                                                    }`}
+                                                />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </Card>
+
+                                {/* Title and actions */}
+                                <div className="flex justify-between items-center">
+                                    <h3 className="font-bold text-slate-900 text-lg">Your Alerts</h3>
+                                    {notifications.length > 0 && (
+                                        <button 
+                                            onClick={handleClearAllNotifications}
+                                            className="text-xs font-bold text-red-500 hover:text-red-700 transition-colors uppercase tracking-wider"
+                                        >
+                                            Clear All
+                                        </button>
+                                    )}
+                                </div>
+
+                                {notifications.length === 0 ? (
+                                    <div className="text-center py-16 bg-white rounded-xl border border-slate-200 border-dashed">
+                                        <BellIcon className="w-16 h-16 mx-auto text-slate-300 mb-4" />
+                                        <h3 className="text-lg font-bold text-slate-900 mb-2">No alerts yet</h3>
+                                        <p className="text-slate-500 font-medium">You are all caught up!</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        {notifications.map(notif => (
+                                            <div 
+                                                key={notif.id} 
+                                                onClick={() => !notif.is_read && handleMarkAsRead(notif.id)}
+                                                className={`p-5 rounded-2xl border transition-all flex justify-between items-start gap-4 cursor-pointer ${
+                                                    notif.is_read 
+                                                        ? 'bg-white border-slate-100 hover:bg-slate-50/50' 
+                                                        : 'bg-teal-50/40 border-teal-100 hover:bg-teal-50/60 shadow-sm'
+                                                }`}
+                                            >
+                                                <div className="flex-1">
+                                                    <p className={`text-sm font-medium ${notif.is_read ? 'text-slate-600' : 'text-slate-900 font-semibold'}`}>
+                                                        {notif.message}
+                                                    </p>
+                                                    <span className="text-xs text-slate-400 mt-2 block font-medium">
+                                                        {new Date(notif.created_at).toLocaleString()}
+                                                    </span>
+                                                </div>
+                                                {!notif.is_read && (
+                                                    <span className="w-2.5 h-2.5 bg-primary rounded-full shrink-0 mt-2.5" title="Unread" />
+                                                )}
+                                            </div>
                                         ))}
                                     </div>
                                 )}

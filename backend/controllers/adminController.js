@@ -25,6 +25,7 @@ exports.updateUserRole = async (req, res) => {
     try {
         await pool.query('UPDATE Users SET role = $1 WHERE id = $2', [role, id]);
         
+        const notificationController = require('./notificationController');
         if (role === 'seller') {
             const sellerCheck = await pool.query('SELECT id FROM Sellers WHERE user_id = $1', [id]);
             if (sellerCheck.rows.length === 0) {
@@ -32,6 +33,17 @@ exports.updateUserRole = async (req, res) => {
             } else {
                 await pool.query('UPDATE Sellers SET approved_status = $1 WHERE user_id = $2', ['approved', id]);
             }
+            await notificationController.createNotification(
+                id, 
+                "Your account has been upgraded to a Seller. You can now access the Seller Dashboard.",
+                "/profile"
+            );
+        } else if (role === 'user') {
+            await notificationController.createNotification(
+                id, 
+                "Your seller access has been revoked. Your role is now set to User.",
+                "/profile"
+            );
         }
         res.status(200).json({ message: `User role updated to ${role}.` });
     } catch (err) {
@@ -63,11 +75,25 @@ exports.updateSellerStatus = async (req, res) => {
     try {
         await pool.query('UPDATE Sellers SET approved_status = $1 WHERE id = $2', [status, id]);
         
-        if (status === 'rejected') {
-            const sellerRes = await pool.query('SELECT user_id FROM Sellers WHERE id = $1', [id]);
-            if (sellerRes.rows.length > 0) {
-                const userId = sellerRes.rows[0].user_id;
+        const sellerRes = await pool.query('SELECT user_id FROM Sellers WHERE id = $1', [id]);
+        if (sellerRes.rows.length > 0) {
+            const userId = sellerRes.rows[0].user_id;
+            const notificationController = require('./notificationController');
+
+            if (status === 'rejected') {
                 await pool.query("UPDATE Users SET role = 'user' WHERE id = $1", [userId]);
+                await notificationController.createNotification(
+                    userId, 
+                    "Your seller application has been rejected. You remain a regular user.",
+                    "/profile"
+                );
+            } else if (status === 'approved') {
+                await pool.query("UPDATE Users SET role = 'seller' WHERE id = $1", [userId]);
+                await notificationController.createNotification(
+                    userId, 
+                    "Your seller application has been approved! Welcome aboard.",
+                    "/profile"
+                );
             }
         }
         

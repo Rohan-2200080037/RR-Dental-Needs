@@ -90,6 +90,9 @@ export default defineConfig({
 
       // ── Workbox (Service Worker) configuration ───────────────────
       workbox: {
+        // Import custom push worker script
+        importScripts: ['/sw-push.js'],
+
         // Cache all built JS/CSS/HTML assets
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,woff,woff2}'],
 

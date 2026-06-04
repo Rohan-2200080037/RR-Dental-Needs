@@ -161,7 +161,12 @@ const SellerDashboard = () => {
         setImagePreviewUrl('');
         setEditingId(product.id);
         setShowForm(true);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setTimeout(() => {
+            const formElement = document.getElementById('product-form');
+            if (formElement) {
+                formElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }, 100);
     };
 
     const handleDeleteProduct = async (id) => {
@@ -330,7 +335,7 @@ const SellerDashboard = () => {
                     )}                    {(activeTab === 'products' || activeTab === 'add-product') ? (
                         <div className="space-y-8">
                             {showForm && (
-                                <Card className="premium-card p-0 overflow-hidden animate-premium border-t-4 border-t-primary shadow-2xl">
+                                <Card id="product-form" className="premium-card p-0 overflow-hidden animate-premium border-t-4 border-t-primary shadow-2xl">
                                     <div className="p-8 bg-slate-50/50 border-b border-slate-100">
                                         <h3 className="text-xl font-black text-slate-900 tracking-tight">
                                             {editingId ? 'Edit Product Details' : 'Create New Product'}

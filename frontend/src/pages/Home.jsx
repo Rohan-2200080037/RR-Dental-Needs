@@ -12,6 +12,8 @@ const Home = () => {
     const [products, setProducts] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [loading, setLoading] = useState(true);
+    const [deferredPrompt, setDeferredPrompt] = useState(null);
+    const [showInstallPrompt, setShowInstallPrompt] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -26,7 +28,27 @@ const Home = () => {
             }
         };
         fetchProducts();
+
+        const handleBeforeInstallPrompt = (e) => {
+            e.preventDefault();
+            setDeferredPrompt(e);
+            setShowInstallPrompt(true);
+        };
+        window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+        return () => {
+            window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+        };
     }, []);
+
+    const handleInstallClick = async () => {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log(`User response to the install prompt: ${outcome}`);
+        setDeferredPrompt(null);
+        setShowInstallPrompt(false);
+    };
 
     const handleSearch = (e) => {
         e.preventDefault();
@@ -201,6 +223,33 @@ const Home = () => {
                     </>
                 )}
             </section>
+
+            {/* PWA Install Prompt */}
+            {showInstallPrompt && (
+                <div className="fixed bottom-4 right-4 z-50 bg-white p-4 rounded-2xl shadow-2xl border border-slate-100 max-w-sm flex items-start space-x-4 animate-premium">
+                    <div className="bg-teal-50 p-2 rounded-xl flex items-center justify-center">
+                        <span className="text-2xl leading-none">📱</span>
+                    </div>
+                    <div className="flex-1">
+                        <h4 className="font-bold text-slate-900 text-sm">Install RR Dental App</h4>
+                        <p className="text-xs text-slate-500 mt-1 mb-3">There is an app for this store and you can install it for a better experience!</p>
+                        <div className="flex space-x-2">
+                            <button 
+                                onClick={handleInstallClick}
+                                className="bg-primary text-white text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-teal-700 transition-colors"
+                            >
+                                Install App
+                            </button>
+                            <button 
+                                onClick={() => setShowInstallPrompt(false)}
+                                className="bg-slate-100 text-slate-600 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-slate-200 transition-colors"
+                            >
+                                Not Now
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

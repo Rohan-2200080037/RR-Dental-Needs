@@ -1,0 +1,18 @@
+User-agent: *
+Allow: /
+
+# Block private/auth routes from crawling
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /cart
+Disallow: /checkout
+Disallow: /payment-status
+Disallow: /profile
+Disallow: /orders
+Disallow: /order/
+Disallow: /admin
+Disallow: /seller
+
+Sitemap: https://rrdentalneeds.online/sitemap.xml

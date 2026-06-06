@@ -2000,3 +2000,5 @@
 {"level":"info","message":"GET /api/products","timestamp":"2026-06-06T03:28:39.164Z"}
 {"level":"info","message":"GET /api/products","timestamp":"2026-06-06T03:33:07.264Z"}
 {"level":"info","message":"GET /api/products","timestamp":"2026-06-06T03:33:07.790Z"}
+{"level":"info","message":"POST /api/auth/login","timestamp":"2026-06-06T04:13:54.417Z"}
+{"level":"info","message":"POST /api/auth/login","timestamp":"2026-06-06T04:14:02.180Z"}

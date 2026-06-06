@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import useAuthStore from '../store/authStore';
@@ -6,9 +6,11 @@ import useCartStore from '../store/cartStore';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import Input from '../components/ui/Input';
-import { ShieldCheckIcon, TruckIcon, BanknotesIcon, CreditCardIcon, MapPinIcon, PlusIcon, CheckIcon } from '@heroicons/react/24/outline';
+import { ShieldCheckIcon, TruckIcon, BanknotesIcon, CreditCardIcon, MapPinIcon, CheckIcon } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from 'framer-motion';
 import { indiaData } from '../utils/indiaData';
+
+const FREE_SHIPPING_THRESHOLD = 500;
 
 const Checkout = () => {
     const { items, fetchCart, clearCartState } = useCartStore();
@@ -32,6 +34,61 @@ const Checkout = () => {
     const [states] = useState(Object.keys(indiaData));
     const [cities, setCities] = useState([]);
     const [orderPlaced, setOrderPlaced] = useState(false);
+
+    const [shippingCharge, setShippingCharge] = useState(0);
+    const [shippingRate, setShippingRate] = useState(null);
+    const [shippingLoading, setShippingLoading] = useState(false);
+    const prevPincodeRef = useRef('');
+
+    const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const qualifiesFreeShipping = subtotal >= FREE_SHIPPING_THRESHOLD;
+    const totalAmount = subtotal + shippingCharge;
+
+    const fetchRates = useCallback(async (pincode) => {
+        if (!pincode || pincode.length !== 6 || qualifiesFreeShipping) {
+            setShippingCharge(0);
+            setShippingRate(null);
+            setShippingLoading(false);
+            return;
+        }
+        setShippingLoading(true);
+        try {
+            const { data } = await axios.get(`${import.meta.env.VITE_API_URL}/api/shipping/rates`, {
+                params: { pincode, weight: 0.5 },
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (data.recommended) {
+                setShippingCharge(data.recommended.rate);
+                setShippingRate(data.recommended);
+            } else if (data.available?.length > 0) {
+                const cheapest = data.available.reduce((a, b) => (a.rate < b.rate ? a : b));
+                setShippingCharge(cheapest.rate);
+                setShippingRate(cheapest);
+            }
+        } catch (err) {
+            console.error("Shipping rate fetch failed:", err);
+            setShippingCharge(80);
+            setShippingRate({ courier_name: 'Standard Courier', rate: 80 });
+        } finally {
+            setShippingLoading(false);
+        }
+    }, [qualifiesFreeShipping, token]);
+
+    useEffect(() => {
+        if (qualifiesFreeShipping) {
+            setShippingCharge(0);
+            setShippingRate(null);
+            setShippingLoading(false);
+        }
+    }, [qualifiesFreeShipping]);
+
+    useEffect(() => {
+        const pincode = formData.pincode;
+        if (pincode && pincode.length === 6 && pincode !== prevPincodeRef.current) {
+            prevPincodeRef.current = pincode;
+            if (!qualifiesFreeShipping) fetchRates(pincode);
+        }
+    }, [formData.pincode, fetchRates, qualifiesFreeShipping]);
 
     useEffect(() => {
         const loadAddresses = async () => {
@@ -67,10 +124,6 @@ const Checkout = () => {
         }
     }, [items, navigate, orderPlaced]);
 
-    const calculateTotal = () => {
-        return items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    };
-
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
         if (e.target.name === 'state') {
@@ -95,43 +148,52 @@ const Checkout = () => {
         setLoading(true);
         setError(null);
 
+        if (!formData.name || !formData.phone || !formData.address || !formData.city || !formData.state || !formData.pincode) {
+            setError("All address fields are required.");
+            setLoading(false);
+            return;
+        }
+
+        const orderPayload = {
+            ...formData,
+            paymentMethod,
+            shouldSaveAddress,
+            shippingCharge,
+            shippingProvider: qualifiesFreeShipping ? 'Free Shipping' : 'Flat Shipping',
+        };
+
         try {
-            if (paymentMethod === 'PhonePe') {
-                const totalAmount = calculateTotal();
+            if (paymentMethod === 'COD') {
+                await axios.post(`${import.meta.env.VITE_API_URL}/api/orders`, orderPayload, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                setOrderPlaced(true);
+                clearCartState();
+                navigate('/profile?tab=orders', { state: { message: 'Order placed successfully!' } });
+            } else if (paymentMethod === 'PhonePe') {
                 const { data } = await axios.post(`${import.meta.env.VITE_API_URL}/api/payment/phonepe-initiate`, 
                     { 
                         amount: totalAmount,
-                        orderDetails: { ...formData, shouldSaveAddress }
+                        orderDetails: { ...formData, shouldSaveAddress, shippingCharge, shippingProvider: qualifiesFreeShipping ? 'Free Shipping' : 'Flat Shipping' }
                     },
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
 
-                // Store orderDetails in localStorage so we can retrieve them on the return page
                 localStorage.setItem('pendingOrder', JSON.stringify({
                     ...formData,
                     items,
                     totalAmount,
-                    shouldSaveAddress
+                    shouldSaveAddress,
+                    shippingCharge,
+                    shippingProvider: qualifiesFreeShipping ? 'Free Shipping' : 'Flat Shipping'
                 }));
 
-                // Redirect to PhonePe
                 window.location.href = data.url;
-                return;
-            } else if (paymentMethod === 'COD') {
-                // COD Flow
-                await axios.post(`${import.meta.env.VITE_API_URL}/api/orders`, 
-                    { ...formData, paymentMethod, shouldSaveAddress },
-                    { headers: { Authorization: `Bearer ${token}` } }
-                );
-                
-                setOrderPlaced(true);
-                clearCartState();
-                navigate('/profile?tab=orders', { state: { message: 'Order placed successfully!' } });
             }
         } catch (err) {
              setError(err.response?.data?.message || 'Failed to place order.');
         } finally {
-            if (paymentMethod !== 'Razorpay' && paymentMethod !== 'PhonePe') setLoading(false);
+            if (paymentMethod !== 'COD') setLoading(false);
         }
     };
 
@@ -152,7 +214,6 @@ const Checkout = () => {
 
                 <div className="lg:grid lg:grid-cols-12 lg:gap-8 lg:items-start">
                     
-                    {/* Checkout Form */}
                     <div className="lg:col-span-8">
                         <form id="checkout-form" onSubmit={handleCheckout}>
                             <Card className="p-6 sm:p-8 mb-6 border-slate-200 shadow-sm">
@@ -340,16 +401,10 @@ const Checkout = () => {
                                         </div>
                                     </label>
                                 </div>
-                                <div className="mt-6 flex items-center justify-center space-x-4 opacity-50 grayscale transition-all hover:grayscale-0">
-                                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/UPI-Logo-vector.svg/1200px-UPI-Logo-vector.svg.png" alt="UPI" className="h-4" />
-                                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Visa_Inc._logo.svg/2560px-Visa_Inc._logo.svg.png" alt="Visa" className="h-3" />
-                                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Mastercard-logo.svg/1280px-Mastercard-logo.svg.png" alt="Mastercard" className="h-5" />
-                                </div>
                             </Card>
                         </form>
                     </div>
 
-                    {/* Order Summary Checkout preview */}
                     <div className="lg:col-span-4 mt-8 lg:mt-0">
                         <Card className="p-6 sm:p-8 sticky top-24 border-slate-200 shadow-md">
                             <h3 className="text-lg font-bold text-slate-900 mb-6 border-b border-slate-100 pb-4">Order Summary</h3>
@@ -374,17 +429,42 @@ const Checkout = () => {
                             <dl className="space-y-4 text-sm text-slate-600 border-t border-slate-100 pt-4">
                                 <div className="flex justify-between items-center">
                                     <dt>Subtotal</dt>
-                                    <dd className="font-semibold text-slate-900">₹{calculateTotal().toLocaleString()}</dd>
+                                    <dd className="font-semibold text-slate-900">₹{subtotal.toLocaleString()}</dd>
                                 </div>
+
                                 <div className="flex justify-between items-center">
-                                    <dt>Shipping estimate</dt>
-                                    <dd className="font-semibold text-emerald-600 uppercase tracking-wider text-xs bg-emerald-50 px-2 py-1 rounded">Free Delivery</dd>
+                                    <dt>Delivery Charge</dt>
+                                    <dd>
+                                        {shippingLoading ? (
+                                            <span className="inline-flex items-center gap-1.5 text-xs text-slate-400">
+                                                <span className="w-3 h-3 border-2 border-slate-300 border-t-primary rounded-full animate-spin"></span>
+                                                Calculating...
+                                            </span>
+                                        ) : qualifiesFreeShipping ? (
+                                            <span className="font-semibold text-emerald-600 uppercase tracking-wider text-xs bg-emerald-50 px-2 py-1 rounded">
+                                                FREE
+                                            </span>
+                                        ) : shippingCharge > 0 ? (
+                                            <span className="font-semibold text-slate-900">₹{shippingCharge.toLocaleString()}</span>
+                                        ) : (
+                                            <span className="text-xs text-slate-400">Enter pincode</span>
+                                        )}
+                                    </dd>
                                 </div>
+
                                 <div className="pt-4 mt-4 border-t border-slate-200 flex justify-between items-center bg-slate-50/50 -mx-4 px-4 py-3 rounded-lg">
                                     <dt className="text-base font-bold text-slate-900">Total Amount</dt>
-                                    <dd className="text-xl font-extrabold text-primary">₹{calculateTotal().toLocaleString()}</dd>
+                                    <dd className="text-xl font-extrabold text-primary">₹{totalAmount.toLocaleString()}</dd>
                                 </div>
                             </dl>
+
+                            {!qualifiesFreeShipping && subtotal > 0 && (
+                                <div className="mt-3 text-center">
+                                    <p className="text-[10px] text-slate-400 font-medium">
+                                        Free delivery on orders above ₹{FREE_SHIPPING_THRESHOLD.toLocaleString()}
+                                    </p>
+                                </div>
+                            )}
 
                             <div className="mt-6 space-y-4 pt-4">
                                 <Button 
@@ -396,7 +476,7 @@ const Checkout = () => {
                                     isLoading={loading}
                                     disabled={items.length === 0}
                                 >
-                                    Confirm Order
+                                    {totalAmount > 0 ? `Pay ₹${totalAmount.toLocaleString()}` : 'Confirm Order'}
                                 </Button>
                                 <div className="text-center flex items-center justify-center text-xs text-slate-500 font-medium space-x-1">
                                     <ShieldCheckIcon className="w-4 h-4" />

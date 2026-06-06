@@ -9,7 +9,8 @@ import {
   StarIcon,
   Cog6ToothIcon,
   ArrowRightOnRectangleIcon,
-  XMarkIcon
+  XMarkIcon,
+  TruckIcon
 } from '@heroicons/react/24/outline';
 import useAuthStore from '../../store/authStore';
 
@@ -37,6 +38,7 @@ const Sidebar = ({ isAdmin = false, activeTab, onTabChange, onClose }) => {
     { name: 'My Products', id: 'products', icon: ShoppingBagIcon },
     { name: 'Add Product', id: 'add-product', icon: ShoppingBagIcon },
     { name: 'Orders', id: 'orders', icon: ClipboardDocumentListIcon },
+    { name: 'Logistics', id: 'logistics', icon: TruckIcon },
   ];
 
   const links = isAdmin ? adminLinks : sellerLinks;

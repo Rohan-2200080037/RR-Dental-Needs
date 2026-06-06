@@ -100,6 +100,13 @@ const OrderHistory = () => {
                                                         </div>
                                                     )}
                                                 </div>
+                                                <div className="mt-4 text-xs bg-slate-50 border border-slate-200 rounded-xl p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-slate-600">
+                                                    <div>
+                                                        <p className="font-semibold text-slate-700">Shipping: <span className={order.shipping_charge > 0 ? 'text-slate-700' : 'text-emerald-600'}>{order.shipping_charge > 0 ? `₹${Number(order.shipping_charge).toLocaleString()}` : 'FREE'}</span></p>
+                                                        <p className="text-[10px] mt-0.5">Status: <span className="font-bold text-teal-600">{order.shipping_status || 'Pending'}</span></p>
+                                                        {order.courier_name && <p className="text-[10px] mt-0.5">Courier: {order.courier_name} {order.tracking_number ? `| ${order.tracking_number}` : ''}</p>}
+                                                    </div>
+                                                </div>
                                             </div>
                                             <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-center border-t sm:border-t-0 pt-4 sm:pt-0">
                                                 <div className="mb-0 sm:mb-2 text-left sm:text-right">

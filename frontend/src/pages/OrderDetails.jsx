@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import useAuthStore from '../store/authStore';
-import { CheckCircleIcon, XMarkIcon, TruckIcon, ClipboardDocumentCheckIcon, ArchiveBoxIcon } from '@heroicons/react/24/outline';
-import { motion } from 'framer-motion';
+import { CheckCircleIcon, XMarkIcon, TruckIcon, ClipboardDocumentCheckIcon, ArchiveBoxIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
@@ -125,11 +124,11 @@ const OrderDetails = () => {
                             {/* Unified Totals Section */}
                             <tr>
                                 <td colSpan="3" style={{ padding: '12px', border: '1px solid #e2e8f0', textAlign: 'right', fontWeight: 'bold', backgroundColor: '#f8fafc', WebkitPrintColorAdjust: 'exact' }}>Subtotal</td>
-                                <td style={{ padding: '12px', border: '1px solid #e2e8f0', textAlign: 'right', fontWeight: 'bold' }}>₹{Number(order.total_price).toLocaleString()}</td>
+                                <td style={{ padding: '12px', border: '1px solid #e2e8f0', textAlign: 'right', fontWeight: 'bold' }}>₹{Number(order.items?.reduce((s, i) => s + Number(i.price) * Number(i.quantity), 0)).toLocaleString()}</td>
                             </tr>
                             <tr>
                                 <td colSpan="3" style={{ padding: '12px', border: '1px solid #e2e8f0', textAlign: 'right', fontWeight: 'bold', backgroundColor: '#f8fafc', WebkitPrintColorAdjust: 'exact' }}>Shipping Charges</td>
-                                <td style={{ padding: '12px', border: '1px solid #e2e8f0', textAlign: 'right', fontWeight: 'bold' }}>₹0.00</td>
+                                <td style={{ padding: '12px', border: '1px solid #e2e8f0', textAlign: 'right', fontWeight: 'bold' }}>₹{Number(order.shipping_charge || 0).toLocaleString()}</td>
                             </tr>
                             <tr style={{ backgroundColor: '#1e3a8a', color: 'white', WebkitPrintColorAdjust: 'exact' }}>
                                 <td colSpan="3" style={{ padding: '15px', border: '1px solid #1e3a8a', textAlign: 'right', fontWeight: '900', fontSize: '12pt', textTransform: 'uppercase' }}>Grand Total (INR)</td>
@@ -183,6 +182,48 @@ const OrderDetails = () => {
                                     </div>
                                 </div>
                             )}
+                        </Card>
+ 
+                        {/* Shipping Information */}
+                        <Card className="p-8 border border-teal-200 bg-teal-50/20 relative overflow-hidden">
+                            <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
+                                <TruckIcon className="w-32 h-32 text-teal-600" />
+                            </div>
+                            <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+                                <TruckIcon className="w-6 h-6 text-teal-600" /> Shipping Information
+                            </h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-slate-700">
+                                <div className="space-y-3">
+                                    <p className="text-sm">
+                                        <span className="font-semibold text-slate-500">Shipping Charge:</span>
+                                        <span className={`font-bold ml-1 ${order.shipping_charge > 0 ? 'text-slate-800' : 'text-emerald-600'}`}>
+                                            {order.shipping_charge > 0 ? `₹${Number(order.shipping_charge).toLocaleString()}` : 'FREE Delivery'}
+                                        </span>
+                                    </p>
+                                    <p className="text-sm">
+                                        <span className="font-semibold text-slate-500">Courier:</span> <span className="font-bold text-slate-800">{order.courier_name || 'Not assigned'}</span>
+                                    </p>
+                                </div>
+                                <div className="space-y-3">
+                                    <p className="text-sm">
+                                        <span className="font-semibold text-slate-500">Tracking Number:</span>
+                                        <span className="font-mono font-bold text-teal-600 select-all ml-1">{order.tracking_number || 'Not available'}</span>
+                                        {order.tracking_number && (
+                                            <a href={`/track/${order.tracking_number}`} target="_blank" rel="noopener noreferrer" className="ml-2 text-[10px] font-bold text-blue-600 underline underline-offset-2">Track</a>
+                                        )}
+                                    </p>
+                                    <p className="text-sm">
+                                        <span className="font-semibold text-slate-500">Shipping Status:</span>
+                                        <Badge variant={
+                                            order.shipping_status === 'Delivered' ? 'success' :
+                                            order.shipping_status === 'Shipped' ? 'info' :
+                                            order.shipping_status === 'Packed' ? 'warning' : 'warning'
+                                        } className="ml-1">
+                                            {order.shipping_status || 'Pending'}
+                                        </Badge>
+                                    </p>
+                                </div>
+                            </div>
                         </Card>
 
                         {/* Items List */}
@@ -249,12 +290,42 @@ const OrderDetails = () => {
                                 </div>
                                 <div className="flex justify-between items-center">
                                     <span className="text-slate-500 font-bold text-xs uppercase tracking-wider">Status</span>
-                                    <Badge variant={order.payment_status === 'Paid' ? 'success' : 'warning'}>
+                                    <Badge variant={order.payment_status === 'Completed' ? 'success' : 'warning'}>
                                         {order.payment_status || 'Pending'}
                                     </Badge>
                                 </div>
+                                <div className="pt-4 border-t border-slate-100 space-y-2">
+                                    <div className="flex justify-between items-center text-xs">
+                                        <span className="text-slate-500 font-semibold">Subtotal</span>
+                                        <span className="text-slate-700 font-bold">
+                                            ₹{(parseFloat(order.total_price) - parseFloat(order.shipping_charge || 0)).toLocaleString()}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-xs">
+                                        <span className="text-slate-500 font-semibold">Delivery Charge</span>
+                                        <span className={`font-bold ${order.shipping_charge > 0 ? 'text-slate-700' : 'text-emerald-600'}`}>
+                                            {order.shipping_charge > 0 ? `₹${parseFloat(order.shipping_charge).toLocaleString()}` : 'FREE'}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between items-center pt-2 border-t border-slate-100">
+                                        <span className="text-slate-800 font-bold text-xs uppercase tracking-wider">Total</span>
+                                        <span className="text-primary font-extrabold">₹{parseFloat(order.total_price).toLocaleString()}</span>
+                                    </div>
+                                </div>
                             </div>
                         </Card>
+
+                        {order.payment_method === 'COD' && order.payment_status === 'Pending' && (
+                            <Card className="p-6 border border-amber-200 bg-amber-50/30">
+                                <div className="flex items-center gap-3">
+                                    <ShieldCheckIcon className="w-5 h-5 text-amber-600 shrink-0" />
+                                    <div>
+                                        <h3 className="text-sm font-bold text-amber-800">Cash on Delivery</h3>
+                                        <p className="text-xs text-amber-600 font-medium">Pay ₹{parseFloat(order.total_price).toLocaleString()} at the time of delivery.</p>
+                                    </div>
+                                </div>
+                            </Card>
+                        )}
 
                         <div className="space-y-4">
                             {order.order_status === 'Delivered' ? (

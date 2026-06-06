@@ -16,6 +16,7 @@ const reviewRoutes = require('./routes/reviewRoutes');
 const contactRoutes = require('./routes/contactRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
+const shippingRoutes = require('./routes/shippingRoutes');
 const { notFound, errorHandler } = require('./middlewares/errorMiddleware');
 const path = require('path');
 
@@ -99,6 +100,7 @@ app.use('/api/reviews', reviewRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/shipping', shippingRoutes);
 
 // Basic route
 app.get('/', (req, res) => {
@@ -136,6 +138,43 @@ async function runMigrations() {
       );
     `);
     console.log('Schema migration: push_subscriptions table ensured.');
+
+    // ── Shipping & Order Status Migrations ──
+    await pool.query(`
+      ALTER TABLE orders 
+      ADD COLUMN IF NOT EXISTS shipping_charge DECIMAL(10, 2) DEFAULT 0.00,
+      ADD COLUMN IF NOT EXISTS shipping_status VARCHAR(50) DEFAULT 'Pending',
+      ADD COLUMN IF NOT EXISTS courier_name VARCHAR(100),
+      ADD COLUMN IF NOT EXISTS tracking_number VARCHAR(100),
+      ADD COLUMN IF NOT EXISTS shipment_id VARCHAR(50),
+      ADD COLUMN IF NOT EXISTS shipping_provider VARCHAR(50) DEFAULT '';
+    `);
+    console.log('Schema migration: shipping columns ensured on orders table.');
+
+    await pool.query(`
+      ALTER TABLE users
+      ADD COLUMN IF NOT EXISTS is_cod_blocked BOOLEAN DEFAULT FALSE;
+    `);
+    console.log('Schema migration: is_cod_blocked column ensured on users table.');
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS logistics_settings (
+        id SERIAL PRIMARY KEY,
+        max_cod_amount DECIMAL(10, 2) DEFAULT 10000.00,
+        cod_enabled BOOLEAN DEFAULT TRUE,
+        blocked_pincodes TEXT DEFAULT '',
+        high_value_threshold DECIMAL(10, 2) DEFAULT 5000.00,
+        otp_verification_enabled BOOLEAN DEFAULT TRUE
+      );
+    `);
+    const settingsCheck = await pool.query('SELECT * FROM logistics_settings LIMIT 1');
+    if (settingsCheck.rows.length === 0) {
+      await pool.query(`
+        INSERT INTO logistics_settings (max_cod_amount, cod_enabled, blocked_pincodes, high_value_threshold, otp_verification_enabled)
+        VALUES (10000.00, TRUE, '', 5000.00, TRUE);
+      `);
+    }
+    console.log('Schema migration: logistics_settings table ensured.');
   } catch (err) {
     console.error('Schema migration error:', err.message);
   }

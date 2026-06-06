@@ -19,6 +19,7 @@ router.delete('/:id', isRole(['user', 'seller', 'admin']), orderController.delet
 // Status and Admin specific
 router.put('/:id/status', isRole(['seller', 'admin']), orderController.updateOrderStatus);
 router.put('/:id/payment-status', isRole(['seller', 'admin']), orderController.updatePaymentStatus);
+router.put('/:id/shipping', isRole(['seller', 'admin']), orderController.updateShipping);
 router.delete('/:id/admin', isRole(['admin']), orderController.deleteOrderAsAdmin);
 
 module.exports = router;

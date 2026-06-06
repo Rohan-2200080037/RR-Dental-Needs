@@ -32,6 +32,15 @@ const SellerDashboard = () => {
     const [imageFile, setImageFile] = useState(null);
     const [imagePreviewUrl, setImagePreviewUrl] = useState('');
 
+    // Shipping management states
+    const [shippingSubTab, setShippingSubTab] = useState('pending'); // 'pending', 'shipped', 'delivered'
+    const [editingShipping, setEditingShipping] = useState(null);
+    const [shippingForm, setShippingForm] = useState({
+        courier_name: '',
+        tracking_number: '',
+        shipping_status: 'Pending'
+    });
+
     const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -76,7 +85,7 @@ const SellerDashboard = () => {
                     } else {
                         setShowForm(false);
                     }
-                } else if (activeTab === 'orders') {
+                } else if (activeTab === 'orders' || activeTab === 'logistics') {
                     const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/orders/seller-orders`, {
                         headers: { Authorization: `Bearer ${token}` }
                     });
@@ -213,6 +222,99 @@ const SellerDashboard = () => {
             setFeedback(err.response?.data?.message || 'Failed to update payment status');
             setTimeout(() => setFeedback(''), 3000);
         }
+    };
+
+    const handleCreateShipment = async (orderId) => {
+        try {
+            setLoading(true);
+            const { data } = await axios.post(`${import.meta.env.VITE_API_URL}/api/shipping/create/${orderId}`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setFeedback(`Shipment created! SR ID: ${data.shipmentId}`);
+            await refreshOrders();
+            setTimeout(() => setFeedback(''), 5000);
+        } catch (err) {
+            setError(err.response?.data?.message || 'Failed to create shipment');
+            setTimeout(() => setError(null), 5000);
+        } finally { setLoading(false); }
+    };
+
+    const handleAssignAWB = async (shipmentId, courierId) => {
+        try {
+            setLoading(true);
+            const { data } = await axios.post(`${import.meta.env.VITE_API_URL}/api/shipping/assign-awb/${shipmentId}`, { courierId }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setFeedback(`AWB assigned: ${data.awb}`);
+            await refreshOrders();
+            setTimeout(() => setFeedback(''), 5000);
+        } catch (err) {
+            setError(err.response?.data?.message || 'Failed to assign AWB');
+            setTimeout(() => setError(null), 5000);
+        } finally { setLoading(false); }
+    };
+
+    const handleRequestPickup = async (shipmentId) => {
+        try {
+            setLoading(true);
+            await axios.post(`${import.meta.env.VITE_API_URL}/api/shipping/pickup/${shipmentId}`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setFeedback("Pickup requested!");
+            await refreshOrders();
+            setTimeout(() => setFeedback(''), 3000);
+        } catch (err) {
+            setError(err.response?.data?.message || 'Failed to request pickup');
+            setTimeout(() => setError(null), 5000);
+        } finally { setLoading(false); }
+    };
+
+    const handleGenerateLabel = async (shipmentId) => {
+        try {
+            setLoading(true);
+            const { data } = await axios.post(`${import.meta.env.VITE_API_URL}/api/shipping/label/${shipmentId}`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            window.open(data.labelUrl, '_blank');
+            setFeedback("Label generated!");
+            setTimeout(() => setFeedback(''), 3000);
+        } catch (err) {
+            setError(err.response?.data?.message || 'Failed to generate label');
+            setTimeout(() => setError(null), 5000);
+        } finally { setLoading(false); }
+    };
+
+    const handleUpdateShipping = async (orderId) => {
+        try {
+            setLoading(true);
+            await axios.put(`${import.meta.env.VITE_API_URL}/api/orders/${orderId}/shipping`, shippingForm, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setFeedback("Shipping info updated successfully!");
+            await refreshOrders();
+            setEditingShipping(null);
+            setShippingForm({ courier_name: '', tracking_number: '', shipping_status: 'Pending' });
+            setTimeout(() => setFeedback(''), 3000);
+        } catch (err) {
+            setError(err.response?.data?.message || 'Failed to update shipping info');
+            setTimeout(() => setError(null), 5000);
+        } finally { setLoading(false); }
+    };
+
+    const refreshOrders = async () => {
+        const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/orders/seller-orders`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        setOrders(res.data);
+    };
+
+    const openShippingForm = (order) => {
+        setEditingShipping(order.order_id);
+        setShippingForm({
+            courier_name: order.courier_name || '',
+            tracking_number: order.tracking_number || '',
+            shipping_status: order.shipping_status || 'Pending'
+        });
     };
 
     if (error && !user?.sellerId) {
@@ -584,6 +686,178 @@ const SellerDashboard = () => {
                                 </div>
                             )}
                         </div>
+                    ) : activeTab === 'logistics' ? (
+                        <div className="space-y-6">
+                            <div className="flex items-center gap-2 pb-1 border-b border-slate-100 flex-wrap">
+                                {[
+                                    { id: 'pending', label: 'Pending' },
+                                    { id: 'shipped', label: 'Shipped' },
+                                    { id: 'delivered', label: 'Delivered' },
+                                ].map(tab => (
+                                    <button
+                                        key={tab.id}
+                                        onClick={() => setShippingSubTab(tab.id)}
+                                        className={`px-4 py-2 text-xs font-medium rounded-lg transition-all ${shippingSubTab === tab.id
+                                                ? 'bg-slate-800 text-white shadow-sm'
+                                                : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'
+                                            }`}
+                                    >
+                                        {tab.label}
+                                    </button>
+                                ))}
+                            </div>
+
+                            <Card className="border border-slate-200 shadow-sm overflow-hidden">
+                                <div className="overflow-x-auto">
+                                    <table className="min-w-full">
+                                        <thead>
+                                            <tr className="bg-slate-100 text-slate-600">
+                                                <th className="px-4 py-3 text-left font-semibold uppercase tracking-wider text-[10px] w-10">#</th>
+                                                <th className="px-4 py-3 text-left font-semibold uppercase tracking-wider text-[10px]">Order</th>
+                                                <th className="px-4 py-3 text-left font-semibold uppercase tracking-wider text-[10px]">Customer</th>
+                                                <th className="px-4 py-3 text-left font-semibold uppercase tracking-wider text-[10px]">Shipping</th>
+                                                <th className="px-4 py-3 text-left font-semibold uppercase tracking-wider text-[10px]">Status</th>
+                                                <th className="px-4 py-3 text-right font-semibold uppercase tracking-wider text-[10px]">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100">
+                                            {orders
+                                                .filter(o => {
+                                                    const st = o.shipping_status || 'Pending';
+                                                    if (shippingSubTab === 'delivered') return st === 'Delivered';
+                                                    if (shippingSubTab === 'shipped') return st === 'Shipped';
+                                                    return st === 'Pending' || st === 'Packed';
+                                                })
+                                                .map((o, idx) => (
+                                                    <tr key={o.order_id} className="hover:bg-slate-50 transition-colors group">
+                                                        <td className="px-4 py-3 text-xs text-slate-400">{idx + 1}</td>
+                                                        <td className="px-4 py-3">
+                                                             <div className="font-medium text-sm text-slate-800">#{o.order_id}</div>
+                                                             <div className="text-[10px] text-slate-400 mt-0.5">{new Date(o.order_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</div>
+                                                             <div className="text-[9px] text-slate-400 mt-0.5">
+                                                                 <span className="block">Order Value: ₹{Number(o.total_price - (o.shipping_charge || 0)).toLocaleString()}</span>
+                                                                 <span className="block text-slate-500">Shipping: {Number(o.shipping_charge) > 0 ? `₹${Number(o.shipping_charge).toLocaleString()}` : 'FREE'}</span>
+                                                                 <span className="block font-semibold text-slate-700">Total: ₹{Number(o.total_price || 0).toLocaleString()}</span>
+                                                             </div>
+                                                         </td>
+                                                        <td className="px-4 py-3">
+                                                            <div className="text-sm font-medium text-slate-700">{o.customer_name}</div>
+                                                            <div className="text-[10px] text-slate-400">{o.phone}</div>
+                                                        </td>
+                                                        <td className="px-4 py-3">
+                                                            {editingShipping === o.order_id ? (
+                                                                <div className="space-y-2 min-w-[160px]">
+                                                                    <input
+                                                                        type="text"
+                                                                        placeholder="Courier name"
+                                                                        value={shippingForm.courier_name}
+                                                                        onChange={(e) => setShippingForm({ ...shippingForm, courier_name: e.target.value })}
+                                                                        className="w-full text-[10px] px-2 py-1 border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-primary/30"
+                                                                    />
+                                                                    <input
+                                                                        type="text"
+                                                                        placeholder="Tracking number"
+                                                                        value={shippingForm.tracking_number}
+                                                                        onChange={(e) => setShippingForm({ ...shippingForm, tracking_number: e.target.value })}
+                                                                        className="w-full text-[10px] px-2 py-1 border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-primary/30"
+                                                                    />
+                                                                    <select
+                                                                        value={shippingForm.shipping_status}
+                                                                        onChange={(e) => setShippingForm({ ...shippingForm, shipping_status: e.target.value })}
+                                                                        className="w-full text-[10px] px-2 py-1 border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-primary/30 bg-white"
+                                                                    >
+                                                                        <option value="Pending">Pending</option>
+                                                                        <option value="Packed">Packed</option>
+                                                                        <option value="Shipped">Shipped</option>
+                                                                        <option value="Delivered">Delivered</option>
+                                                                    </select>
+                                                                </div>
+                                                            ) : (
+                                                                <div className="text-xs text-slate-600">
+                                                                    <p>{o.courier_name || <span className="text-slate-400 italic">Not set</span>}</p>
+                                                                    <p className="font-mono text-[10px] mt-0.5">{o.tracking_number || ''}</p>
+                                                                </div>
+                                                            )}
+                                                        </td>
+                                                        <td className="px-4 py-3">
+                                                            <Badge variant={
+                                                                o.shipping_status === 'Delivered' ? 'success' :
+                                                                o.shipping_status === 'Shipped' ? 'info' :
+                                                                o.shipping_status === 'Packed' ? 'warning' :
+                                                                'warning'
+                                                            }>
+                                                                {o.shipping_status || 'Pending'}
+                                                            </Badge>
+                                                        </td>
+                                                        <td className="px-4 py-3 text-right">
+                                                            <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                                                                {editingShipping === o.order_id ? (
+                                                                    <>
+                                                                        <button
+                                                                            onClick={() => handleUpdateShipping(o.order_id)}
+                                                                            disabled={loading}
+                                                                            className="px-2 py-1.5 text-[9px] font-bold text-white bg-teal-600 hover:bg-teal-700 rounded-lg transition-colors shadow-sm uppercase tracking-wider"
+                                                                        >
+                                                                            Save
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => { setEditingShipping(null); }}
+                                                                            className="px-2 py-1.5 text-[9px] font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors uppercase tracking-wider"
+                                                                        >
+                                                                            Cancel
+                                                                        </button>
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        {(o.shipping_status === 'Pending' || !o.shipping_status) && (
+                                                                            <button
+                                                                                onClick={() => handleCreateShipment(o.order_id)}
+                                                                                disabled={loading}
+                                                                                className="px-2.5 py-1.5 text-[9px] font-bold text-white bg-teal-600 hover:bg-teal-700 rounded-lg transition-colors shadow-sm uppercase tracking-wider"
+                                                                            >
+                                                                                Create Shipment
+                                                                            </button>
+                                                                        )}
+                                                                        {o.shipping_status === 'Shipped' && o.tracking_number && (
+                                                                            <button
+                                                                                onClick={() => window.open(`/track/${o.tracking_number}`, '_blank')}
+                                                                                className="px-2.5 py-1.5 text-[9px] font-bold text-blue-600 bg-blue-50 border border-blue-100 rounded-lg hover:bg-blue-100 transition-colors uppercase tracking-wider"
+                                                                            >
+                                                                                Track
+                                                                            </button>
+                                                                        )}
+                                                                        <button
+                                                                            onClick={() => openShippingForm(o)}
+                                                                            className="px-2.5 py-1.5 text-[9px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-lg hover:bg-indigo-100 transition-colors uppercase tracking-wider"
+                                                                        >
+                                                                            Edit
+                                                                        </button>
+                                                                    </>
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            {orders.filter(o => {
+                                                const st = o.shipping_status || 'Pending';
+                                                if (shippingSubTab === 'delivered') return st === 'Delivered';
+                                                if (shippingSubTab === 'shipped') return st === 'Shipped';
+                                                return st === 'Pending' || st === 'Packed';
+                                            }).length === 0 && (
+                                                <tr>
+                                                    <td colSpan={6} className="px-4 py-16 text-center">
+                                                        <div className="flex flex-col items-center">
+                                                            <TruckIcon className="w-8 h-8 text-slate-300 mb-2" />
+                                                            <p className="text-sm text-slate-400 font-medium">No orders found in this category</p>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </Card>
+                        </div>
                     ) : (
                         <div className="space-y-6">
                             <div className="flex items-center gap-2 pb-1 border-b border-slate-100">
@@ -630,9 +904,12 @@ const SellerDashboard = () => {
                                                             {idx + 1}
                                                         </td>
                                                         <td className="px-4 py-3">
-                                                            <div className="font-medium text-sm text-slate-800">#{o.order_id}</div>
-                                                            <div className="text-[10px] text-slate-400 mt-0.5">{new Date(o.order_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</div>
-                                                        </td>
+                                                             <div className="font-medium text-sm text-slate-800">#{o.order_id}</div>
+                                                             <div className="text-[10px] text-slate-400 mt-0.5">{new Date(o.order_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</div>
+                                                             <div className="text-[9px] text-slate-400 mt-0.5">
+                                                                 <span>Ship: {Number(o.shipping_charge) > 0 ? `₹${Number(o.shipping_charge).toLocaleString()}` : 'FREE'} | Total: ₹{Number(o.total_price || 0).toLocaleString()}</span>
+                                                             </div>
+                                                         </td>
                                                         <td className="px-4 py-3">
                                                             <div className="flex flex-wrap gap-1">
                                                                 {o.items?.slice(0, 2).map((i, itemIdx) => (

@@ -28,6 +28,18 @@ exports.markAsRead = async (req, res) => {
     }
 };
 
+const nodemailer = require('nodemailer');
+
+const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: parseInt(process.env.SMTP_PORT || '587'),
+    secure: false,
+    auth: {
+        user: process.env.SMTP_EMAIL,
+        pass: process.env.SMTP_PASSWORD
+    }
+});
+
 exports.createNotification = async (userId, message, url = '/') => {
     try {
         await pool.query(
@@ -36,6 +48,34 @@ exports.createNotification = async (userId, message, url = '/') => {
         );
         // Send background push notification
         pushService.sendPushNotification(userId, 'RR Dental Needs', message, url);
+
+        // Fetch user email for email notification
+        const userRes = await pool.query('SELECT email, name FROM Users WHERE id = $1', [userId]);
+        if (userRes.rows.length > 0) {
+            const userEmail = userRes.rows[0].email;
+            const userName = userRes.rows[0].name;
+
+            const mailOptions = {
+                from: process.env.SMTP_EMAIL || 'no-reply@rrdentalneeds.online',
+                to: userEmail,
+                subject: 'Notification Update - RR Dental Needs',
+                html: `
+                    <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+                        <h2>Hello ${userName},</h2>
+                        <p>${message}</p>
+                        <p>You can check the details on our website:</p>
+                        <a href="https://rrdentalneeds.online${url}" style="background-color: #0d9488; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; display: inline-block;">View Update</a>
+                        <br/><br/>
+                        <p>Regards,<br/>RR Dental Needs Team</p>
+                    </div>
+                `
+            };
+
+            // Send in background, don't block
+            transporter.sendMail(mailOptions).catch(mailErr => {
+                console.error("Nodemailer failed in background:", mailErr.message);
+            });
+        }
     } catch (err) {
         console.error("Error creating notification:", err);
     }

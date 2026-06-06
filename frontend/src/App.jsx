@@ -24,6 +24,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import OrderHistory from './pages/OrderHistory';
 import OrderDetails from './pages/OrderDetails';
+import TrackOrder from './pages/TrackOrder';
 
 import AboutUs from './pages/AboutUs';
 import FAQ from './pages/FAQ';
@@ -115,6 +116,12 @@ function App() {
           <Route path="order/:id" element={
               <ProtectedRoute>
                 <OrderDetails />
+              </ProtectedRoute>
+          } />
+
+          <Route path="track/:awb" element={
+              <ProtectedRoute>
+                <TrackOrder />
               </ProtectedRoute>
           } />
         </Route>

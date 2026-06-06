@@ -1,11 +1,13 @@
 const pool = require('../db');
 const notificationController = require('./notificationController');
+const shippingController = require('./shippingController');
 const logger = require('../services/loggingService');
 
 exports.createOrder = async (req, res) => {
     const userId = req.user.id;
     const { 
-        name, phone, address, city, state, pincode, paymentMethod = 'COD', shouldSaveAddress = false
+        name, phone, address, city, state, pincode, paymentMethod = 'COD', shouldSaveAddress = false,
+        shippingCharge = 0, shippingProvider = 'Free Shipping', estimatedDeliveryDate = null
     } = req.body;
 
     if (!name || !phone || !address || !city || !state || !pincode) {
@@ -15,9 +17,36 @@ exports.createOrder = async (req, res) => {
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
+
+        // COD Fraud Prevention Checks
+        if (paymentMethod === 'COD') {
+            const settingsRes = await client.query('SELECT * FROM logistics_settings LIMIT 1');
+            if (settingsRes.rows.length > 0) {
+                const settings = settingsRes.rows[0];
+                if (!settings.cod_enabled) {
+                    throw new Error("Cash on Delivery is currently disabled.");
+                }
+
+                // Blocked pincodes check
+                if (settings.blocked_pincodes) {
+                    const blockedList = settings.blocked_pincodes.split(',').map(p => p.trim());
+                    if (blockedList.includes(pincode.trim())) {
+                        throw new Error("Cash on Delivery is not available for this pincode.");
+                    }
+                }
+
+                // Blocked user check
+                const userRes = await client.query('SELECT is_cod_blocked FROM users WHERE id = $1', [userId]);
+                if (userRes.rows.length > 0 && userRes.rows[0].is_cod_blocked) {
+                    throw new Error("Cash on Delivery is not available for this account.");
+                }
+            }
+        }
+
         const { orderId, totalPrice, cartItems, lowStockItems } = await exports.processOrderCreation(client, userId, {
             name, phone, address, city, state, pincode, paymentMethod,
-            shouldSaveAddress, paymentStatus: 'Pending'
+            shouldSaveAddress, paymentStatus: 'Pending',
+            shippingCharge, shippingProvider, estimatedDeliveryDate
         });
         await client.query('COMMIT');
 
@@ -60,7 +89,8 @@ exports.processOrderCreation = async (client, userId, orderDetails) => {
         name, phone, address, city, state, pincode, 
         paymentMethod, paymentStatus = 'Pending', 
         rzpOrderId = null, rzpPaymentId = null,
-        shouldSaveAddress = false 
+        shouldSaveAddress = false,
+        shippingCharge = 0, shippingProvider = 'Free Shipping', estimatedDeliveryDate = null
     } = orderDetails;
 
     // 1. Get Cart Items
@@ -83,6 +113,17 @@ exports.processOrderCreation = async (client, userId, orderDetails) => {
              throw new Error(`Insufficient stock for product ID ${item.product_id}.`);
         }
         totalPrice += item.price * item.quantity;
+    }
+
+    // Max COD Amount Check
+    if (paymentMethod === 'COD') {
+        const settingsRes = await client.query('SELECT max_cod_amount FROM logistics_settings LIMIT 1');
+        if (settingsRes.rows.length > 0) {
+            const maxCod = parseFloat(settingsRes.rows[0].max_cod_amount);
+            if (totalPrice > maxCod) {
+                throw new Error(`Order total of ₹${totalPrice} exceeds the maximum allowed COD limit of ₹${maxCod}.`);
+            }
+        }
     }
 
     // 3. Find or Create Address
@@ -108,10 +149,26 @@ exports.processOrderCreation = async (client, userId, orderDetails) => {
         addressId = addressResult.rows[0].id;
     }
 
-    // 4. Create Order
+    const finalTotal = parseFloat(totalPrice) + parseFloat(shippingCharge);
+
     const orderResult = await client.query(
-        'INSERT INTO Orders (user_id, address_id, total_price, payment_method, order_status, payment_status, razorpay_order_id, razorpay_payment_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id',
-        [userId, addressId, totalPrice, paymentMethod, 'Pending', paymentStatus, rzpOrderId, rzpPaymentId]
+        `INSERT INTO Orders (
+            user_id, address_id, total_price, payment_method, order_status, payment_status, 
+            razorpay_order_id, razorpay_payment_id,
+            shipping_charge, shipping_status
+         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id`,
+        [
+            userId, 
+            addressId, 
+            finalTotal,
+            paymentMethod, 
+            'Pending', 
+            paymentStatus, 
+            rzpOrderId, 
+            rzpPaymentId,
+            shippingCharge,
+            'Pending'
+        ]
     );
     const orderId = orderResult.rows[0].id;
 
@@ -147,7 +204,7 @@ exports.processOrderCreation = async (client, userId, orderDetails) => {
         }
     }
 
-    return { orderId, totalPrice, cartItems, lowStockItems };
+    return { orderId, totalPrice: finalTotal, cartItems, lowStockItems };
 };
 
 exports.getUserOrders = async (req, res) => {
@@ -155,6 +212,7 @@ exports.getUserOrders = async (req, res) => {
     try {
         const result = await pool.query(`
             SELECT o.id, o.order_date, o.total_price, o.order_status, o.payment_method,
+                   o.shipping_charge, o.shipping_status, o.courier_name, o.tracking_number,
                    a.name as delivery_name, a.address, a.city, a.state, a.pincode
             FROM Orders o
             JOIN Addresses a ON o.address_id = a.id
@@ -190,6 +248,7 @@ exports.getSellerOrders = async (req, res) => {
         // Find order items that belong to the seller's products
         const result = await pool.query(`
             SELECT DISTINCT o.id as order_id, o.order_date, o.order_status, o.payment_method, o.payment_status,
+                   o.shipping_charge, o.shipping_status, o.courier_name, o.tracking_number, o.total_price,
                    u.email as customer_email, a.name as customer_name, a.phone, a.address, a.city, a.state, a.pincode
             FROM Orders o
             JOIN Addresses a ON o.address_id = a.id
@@ -268,9 +327,9 @@ exports.deleteOrderHistory = async (req, res) => {
 
 exports.updateOrderStatus = async (req, res) => {
     const { id } = req.params;
-    const { status } = req.body; // 'Pending', 'Packed', 'Shipped', 'Delivered'
+    const { status } = req.body; // 'Pending', 'Confirmed', 'Packed', 'Shipped', 'Delivered', 'Cancelled'
 
-    const validStatuses = ['Pending', 'Packed', 'Shipped', 'Delivered'];
+    const validStatuses = ['Pending', 'Confirmed', 'Packed', 'Shipped', 'Delivered', 'Cancelled'];
     if (!validStatuses.includes(status)) {
          return res.status(400).json({ message: "Invalid status." });
     }
@@ -287,6 +346,12 @@ exports.updateOrderStatus = async (req, res) => {
                 `Your order #${id} status has been updated to "${status}".`,
                 `/profile?tab=orders`
             );
+        }
+
+        if (status === 'Confirmed') {
+            shippingController.triggerAutomaticShipment(id).catch(err => {
+                logger.error(`Error triggering auto-shipment for order ${id}: ${err.message}`);
+            });
         }
 
         res.status(200).json({ message: "Order status updated." });
@@ -338,11 +403,66 @@ exports.updatePaymentStatus = async (req, res) => {
     }
 };
 
+exports.updateShipping = async (req, res) => {
+    const { id } = req.params;
+    const { courier_name, tracking_number, shipping_status } = req.body;
+
+    const validStatuses = ['Pending', 'Packed', 'Shipped', 'Delivered'];
+    if (shipping_status && !validStatuses.includes(shipping_status)) {
+        return res.status(400).json({ message: "Invalid shipping status." });
+    }
+
+    try {
+        const orderRes = await pool.query('SELECT id FROM Orders WHERE id = $1', [id]);
+        if (orderRes.rows.length === 0) return res.status(404).json({ message: "Order not found." });
+
+        const updates = [];
+        const params = [];
+        let idx = 1;
+        if (courier_name !== undefined) {
+            updates.push(`courier_name = $${idx++}`);
+            params.push(courier_name);
+        }
+        if (tracking_number !== undefined) {
+            updates.push(`tracking_number = $${idx++}`);
+            params.push(tracking_number);
+        }
+        if (shipping_status !== undefined) {
+            updates.push(`shipping_status = $${idx++}`);
+            params.push(shipping_status);
+            if (shipping_status === 'Delivered') {
+                updates.push(`order_status = 'Delivered'`);
+            } else if (shipping_status === 'Shipped') {
+                updates.push(`order_status = 'Shipped'`);
+            }
+        }
+        if (updates.length === 0) {
+            return res.status(400).json({ message: "No fields to update." });
+        }
+        params.push(id);
+        await pool.query(`UPDATE Orders SET ${updates.join(', ')} WHERE id = $${idx}`, params);
+
+        // Notify user
+        const orderInfo = await pool.query('SELECT user_id FROM Orders WHERE id = $1', [id]);
+        if (orderInfo.rows.length > 0) {
+            const msg = shipping_status
+                ? `Your order #${id} shipping status updated to "${shipping_status}".`
+                : `Your order #${id} shipping information has been updated.`;
+            await notificationController.createNotification(orderInfo.rows[0].user_id, msg, `/profile?tab=orders`);
+        }
+
+        res.status(200).json({ message: "Shipping info updated successfully." });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
+
 // Admin
 exports.getAllOrders = async (req, res) => {
     try {
         const result = await pool.query(`
-            SELECT o.id, o.order_date, o.total_price, o.order_status, o.payment_method, u.email as user_email
+            SELECT o.id, o.order_date, o.total_price, o.order_status, o.payment_method, o.shipping_charge, o.shipping_provider,
+                   u.email as user_email
             FROM Orders o
             JOIN Users u ON o.user_id = u.id
             ORDER BY o.order_date DESC

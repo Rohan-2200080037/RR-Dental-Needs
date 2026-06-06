@@ -45,8 +45,8 @@ const SellerDashboard = () => {
             return imagePreviewUrl;
         }
         if (formData.image) {
-            return formData.image.startsWith('/uploads') 
-                ? `${import.meta.env.VITE_API_URL}${formData.image}` 
+            return formData.image.startsWith('/uploads')
+                ? `${import.meta.env.VITE_API_URL}${formData.image}`
                 : formData.image;
         }
         return '';
@@ -54,9 +54,9 @@ const SellerDashboard = () => {
 
     useEffect(() => {
         if (!user?.sellerId) {
-             setError("Your seller account is pending approval by an admin. You cannot access seller features yet.");
-             setLoading(false);
-             return;
+            setError("Your seller account is pending approval by an admin. You cannot access seller features yet.");
+            setLoading(false);
+            return;
         }
 
         const fetchData = async () => {
@@ -70,7 +70,7 @@ const SellerDashboard = () => {
                     if (activeTab === 'add-product') {
                         setShowForm(true);
                         setEditingId(null);
-                        setFormData({ name: '', description: '', price: '', stock_quantity: '', year: '1st Year', category: 'permanent teeth wax carvings', image: ''});
+                        setFormData({ name: '', description: '', price: '', stock_quantity: '', year: '1st Year', category: 'permanent teeth wax carvings', image: '' });
                         setImageFile(null);
                         setImagePreviewUrl('');
                     } else {
@@ -107,7 +107,7 @@ const SellerDashboard = () => {
             submitData.append('stock_quantity', formData.stock_quantity);
             submitData.append('year', formData.year);
             submitData.append('category', formData.category);
-            
+
             if (imageFile) {
                 submitData.append('image', imageFile);
             } else if (formData.image) {
@@ -115,35 +115,35 @@ const SellerDashboard = () => {
             }
 
             if (editingId) {
-                 await axios.put(`${import.meta.env.VITE_API_URL}/api/products/${editingId}`, submitData, {
-                     headers: { 
-                         Authorization: `Bearer ${token}`,
-                         'Content-Type': 'multipart/form-data'
-                     }
-                 });
-                 setFeedback("Product updated successfully");
+                await axios.put(`${import.meta.env.VITE_API_URL}/api/products/${editingId}`, submitData, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'multipart/form-data'
+                    }
+                });
+                setFeedback("Product updated successfully");
             } else {
-                 await axios.post(`${import.meta.env.VITE_API_URL}/api/products`, submitData, {
-                     headers: { 
-                         Authorization: `Bearer ${token}`,
-                         'Content-Type': 'multipart/form-data'
-                     }
-                 });
-                 setFeedback("Product created successfully");
+                await axios.post(`${import.meta.env.VITE_API_URL}/api/products`, submitData, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'multipart/form-data'
+                    }
+                });
+                setFeedback("Product created successfully");
             }
-            
+
             setShowForm(false);
             setEditingId(null);
-            setFormData({ name: '', description: '', price: '', stock_quantity: '', year: '1st Year', category: 'permanent teeth wax carvings', image: ''});
+            setFormData({ name: '', description: '', price: '', stock_quantity: '', year: '1st Year', category: 'permanent teeth wax carvings', image: '' });
             setImageFile(null);
             setImagePreviewUrl('');
-            
+
             // Refresh products
             const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/products/seller/my-products`, {
-                        headers: { Authorization: `Bearer ${token}` }
+                headers: { Authorization: `Bearer ${token}` }
             });
             setProducts(res.data);
-            
+
             setTimeout(() => setFeedback(''), 3000);
         } catch (err) {
             setFeedback(err.response?.data?.message || 'Action failed');
@@ -195,8 +195,8 @@ const SellerDashboard = () => {
             setFeedback(`Status updated to ${newStatus}`);
             setTimeout(() => setFeedback(''), 3000);
         } catch (err) {
-             setFeedback('Failed to update status');
-             setTimeout(() => setFeedback(''), 3000);
+            setFeedback('Failed to update status');
+            setTimeout(() => setFeedback(''), 3000);
         }
     };
 
@@ -229,7 +229,7 @@ const SellerDashboard = () => {
     // Calculate Analytics
     const activeOrders = orders.filter(o => o.order_status !== 'Cancelled');
     const deliveredOrders = orders.filter(o => o.order_status === 'Delivered');
-    
+
     const totalOrders = activeOrders.length;
     const totalRevenue = deliveredOrders.reduce((acc, order) => {
         const orderTotal = order.items.reduce((sum, item) => sum + (item.quantity * item.price), 0);
@@ -243,11 +243,10 @@ const SellerDashboard = () => {
     const TabButton = ({ id, label }) => (
         <button
             onClick={() => setActiveTab(id)}
-            className={`px-4 py-2 font-medium text-sm rounded-lg transition-colors ${
-                activeTab === id
+            className={`px-4 py-2 font-medium text-sm rounded-lg transition-colors ${activeTab === id
                     ? 'bg-primary text-white shadow-md shadow-primary/20'
                     : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-            }`}
+                }`}
         >
             {label}
         </button>
@@ -266,14 +265,14 @@ const SellerDashboard = () => {
                     </div>
                     {activeTab === 'products' && (
                         <div className="flex sm:justify-end">
-                            <Button 
+                            <Button
                                 variant={showForm ? 'outline' : 'primary'}
                                 className="w-full sm:w-auto shadow-lg shadow-primary/20"
                                 onClick={() => {
                                     setShowForm(!showForm);
                                     if (!showForm) {
                                         setEditingId(null);
-                                        setFormData({ name: '', description: '', price: '', stock_quantity: '', year: '1st Year', category: 'permanent teeth wax carvings', image: ''});
+                                        setFormData({ name: '', description: '', price: '', stock_quantity: '', year: '1st Year', category: 'permanent teeth wax carvings', image: '' });
                                         setImageFile(null);
                                         setImagePreviewUrl('');
                                     }
@@ -284,7 +283,7 @@ const SellerDashboard = () => {
                         </div>
                     )}
                 </div>
-                
+
                 {feedback && (
                     <div className="bg-emerald-50 text-emerald-800 border border-emerald-200 p-4 rounded-xl flex items-center animate-fade-in shadow-sm">
                         <span className="font-medium">{feedback}</span>
@@ -300,117 +299,91 @@ const SellerDashboard = () => {
 
                 <div className="mt-6">
                     {activeTab === 'orders' && (
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
-                        <Card className="premium-card p-6 relative overflow-hidden group animate-premium bg-gradient-to-br from-teal-600 to-emerald-700 border-none">
-                            <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full transition-transform group-hover:scale-150 duration-700"></div>
-                            <div className="relative z-10">
-                                <p className="text-xs font-bold text-teal-100 uppercase tracking-widest mb-1">Monthly Revenue</p>
-                                <p className="text-3xl font-black text-white">₹{totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                                <div className="mt-4 flex items-center text-[10px] font-bold text-white bg-white/20 w-fit px-2 py-1 rounded-full">
-                                    <span>Verified Earnings</span>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+                            <Card className="premium-card p-6 relative overflow-hidden group animate-premium bg-gradient-to-br from-teal-600 to-emerald-700 border-none">
+                                <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full transition-transform group-hover:scale-150 duration-700"></div>
+                                <div className="relative z-10">
+                                    <p className="text-xs font-bold text-teal-100 uppercase tracking-widest mb-1">Monthly Revenue</p>
+                                    <p className="text-3xl font-black text-white">₹{totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                                    <div className="mt-4 flex items-center text-[10px] font-bold text-white bg-white/20 w-fit px-2 py-1 rounded-full">
+                                        <span>Verified Earnings</span>
+                                    </div>
                                 </div>
-                            </div>
-                        </Card>
-                        <Card className="premium-card p-6 relative overflow-hidden group animate-premium" style={{ animationDelay: '0.1s' }}>
-                            <div className="absolute -right-4 -top-4 w-24 h-24 bg-blue-500/5 rounded-full transition-transform group-hover:scale-150 duration-700"></div>
-                            <div className="relative z-10 text-center sm:text-left">
-                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Total Orders</p>
-                                <p className="text-3xl font-black text-slate-900">{totalOrders}</p>
-                                <div className="mt-4 flex items-center justify-center sm:justify-start">
-                                     <div className="flex -space-x-2">
-                                        {[1,2,3].map(i => <div key={i} className="w-5 h-5 rounded-full border-2 border-white bg-slate-200"></div>)}
-                                     </div>
-                                     <span className="text-[10px] font-bold text-slate-400 ml-3">Active Pipeline</span>
+                            </Card>
+                            <Card className="premium-card p-6 relative overflow-hidden group animate-premium" style={{ animationDelay: '0.1s' }}>
+                                <div className="absolute -right-4 -top-4 w-24 h-24 bg-blue-500/5 rounded-full transition-transform group-hover:scale-150 duration-700"></div>
+                                <div className="relative z-10 text-center sm:text-left">
+                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Total Orders</p>
+                                    <p className="text-3xl font-black text-slate-900">{totalOrders}</p>
+                                    <div className="mt-4 flex items-center justify-center sm:justify-start">
+                                        <div className="flex -space-x-2">
+                                            {[1, 2, 3].map(i => <div key={i} className="w-5 h-5 rounded-full border-2 border-white bg-slate-200"></div>)}
+                                        </div>
+                                        <span className="text-[10px] font-bold text-slate-400 ml-3">Active Pipeline</span>
+                                    </div>
                                 </div>
-                            </div>
-                        </Card>
-                        <Card className="premium-card p-6 relative overflow-hidden group animate-premium" style={{ animationDelay: '0.2s' }}>
-                            <div className="absolute -right-4 -top-4 w-24 h-24 bg-indigo-500/5 rounded-full transition-transform group-hover:scale-150 duration-700"></div>
-                            <div className="relative z-10 text-center sm:text-left">
-                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Products Sold</p>
-                                <p className="text-3xl font-black text-slate-900">{productsSold}</p>
-                                <div className="mt-4 flex items-center justify-center sm:justify-start text-[10px] font-bold text-indigo-500 bg-indigo-500/10 w-fit px-2 py-1 rounded-full">
-                                    <span>Inventory Velocity</span>
+                            </Card>
+                            <Card className="premium-card p-6 relative overflow-hidden group animate-premium" style={{ animationDelay: '0.2s' }}>
+                                <div className="absolute -right-4 -top-4 w-24 h-24 bg-indigo-500/5 rounded-full transition-transform group-hover:scale-150 duration-700"></div>
+                                <div className="relative z-10 text-center sm:text-left">
+                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Products Sold</p>
+                                    <p className="text-3xl font-black text-slate-900">{productsSold}</p>
+                                    <div className="mt-4 flex items-center justify-center sm:justify-start text-[10px] font-bold text-indigo-500 bg-indigo-500/10 w-fit px-2 py-1 rounded-full">
+                                        <span>Inventory Velocity</span>
+                                    </div>
                                 </div>
-                            </div>
-                        </Card>
-                    </div>
+                            </Card>
+                        </div>
                     )}                    {(activeTab === 'products' || activeTab === 'add-product') ? (
                         <div className="space-y-8">
                             {showForm && (
-                                <Card id="product-form" className="premium-card p-0 overflow-hidden animate-premium border-t-4 border-t-primary shadow-2xl">
-                                    <div className="p-8 bg-slate-50/50 border-b border-slate-100">
-                                        <h3 className="text-xl font-black text-slate-900 tracking-tight">
-                                            {editingId ? 'Edit Product Details' : 'Create New Product'}
+                                <Card id="product-form" className="border border-slate-200 shadow-sm overflow-hidden">
+                                    <div className="px-6 py-4 border-b border-slate-100 bg-white">
+                                        <h3 className="text-base font-semibold text-slate-800">
+                                            {editingId ? 'Edit Product' : 'New Product'}
                                         </h3>
-                                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Product Information</p>
                                     </div>
-                                    <form onSubmit={handleFormSubmit} className="p-8 space-y-8">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                            <div className="space-y-1">
-                                                <Input label="Product Name" name="name" value={formData.name} onChange={handleFormChange} required placeholder="e.g. Dental Mirror High Quality" />
-                                            </div>
-                                            <div className="space-y-1">
-                                                <label className="block text-sm font-bold text-slate-700 mb-1.5 ml-1">Year</label>
-                                                <select name="year" className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-primary/10 bg-white text-slate-900 font-medium transition-all" value={formData.year} onChange={handleFormChange}>
+                                    <form onSubmit={handleFormSubmit} className="p-6 space-y-5">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                            <Input label="Product Name" name="name" value={formData.name} onChange={handleFormChange} required placeholder="e.g. Dental Mirror" />
+                                            <div>
+                                                <label className="block text-xs font-medium text-slate-600 mb-1.5">Year</label>
+                                                <select name="year" className="w-full px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 bg-white text-sm text-slate-700 transition-all" value={formData.year} onChange={handleFormChange}>
                                                     <option value="1st Year">1st Year</option>
                                                     <option value="2nd Year">2nd Year</option>
                                                     <option value="3rd Year">3rd Year</option>
                                                     <option value="4th Year">4th Year</option>
                                                 </select>
                                             </div>
-                                            <div className="space-y-1">
-                                                <Input label="Price (₹)" type="number" name="price" value={formData.price} onChange={handleFormChange} required min="0" step="0.01" />
-                                            </div>
-                                            <div className="space-y-1">
-                                                <Input label="Available Stock" type="number" name="stock_quantity" value={formData.stock_quantity} onChange={handleFormChange} required min="0" />
-                                            </div>
-                                            <div className="space-y-1">
-                                                <label className="block text-sm font-bold text-slate-700 mb-1.5 ml-1">Category</label>
-                                                <select name="category" className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-primary/10 bg-white text-slate-900 font-medium transition-all" value={formData.category} onChange={handleFormChange}>
+                                            <Input label="Price (₹)" type="number" name="price" value={formData.price} onChange={handleFormChange} required min="0" step="0.01" />
+                                            <Input label="Stock Quantity" type="number" name="stock_quantity" value={formData.stock_quantity} onChange={handleFormChange} required min="0" />
+                                            <div>
+                                                <label className="block text-xs font-medium text-slate-600 mb-1.5">Category</label>
+                                                <select name="category" className="w-full px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 bg-white text-sm text-slate-700 transition-all" value={formData.category} onChange={handleFormChange}>
                                                     <option value="permanent teeth wax carvings">Permanent Teeth Wax Carvings</option>
                                                     <option value="preclinical prosthodontics">Preclinical Prosthodontics</option>
                                                     <option value="primary teeth wax carvings">Primary Teeth Wax Carvings</option>
                                                     <option value="Orthodontics">Preclinical Orthodontics</option>
                                                 </select>
                                             </div>
-                                            
-                                            <div className="md:col-span-2 space-y-2">
-                                                <label className="block text-sm font-bold text-slate-700 mb-1 ml-1">Product Photo</label>
-                                                <input 
-                                                    type="file" 
-                                                    accept="image/*" 
-                                                    onChange={handleFileChange} 
-                                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-primary/10 bg-white text-slate-900 font-medium transition-all"
-                                                />
-                                                {getPreviewSrc() && (
-                                                    <div className="mt-4 p-2 bg-slate-50 rounded-2xl border border-slate-100 inline-block">
-                                                        <img src={getPreviewSrc()} alt="Preview" className="h-40 w-40 object-cover rounded-xl shadow-lg" />
-                                                    </div>
-                                                )}
+                                            <div>
+                                                <label className="block text-xs font-medium text-slate-600 mb-1.5">Product Photo</label>
+                                                <input type="file" accept="image/*" onChange={handleFileChange} className="w-full text-sm text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100 transition-colors" />
                                             </div>
-                                            
-                                            <div className="md:col-span-2 space-y-1">
-                                                <label className="block text-sm font-bold text-slate-700 mb-1.5 ml-1">Full Description</label>
-                                                <textarea 
-                                                    name="description" 
-                                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all font-medium min-h-[120px]" 
-                                                    value={formData.description} 
-                                                    onChange={handleFormChange} 
-                                                    required 
-                                                    placeholder="Describe the product features, materials, and usage..."
-                                                />
+                                            <div className="md:col-span-2">
+                                                <label className="block text-xs font-medium text-slate-600 mb-1.5">Description</label>
+                                                <textarea name="description" className="w-full px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-sm min-h-[80px]" value={formData.description} onChange={handleFormChange} required placeholder="Describe the product..." />
                                             </div>
                                         </div>
-                                        <div className="flex justify-end pt-6 border-t border-slate-100 gap-4">
-                                            <Button type="button" variant="ghost" className="px-8 rounded-xl font-bold" onClick={() => {
-                                                setShowForm(false);
-                                                setImageFile(null);
-                                                setImagePreviewUrl('');
-                                            }}>Discard</Button>
-                                            <Button type="submit" variant="primary" className="px-10 rounded-xl font-bold shadow-lg shadow-primary/30">
-                                                {editingId ? 'Update Product' : 'List Product'}
-                                            </Button>
+                                        {getPreviewSrc() && (
+                                            <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-100">
+                                                <img src={getPreviewSrc()} alt="Preview" className="w-16 h-16 rounded-lg object-cover border border-slate-200" />
+                                                <span className="text-xs text-slate-500">Image preview</span>
+                                            </div>
+                                        )}
+                                        <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                                            <Button type="button" variant="ghost" size="sm" onClick={() => { setShowForm(false); setImageFile(null); setImagePreviewUrl(''); }}>Cancel</Button>
+                                            <Button type="submit" variant="primary" size="sm">{editingId ? 'Update' : 'Create'}</Button>
                                         </div>
                                     </form>
                                 </Card>
@@ -422,214 +395,188 @@ const SellerDashboard = () => {
                                     <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">Loading Inventory...</p>
                                 </div>
                             ) : (
-                                <div className="space-y-4">
-                                    {/* Search, Year & Category Filter Bar */}
-                                    <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center flex-wrap">
-                                        <div className="relative flex-1 min-w-[200px]">
-                                            <MagnifyingGlassIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
+                                <div className="space-y-3">
+                                    <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
+                                        <div className="relative flex-1 min-w-[180px]">
+                                            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                                             <input
                                                 type="text"
-                                                placeholder="Search products by name or ID..."
+                                                placeholder="Search by name or ID..."
                                                 value={searchQuery}
                                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                                className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary/30 bg-white text-sm font-medium text-slate-800 placeholder:text-slate-400 transition-all shadow-sm"
+                                                className="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30 bg-white text-sm text-slate-700 placeholder:text-slate-400 transition-all"
                                             />
                                             {searchQuery && (
                                                 <button
                                                     onClick={() => setSearchQuery('')}
-                                                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                                                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                                                 >
-                                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                                                 </button>
                                             )}
                                         </div>
-                                        <div className="relative">
-                                            <FunnelIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                                            <select
-                                                value={yearFilter}
-                                                onChange={(e) => setYearFilter(e.target.value)}
-                                                className={`w-full sm:w-auto pl-10 pr-10 py-3 rounded-xl border text-sm font-bold appearance-none cursor-pointer transition-all shadow-sm focus:outline-none focus:ring-4 focus:ring-primary/10 ${
-                                                    yearFilter !== 'all'
-                                                        ? 'bg-primary/5 border-primary/20 text-primary'
-                                                        : 'bg-white border-slate-200 text-slate-700'
+                                        <select
+                                            value={yearFilter}
+                                            onChange={(e) => setYearFilter(e.target.value)}
+                                            className={`px-3 py-2 rounded-lg border text-xs font-medium appearance-none cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-primary/20 ${yearFilter !== 'all'
+                                                    ? 'bg-teal-50 border-teal-200 text-teal-700'
+                                                    : 'bg-white border-slate-200 text-slate-600'
                                                 }`}
-                                            >
-                                                <option value="all">All Years</option>
-                                                <option value="1st Year">1st Year</option>
-                                                <option value="2nd Year">2nd Year</option>
-                                                <option value="3rd Year">3rd Year</option>
-                                                <option value="4th Year">4th Year</option>
-                                            </select>
-                                            <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none">
-                                                <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                                            </div>
-                                        </div>
-                                        <div className="relative">
-                                            <FunnelIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-400 pointer-events-none" />
-                                            <select
-                                                value={categoryFilter}
-                                                onChange={(e) => setCategoryFilter(e.target.value)}
-                                                className={`w-full sm:w-auto pl-10 pr-10 py-3 rounded-xl border text-sm font-bold appearance-none cursor-pointer transition-all shadow-sm focus:outline-none focus:ring-4 focus:ring-indigo-500/10 ${
-                                                    categoryFilter !== 'all'
-                                                        ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
-                                                        : 'bg-white border-slate-200 text-slate-700'
+                                        >
+                                            <option value="all">All Years</option>
+                                            <option value="1st Year">1st Year</option>
+                                            <option value="2nd Year">2nd Year</option>
+                                            <option value="3rd Year">3rd Year</option>
+                                            <option value="4th Year">4th Year</option>
+                                        </select>
+                                        <select
+                                            value={categoryFilter}
+                                            onChange={(e) => setCategoryFilter(e.target.value)}
+                                            className={`px-3 py-2 rounded-lg border text-xs font-medium appearance-none cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-primary/20 ${categoryFilter !== 'all'
+                                                    ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
+                                                    : 'bg-white border-slate-200 text-slate-600'
                                                 }`}
-                                            >
-                                                <option value="all">All Categories</option>
-                                                <option value="permanent teeth wax carvings">Permanent Teeth Wax Carvings</option>
-                                                <option value="preclinical prosthodontics">Preclinical Prosthodontics</option>
-                                                <option value="primary teeth wax carvings">Primary Teeth Wax Carvings</option>
-                                                <option value="Orthodontics">Preclinical Orthodontics</option>
-                                            </select>
-                                            <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none">
-                                                <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                                            </div>
-                                        </div>
+                                        >
+                                            <option value="all">All Categories</option>
+                                            <option value="permanent teeth wax carvings">Permanent Teeth Wax Carvings</option>
+                                            <option value="preclinical prosthodontics">Preclinical Prosthodontics</option>
+                                            <option value="primary teeth wax carvings">Primary Teeth Wax Carvings</option>
+                                            <option value="Orthodontics">Preclinical Orthodontics</option>
+                                        </select>
                                     </div>
 
-                                    <div className="flex justify-between items-center px-2">
-                                        <h3 className="font-black text-slate-800 tracking-tight">Inventory Status</h3>
-                                        <div className="flex items-center gap-2">
-                                            {(searchQuery || yearFilter !== 'all' || categoryFilter !== 'all') && (
-                                                <button
-                                                    onClick={() => { setSearchQuery(''); setYearFilter('all'); setCategoryFilter('all'); }}
-                                                    className="text-[10px] font-black text-red-500 uppercase tracking-[0.15em] bg-red-50 px-3 py-1.5 rounded-full border border-red-100 hover:bg-red-100 transition-colors cursor-pointer"
-                                                >
-                                                    Clear Filters
-                                                </button>
-                                            )}
-                                            <div className="text-[10px] font-black text-primary uppercase tracking-[0.2em] bg-primary/5 px-3 py-1.5 rounded-full border border-primary/10">
-                                                {products
-                                                    .filter(p => {
-                                                        const matchesSearch = !searchQuery || 
-                                                            p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                                                            String(p.id).includes(searchQuery);
-                                                        const matchesYear = yearFilter === 'all' || p.year === yearFilter;
-                                                        const matchesCategory = categoryFilter === 'all' || p.category === categoryFilter;
-                                                        return matchesSearch && matchesYear && matchesCategory;
-                                                    }).length} / {products.length} Products
-                                            </div>
-                                        </div>
+                                    <div className="flex items-center justify-between px-1">
+                                        <span className="text-xs font-medium text-slate-500">
+                                            {products.filter(p => {
+                                                const ms = !searchQuery || p.name.toLowerCase().includes(searchQuery.toLowerCase()) || String(p.id).includes(searchQuery);
+                                                const my = yearFilter === 'all' || p.year === yearFilter;
+                                                const mc = categoryFilter === 'all' || p.category === categoryFilter;
+                                                return ms && my && mc;
+                                            }).length} of {products.length} products
+                                        </span>
+                                        {(searchQuery || yearFilter !== 'all' || categoryFilter !== 'all') && (
+                                            <button
+                                                onClick={() => { setSearchQuery(''); setYearFilter('all'); setCategoryFilter('all'); }}
+                                                className="text-xs font-medium text-slate-400 hover:text-slate-600 transition-colors"
+                                            >
+                                                Clear filters
+                                            </button>
+                                        )}
                                     </div>
-                                    <Card className="premium-card overflow-hidden animate-premium">
+                                    <Card className="overflow-hidden border border-slate-200 shadow-sm">
                                         <div className="overflow-x-auto">
-                                            <table className="min-w-full text-sm">
+                                            <table className="min-w-full">
                                                 <thead>
-                                                    <tr className="bg-slate-200/50 text-slate-800">
-                                                        <th className="px-8 py-5 text-left font-bold uppercase tracking-widest text-[11px]">S.No</th>
-                                                        <th className="px-8 py-5 text-left font-bold uppercase tracking-widest text-[11px]">Product Details</th>
-                                                        <th className="px-8 py-5 text-left font-bold uppercase tracking-widest text-[11px]">Price</th>
-                                                        <th className="px-8 py-5 text-left font-bold uppercase tracking-widest text-[11px]">Inventory</th>
-                                                        <th className="px-8 py-5 text-left font-bold uppercase tracking-widest text-[11px]">Category</th>
-                                                        <th className="px-8 py-5 text-right font-bold uppercase tracking-widest text-[11px]">Actions</th>
+                                                    <tr className="bg-slate-100 text-slate-600">
+                                                        <th className="px-4 py-3 text-left font-semibold uppercase tracking-wider text-[10px] w-12">#</th>
+                                                        <th className="px-4 py-3 text-left font-semibold uppercase tracking-wider text-[10px]">Product</th>
+                                                        <th className="px-4 py-3 text-left font-semibold uppercase tracking-wider text-[10px]">Price</th>
+                                                        <th className="px-4 py-3 text-left font-semibold uppercase tracking-wider text-[10px]">Stock</th>
+                                                        <th className="px-4 py-3 text-left font-semibold uppercase tracking-wider text-[10px] hidden md:table-cell">Category</th>
+                                                        <th className="px-4 py-3 text-right font-semibold uppercase tracking-wider text-[10px] w-24">Actions</th>
                                                     </tr>
                                                 </thead>
-                                                <tbody className="divide-y divide-slate-200">
+                                                <tbody className="divide-y divide-slate-100">
                                                     {products
-                                                    .filter(p => {
-                                                        const matchesSearch = !searchQuery || 
-                                                            p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                                                            String(p.id).includes(searchQuery);
-                                                        const matchesYear = yearFilter === 'all' || p.year === yearFilter;
-                                                        const matchesCategory = categoryFilter === 'all' || p.category === categoryFilter;
-                                                        return matchesSearch && matchesYear && matchesCategory;
-                                                    })
-                                                    .map((p, idx) => (
-                                                        <tr key={p.id} className="hover:bg-blue-50/50 transition-colors group even:bg-slate-100/80 border-b border-slate-200 last:border-0">
-                                                            <td className="px-8 py-5 font-bold text-slate-500 bg-slate-200/50 group-hover:bg-transparent transition-colors shadow-inner">
-                                                                {idx + 1}
-                                                            </td>
-                                                            <td className="px-8 py-5">
-                                                                <div className="flex items-center">
-                                                                    <div className="relative w-14 h-14 rounded-2xl overflow-hidden mr-5 border border-slate-200/50 shadow-sm group-hover:shadow-md transition-all duration-500">
-                                                                        <img 
-                                                                            src={p.image?.startsWith('/uploads') ? `${import.meta.env.VITE_API_URL}${p.image}` : (p.image || 'https://via.placeholder.com/100')} 
-                                                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
-                                                                            alt="" 
-                                                                        />
-                                                                        <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                                                    </div>
-                                                                    <div>
-                                                                        <div className="font-extrabold text-slate-900 leading-tight group-hover:text-primary transition-colors">{p.name}</div>
-                                                                        <div className="flex items-center mt-1.5">
-                                                                            <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest bg-indigo-50 px-1.5 py-0.5 rounded">{p.year}</span>
-                                                                            <span className="mx-2 text-slate-200">|</span>
-                                                                            <span className="text-[10px] font-mono text-slate-300">ID: #{p.id}</span>
+                                                        .filter(p => {
+                                                            const matchesSearch = !searchQuery ||
+                                                                p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                                                String(p.id).includes(searchQuery);
+                                                            const matchesYear = yearFilter === 'all' || p.year === yearFilter;
+                                                            const matchesCategory = categoryFilter === 'all' || p.category === categoryFilter;
+                                                            return matchesSearch && matchesYear && matchesCategory;
+                                                        })
+                                                        .map((p, idx) => (
+                                                            <tr key={p.id} className="hover:bg-slate-50 transition-colors group">
+                                                                <td className="px-4 py-3 text-xs font-medium text-slate-400">
+                                                                    {idx + 1}
+                                                                </td>
+                                                                <td className="px-4 py-3">
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-slate-100 border border-slate-200">
+                                                                            <img
+                                                                                src={p.image?.startsWith('/uploads') ? `${import.meta.env.VITE_API_URL}${p.image}` : (p.image || 'https://via.placeholder.com/100')}
+                                                                                className="w-full h-full object-cover"
+                                                                                alt=""
+                                                                            />
+                                                                        </div>
+                                                                        <div className="min-w-0">
+                                                                            <div className="text-sm font-medium text-slate-800 truncate max-w-[200px]">{p.name}</div>
+                                                                            <div className="flex items-center gap-1.5 mt-0.5">
+                                                                                <span className="text-[10px] font-medium text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">{p.year}</span>
+                                                                                <span className="text-[10px] text-slate-400">#{p.id}</span>
+                                                                            </div>
                                                                         </div>
                                                                     </div>
-                                                                </div>
-                                                            </td>
-                                                            <td className="px-8 py-5 bg-teal-100/30 group-hover:bg-transparent transition-colors">
-                                                                <div className="font-black text-slate-900 border-l-4 border-teal-500/30 pl-3">₹{Number(p.price).toLocaleString()}</div>
-                                                            </td>
-                                                            <td className="px-8 py-5 bg-blue-100/40 group-hover:bg-transparent transition-colors">
-                                                                <div className="flex items-center">
-                                                                    <div className={`w-2.5 h-2.5 rounded-full mr-2.5 ${p.stock_quantity > 10 ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : p.stock_quantity > 0 ? 'bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]' : 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]'}`}></div>
-                                                                    <span className={`font-black text-sm ${p.stock_quantity === 0 ? 'text-red-500' : 'text-slate-700'}`}>{p.stock_quantity}</span>
-                                                                    <span className="text-[10px] font-bold text-slate-400 ml-1.5 uppercase">Left</span>
-                                                                </div>
-                                                            </td>
-                                                            <td className="px-8 py-5 bg-purple-50/40 group-hover:bg-transparent transition-colors">
-                                                                <span className="text-[10px] font-bold text-purple-700 bg-purple-100 px-2 py-1 rounded-lg border border-purple-200">{p.category}</span>
-                                                            </td>
-                                                            <td className="px-8 py-5 text-right bg-slate-200/30 group-hover:bg-transparent transition-colors">
-                                                                <div className="flex justify-end gap-2">
-                                                                    <button 
-                                                                        onClick={() => handleEdit(p)}
-                                                                        className="p-2.5 rounded-xl bg-teal-50 text-teal-600 hover:bg-teal-600 hover:text-white transition-all shadow-sm active:scale-90"
-                                                                        title="Edit Product"
-                                                                    >
-                                                                        <PencilSquareIcon className="w-5 h-5" />
-                                                                    </button>
-                                                                    <button 
-                                                                        onClick={() => handleDeleteProduct(p.id)}
-                                                                        className="p-2.5 rounded-xl bg-red-50 text-red-500 hover:bg-red-600 hover:text-white transition-all shadow-sm active:scale-90"
-                                                                        title="Delete Product"
-                                                                    >
-                                                                        <TrashIcon className="w-5 h-5" />
-                                                                    </button>
-                                                                </div>
-                                                            </td>
-                                                        </tr>
-                                                    ))}
+                                                                </td>
+                                                                <td className="px-4 py-3">
+                                                                    <span className="text-sm font-semibold text-slate-800">₹{Number(p.price).toLocaleString()}</span>
+                                                                </td>
+                                                                <td className="px-4 py-3">
+                                                                    <div className="flex items-center gap-1.5">
+                                                                        <span className={`inline-block w-2 h-2 rounded-full ${p.stock_quantity > 10 ? 'bg-emerald-500' : p.stock_quantity > 0 ? 'bg-amber-500' : 'bg-red-500'}`}></span>
+                                                                        <span className={`text-xs font-medium ${p.stock_quantity === 0 ? 'text-red-500' : 'text-slate-600'}`}>
+                                                                            {p.stock_quantity}
+                                                                        </span>
+                                                                        <span className="text-[9px] text-slate-400 uppercase tracking-wider">units</span>
+                                                                    </div>
+                                                                </td>
+                                                                <td className="px-4 py-3 hidden md:table-cell">
+                                                                    <span className="inline-block text-[9px] font-medium text-purple-600 bg-purple-50 px-2 py-0.5 rounded border border-purple-100 whitespace-nowrap max-w-[140px] truncate">{p.category}</span>
+                                                                </td>
+                                                                <td className="px-4 py-3 text-right">
+                                                                    <div className="flex items-center justify-end gap-1">
+                                                                        <button
+                                                                            onClick={() => handleEdit(p)}
+                                                                            className="p-1.5 rounded-lg text-slate-400 hover:text-teal-600 hover:bg-teal-50 transition-colors"
+                                                                            title="Edit Product"
+                                                                        >
+                                                                            <PencilSquareIcon className="w-4 h-4" />
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => handleDeleteProduct(p.id)}
+                                                                            className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                                                                            title="Delete Product"
+                                                                        >
+                                                                            <TrashIcon className="w-4 h-4" />
+                                                                        </button>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        ))}
                                                     {products.filter(p => {
-                                                        const matchesSearch = !searchQuery || 
+                                                        const matchesSearch = !searchQuery ||
                                                             p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                                                             String(p.id).includes(searchQuery);
                                                         const matchesYear = yearFilter === 'all' || p.year === yearFilter;
                                                         const matchesCategory = categoryFilter === 'all' || p.category === categoryFilter;
                                                         return matchesSearch && matchesYear && matchesCategory;
                                                     }).length === 0 && (
-                                                        <tr>
-                                                            <td colSpan="5" className="px-8 py-24 text-center">
-                                                                <div className="flex flex-col items-center">
-                                                                    <div className="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center mb-4 border border-slate-100">
-                                                                        {(searchQuery || yearFilter !== 'all' || categoryFilter !== 'all') ? (
-                                                                            <MagnifyingGlassIcon className="w-8 h-8 text-slate-200" />
-                                                                        ) : (
-                                                                            <ShoppingBagIcon className="w-8 h-8 text-slate-200" />
+                                                            <tr>
+                                                                <td colSpan="6" className="px-4 py-16 text-center">
+                                                                    <div className="flex flex-col items-center">
+                                                                        <div className="w-14 h-14 bg-slate-50 rounded-xl flex items-center justify-center mb-3 border border-slate-100">
+                                                                            {(searchQuery || yearFilter !== 'all' || categoryFilter !== 'all') ? (
+                                                                                <MagnifyingGlassIcon className="w-6 h-6 text-slate-300" />
+                                                                            ) : (
+                                                                                <ShoppingBagIcon className="w-6 h-6 text-slate-300" />
+                                                                            )}
+                                                                        </div>
+                                                                        <p className="text-sm font-medium text-slate-400">
+                                                                            {(searchQuery || yearFilter !== 'all' || categoryFilter !== 'all') ? 'No products match your filters' : 'No products yet'}
+                                                                        </p>
+                                                                        {(searchQuery || yearFilter !== 'all' || categoryFilter !== 'all') && (
+                                                                            <button
+                                                                                onClick={() => { setSearchQuery(''); setYearFilter('all'); setCategoryFilter('all'); }}
+                                                                                className="mt-3 text-xs font-medium text-primary hover:text-primary/80 underline underline-offset-4"
+                                                                            >
+                                                                                Clear filters
+                                                                            </button>
                                                                         )}
                                                                     </div>
-                                                                    <h4 className="font-black text-slate-400 uppercase tracking-widest text-sm">
-                                                                        {(searchQuery || yearFilter !== 'all' || categoryFilter !== 'all') ? 'No Matches Found' : 'Inventory Empty'}
-                                                                    </h4>
-                                                                    <p className="text-slate-300 text-xs mt-1">
-                                                                        {(searchQuery || yearFilter !== 'all' || categoryFilter !== 'all') 
-                                                                            ? 'Try adjusting your search or filter criteria' 
-                                                                            : 'Start by adding your first dental product'}
-                                                                    </p>
-                                                                    {(searchQuery || yearFilter !== 'all' || categoryFilter !== 'all') && (
-                                                                        <button
-                                                                            onClick={() => { setSearchQuery(''); setYearFilter('all'); setCategoryFilter('all'); }}
-                                                                            className="mt-4 text-xs font-bold text-primary hover:text-primary/80 underline underline-offset-4 transition-colors"
-                                                                        >
-                                                                            Clear all filters
-                                                                        </button>
-                                                                    )}
-                                                                </div>
-                                                            </td>
-                                                        </tr>
-                                                    )}
+                                                                </td>
+                                                            </tr>
+                                                        )}
                                                 </tbody>
                                             </table>
                                         </div>
@@ -638,140 +585,119 @@ const SellerDashboard = () => {
                             )}
                         </div>
                     ) : (
-                                <div className="space-y-6">
-                                    <div className="flex flex-wrap gap-2 pb-2">
-                                        {[
-                                            { id: 'to-deliver', label: 'processing' },
-                                            { id: 'delivered', label: 'delivered' },
-                                            { id: 'cancelled', label: 'cancelled' }
-                                        ].map(tab => (
-                                            <button 
-                                                key={tab.id}
-                                                onClick={() => setOrderSubTab(tab.id)}
-                                                className={`px-5 py-2.5 text-xs font-black uppercase tracking-widest rounded-xl transition-all duration-300 ${
-                                                    orderSubTab === tab.id 
-                                                    ? 'bg-slate-900 text-white shadow-lg shadow-slate-900/20 ring-2 ring-slate-900/10' 
-                                                    : 'bg-white text-slate-400 hover:bg-slate-50 hover:text-slate-600 border border-slate-100'
-                                                }`}
-                                            >
-                                                {tab.label}
-                                            </button>
-                                        ))}
-                                    </div>
+                        <div className="space-y-6">
+                            <div className="flex items-center gap-2 pb-1 border-b border-slate-100">
+                                {[
+                                    { id: 'to-deliver', label: 'Processing' },
+                                    { id: 'delivered', label: 'Delivered' },
+                                    { id: 'cancelled', label: 'Cancelled' }
+                                ].map(tab => (
+                                    <button
+                                        key={tab.id}
+                                        onClick={() => setOrderSubTab(tab.id)}
+                                        className={`px-4 py-2 text-xs font-medium rounded-lg transition-all ${orderSubTab === tab.id
+                                                ? 'bg-slate-800 text-white shadow-sm'
+                                                : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'
+                                            }`}
+                                    >
+                                        {tab.label}
+                                    </button>
+                                ))}
+                            </div>
 
-                                    <Card className="premium-card overflow-hidden animate-premium">
-                                        <div className="overflow-x-auto">
-                                            <table className="min-w-full text-sm">
-                                                <thead>
-                                                    <tr className="bg-slate-200/50 text-slate-800">
-                                                        <th className="px-8 py-5 text-left font-bold uppercase tracking-widest text-[11px]">S.No</th>
-                                                        <th className="px-8 py-5 text-left font-bold uppercase tracking-widest text-[11px]">Reference</th>
-                                                        <th className="px-8 py-5 text-left font-bold uppercase tracking-widest text-[11px]">Items</th>
-                                                        <th className="px-8 py-5 text-left font-bold uppercase tracking-widest text-[11px]">Delivery Location</th>
-                                                        <th className="px-8 py-5 text-right font-bold uppercase tracking-widest text-[11px]">Management</th>
+                            <Card className="border border-slate-200 shadow-sm overflow-hidden">
+                                <div className="overflow-x-auto">
+                                    <table className="min-w-full">
+                                        <thead>
+                                            <tr className="bg-slate-100 text-slate-600">
+                                                <th className="px-4 py-3 text-left font-semibold uppercase tracking-wider text-[10px] w-10">#</th>
+                                                <th className="px-4 py-3 text-left font-semibold uppercase tracking-wider text-[10px]">Order</th>
+                                                <th className="px-4 py-3 text-left font-semibold uppercase tracking-wider text-[10px]">Items</th>
+                                                <th className="px-4 py-3 text-left font-semibold uppercase tracking-wider text-[10px] hidden sm:table-cell">Customer</th>
+                                                <th className="px-4 py-3 text-right font-semibold uppercase tracking-wider text-[10px]">Manage</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100">
+                                            {orders
+                                                .filter(o => {
+                                                    if (orderSubTab === 'delivered') return o.order_status === 'Delivered';
+                                                    if (orderSubTab === 'cancelled') return o.order_status === 'Cancelled';
+                                                    return ['Pending', 'Packed', 'Shipped'].includes(o.order_status);
+                                                })
+                                                .map((o, idx) => (
+                                                    <tr key={o.order_id} className="hover:bg-slate-50 transition-colors group">
+                                                        <td className="px-4 py-3 text-xs text-slate-400">
+                                                            {idx + 1}
+                                                        </td>
+                                                        <td className="px-4 py-3">
+                                                            <div className="font-medium text-sm text-slate-800">#{o.order_id}</div>
+                                                            <div className="text-[10px] text-slate-400 mt-0.5">{new Date(o.order_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</div>
+                                                        </td>
+                                                        <td className="px-4 py-3">
+                                                            <div className="flex flex-wrap gap-1">
+                                                                {o.items?.slice(0, 2).map((i, itemIdx) => (
+                                                                    <span key={itemIdx} className="inline-block px-1.5 py-0.5 bg-slate-50 border border-slate-200 text-slate-600 rounded text-[9px] font-medium">
+                                                                        {i.quantity}x {i.name.length > 20 ? i.name.slice(0, 20) + '...' : i.name}
+                                                                    </span>
+                                                                ))}
+                                                                {o.items?.length > 2 && <span className="text-[9px] text-slate-400 self-center">+{o.items.length - 2} more</span>}
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-4 py-3 hidden sm:table-cell">
+                                                            <div className="text-sm font-medium text-slate-700">{o.customer_name}</div>
+                                                            <div className="text-[10px] text-slate-400">{o.phone}</div>
+                                                        </td>
+                                                        <td className="px-4 py-3 text-right">
+                                                            {o.order_status === 'Cancelled' ? (
+                                                                <span className="inline-block px-2 py-0.5 bg-red-50 text-red-600 rounded text-[9px] font-medium uppercase tracking-wider">Voided</span>
+                                                            ) : (
+                                                                <div className="flex items-center justify-end gap-2">
+                                                                    <select
+                                                                        className={`text-[9px] font-medium rounded-lg border py-1.5 pl-2 pr-6 focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer bg-white ${o.order_status === 'Delivered' ? 'text-emerald-700 border-emerald-200 bg-emerald-50' :
+                                                                                o.order_status === 'Shipped' ? 'text-blue-700 border-blue-200 bg-blue-50' :
+                                                                                    'text-slate-600 border-slate-200'
+                                                                            }`}
+                                                                        value={o.order_status}
+                                                                        onChange={(e) => handleOrderStatusUpdate(o.order_id, e.target.value)}
+                                                                    >
+                                                                        <option value="Pending">Pending</option>
+                                                                        <option value="Packed">Packed</option>
+                                                                        <option value="Shipped">Shipped</option>
+                                                                        <option value="Delivered">Delivered</option>
+                                                                    </select>
+                                                                    {o.payment_status !== 'Completed' && (
+                                                                        <button
+                                                                            onClick={() => handlePaymentStatusUpdate(o.order_id)}
+                                                                            className="px-2 py-1.5 text-[9px] font-medium text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-lg hover:bg-indigo-100 transition-colors whitespace-nowrap"
+                                                                        >
+                                                                            Mark Paid
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+                                                            )}
+                                                        </td>
                                                     </tr>
-                                                </thead>
-                                                <tbody className="divide-y divide-slate-200">
-                                                    {orders
-                                                        .filter(o => {
-                                                            if (orderSubTab === 'delivered') return o.order_status === 'Delivered';
-                                                            if (orderSubTab === 'cancelled') return o.order_status === 'Cancelled';
-                                                            return ['Pending', 'Packed', 'Shipped'].includes(o.order_status);
-                                                        })
-                                                        .map((o, idx) => (
-                                                        <tr key={o.order_id} className="hover:bg-blue-50/50 transition-colors group even:bg-slate-100/80">
-                                                            <td className="px-8 py-5 font-bold text-slate-500 bg-slate-200/50 group-hover:bg-transparent transition-colors">
-                                                                {idx + 1}
-                                                            </td>
-                                                            <td className="px-8 py-5 bg-white group-hover:bg-transparent transition-colors text-center sm:text-left">
-                                                                <div className="font-black text-slate-900 tracking-tight">#{o.order_id}</div>
-                                                                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
-                                                                    {new Date(o.order_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                                                                </div>
-                                                            </td>
-                                                            <td className="px-8 py-5 bg-teal-50/30 group-hover:bg-transparent transition-colors">
-                                                                <div className="flex flex-wrap gap-1">
-                                                                    {o.items?.map((i, itemIdx) => (
-                                                                        <span key={itemIdx} className="inline-block px-2 py-0.5 bg-white border border-teal-100 text-teal-700 rounded text-[10px] font-bold shadow-sm">
-                                                                            {i.quantity}x {i.name}
-                                                                        </span>
-                                                                    ))}
-                                                                </div>
-                                                            </td>
-                                                            <td className="px-8 py-5 bg-slate-50 group-hover:bg-transparent transition-colors">
-                                                                <div className="font-bold text-slate-900 group-hover:text-primary transition-colors">{o.customer_name}</div>
-                                                                <div className="text-xs text-slate-600 font-medium mt-1">{o.phone}</div>
-                                                                <div className="text-[11px] text-slate-500 leading-tight mt-1 max-w-[200px]">
-                                                                    {o.address}, {o.city}, {o.state} - <span className="font-bold">{o.pincode}</span>
-                                                                </div>
-                                                            </td>
-                                                            <td className="px-8 py-5 text-right bg-blue-50/30 group-hover:bg-transparent transition-colors">
-                                                                {o.order_status === 'Cancelled' ? (
-                                                                    <Badge variant="danger" className="rounded-lg font-black uppercase tracking-widest text-[10px] px-3">Voided</Badge>
-                                                                ) : (
-                                                                    <div className="flex flex-col items-end gap-3">
-                                                                        {/* Order Status Select */}
-                                                                        <div className="relative inline-block w-full min-w-[120px]">
-                                                                            <select 
-                                                                                className={`w-full text-[10px] font-black uppercase tracking-widest rounded-xl border border-slate-200 py-2 pl-3 pr-8 focus:ring-4 focus:ring-primary/10 transition-all appearance-none cursor-pointer shadow-sm ${
-                                                                                    o.order_status === 'Delivered' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 
-                                                                                    o.order_status === 'Shipped' ? 'bg-blue-50 text-blue-700 border-blue-100' :
-                                                                                    'bg-white text-slate-700'
-                                                                                }`}
-                                                                                value={o.order_status}
-                                                                                onChange={(e) => handleOrderStatusUpdate(o.order_id, e.target.value)}
-                                                                            >
-                                                                                <option value="Pending">Pending</option>
-                                                                                <option value="Packed">Packed</option>
-                                                                                <option value="Shipped">Shipped</option>
-                                                                                <option value="Delivered">Delivered</option>
-                                                                            </select>
-                                                                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                                                                                <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                                                                </svg>
-                                                                            </div>
-                                                                        </div>
-
-                                                                        {/* Payment Status Management */}
-                                                                        <div className="flex flex-wrap items-center gap-2 mt-2 sm:mt-0">
-                                                                            <Badge variant={o.payment_status === 'Completed' ? 'success' : 'warning'} className="text-[9px] px-2 py-0.5 uppercase tracking-tighter whitespace-nowrap">
-                                                                                {o.payment_status || 'Pending'}
-                                                                            </Badge>
-                                                                            {o.payment_status !== 'Completed' && (
-                                                                                <Button 
-                                                                                    variant="primary" 
-                                                                                    size="sm" 
-                                                                                    className="text-[9px] font-black uppercase tracking-widest h-7 px-3 bg-indigo-600 hover:bg-indigo-700 shadow-sm whitespace-nowrap flex-shrink-0"
-                                                                                    onClick={() => handlePaymentStatusUpdate(o.order_id)}
-                                                                                >
-                                                                                    Mark as Paid
-                                                                                </Button>
-                                                                            )}
-                                                                        </div>
-                                                                    </div>
-                                                                )}
-                                                            </td>
-                                                        </tr>
-                                                    ))}
-                                                    {orders.length === 0 && (
-                                                        <tr>
-                                                            <td colSpan="5" className="px-8 py-24 text-center">
-                                                                <div className="flex flex-col items-center">
-                                                                     <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-3">
-                                                                        <ClipboardDocumentListIcon className="w-8 h-8 text-slate-200" />
-                                                                     </div>
-                                                                     <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">No Records Found</p>
-                                                                </div>
-                                                            </td>
-                                                        </tr>
-                                                    )}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </Card>
+                                                ))}
+                                            {orders.filter(o => {
+                                                if (orderSubTab === 'delivered') return o.order_status === 'Delivered';
+                                                if (orderSubTab === 'cancelled') return o.order_status === 'Cancelled';
+                                                return ['Pending', 'Packed', 'Shipped'].includes(o.order_status);
+                                            }).length === 0 && (
+                                                <tr>
+                                                    <td colSpan="5" className="px-4 py-16 text-center">
+                                                        <div className="flex flex-col items-center">
+                                                            <ClipboardDocumentListIcon className="w-8 h-8 text-slate-300 mb-2" />
+                                                            <p className="text-sm text-slate-400 font-medium">No orders found</p>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
                                 </div>
-                        )}
+                            </Card>
+                        </div>
+                    )}
                 </div>
             </div>
         </DashboardLayout>

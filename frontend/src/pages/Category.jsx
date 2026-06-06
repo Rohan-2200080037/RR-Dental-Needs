@@ -18,7 +18,9 @@ const Category = () => {
         const fetchCategoryProducts = async () => {
             setLoading(true);
             try {
-                const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/products/category/${encodeURIComponent(decodedCategory)}`);
+                const isYear = ['1st Year', '2nd Year', '3rd Year', '4th Year'].includes(decodedCategory);
+                const endpoint = isYear ? 'year' : 'category';
+                const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/products/${endpoint}/${encodeURIComponent(decodedCategory)}`);
                 setProducts(res.data);
                 setError(null);
             } catch (err) {

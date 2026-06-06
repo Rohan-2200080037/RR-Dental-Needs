@@ -462,6 +462,8 @@ const AdminDashboard = () => {
                                                 <th className="px-6 py-4 text-left font-bold text-slate-700 uppercase tracking-widest text-[10px]">S.No</th>
                                                 <th className="px-6 py-4 text-left font-bold text-slate-700 uppercase tracking-widest text-[10px]">Name</th>
                                                 <th className="px-6 py-4 text-left font-bold text-slate-700 uppercase tracking-widest text-[10px]">Seller</th>
+                                                <th className="px-6 py-4 text-left font-bold text-slate-700 uppercase tracking-widest text-[10px]">Year</th>
+                                                <th className="px-6 py-4 text-left font-bold text-slate-700 uppercase tracking-widest text-[10px]">Category</th>
                                                 <th className="px-6 py-4 text-left font-bold text-slate-700 uppercase tracking-widest text-[10px]">Price</th>
                                                 <th className="px-6 py-4 text-left font-bold text-slate-700 uppercase tracking-widest text-[10px]">Stock</th>
                                                 <th className="px-6 py-4 text-right font-bold text-slate-700 uppercase tracking-widest text-[10px]">Actions</th>
@@ -473,6 +475,12 @@ const AdminDashboard = () => {
                                                     <td className="px-6 py-4 font-bold text-slate-600 bg-slate-300/20 group-hover:bg-transparent transition-colors">{idx + 1}</td>
                                                     <td className="px-6 py-4 font-extrabold text-slate-900">{p.name}</td>
                                                     <td className="px-6 py-4 text-slate-700 font-bold bg-blue-100/30 group-hover:bg-transparent transition-colors">#{p.seller_id}</td>
+                                                    <td className="px-6 py-4 bg-indigo-50/50 group-hover:bg-transparent transition-colors">
+                                                        <span className="text-[10px] font-black text-indigo-700 bg-indigo-100 px-2 py-1 rounded-lg border border-indigo-200 uppercase tracking-wider">{p.year}</span>
+                                                    </td>
+                                                    <td className="px-6 py-4 bg-purple-50/40 group-hover:bg-transparent transition-colors">
+                                                        <span className="text-[10px] font-bold text-purple-700 bg-purple-100 px-2 py-1 rounded-lg border border-purple-200">{p.category}</span>
+                                                    </td>
                                                     <td className="px-6 py-4 font-black text-slate-900 bg-emerald-100/30 group-hover:bg-transparent transition-colors">₹{Number(p.price).toLocaleString()}</td>
                                                     <td className="px-6 py-4">
                                                         <Badge variant={p.stock_quantity > 10 ? 'success' : p.stock_quantity > 0 ? 'warning' : 'danger'} className="shadow-sm font-black">

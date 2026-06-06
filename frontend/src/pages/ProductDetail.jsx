@@ -211,7 +211,7 @@ const ProductDetail = () => {
                     <span className="mx-2">/</span>
                     <Link to="/products" className="hover:text-primary transition-colors">Products</Link>
                     <span className="mx-2">/</span>
-                    <Link to={`/category/${product.category}`} className="hover:text-primary transition-colors">{product.category}</Link>
+                    <Link to={`/products?search=${product.year}`} className="hover:text-primary transition-colors">{product.year}</Link>
                     <span className="mx-2 text-slate-300">/</span>
                     <span className="text-slate-900 truncate max-w-[200px] sm:max-w-none">{product.name}</span>
                 </nav>
@@ -248,7 +248,8 @@ const ProductDetail = () => {
                                 <span className="text-slate-300">|</span>
                                 <a href="#reviews" className="text-sm font-medium text-primary hover:underline">{reviews.length} Reviews</a>
                                 <span className="text-slate-300">|</span>
-                                <Badge variant="primary">{product.category}</Badge>
+                                {product.year && <Badge variant="primary">{product.year}</Badge>}
+                                <Badge className="bg-purple-600 text-white border-purple-700 capitalize">{product.category}</Badge>
                             </div>
 
                             <div className="mb-8 flex items-end space-x-4">
@@ -470,7 +471,7 @@ const ProductDetail = () => {
                     <div className="mt-16 pt-8 border-t border-slate-200">
                         <div className="flex items-center justify-between mb-8">
                             <h2 className="text-2xl font-bold text-slate-900">Related Products</h2>
-                            <Link to={`/category/${product.category}`} className="text-primary font-medium hover:underline flex items-center">
+                            <Link to={`/category/${product.category}`} className="text-primary font-medium hover:underline flex items-center capitalize">
                                 View all {product.category} <span className="ml-1">&rarr;</span>
                             </Link>
                         </div>

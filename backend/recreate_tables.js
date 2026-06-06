@@ -48,6 +48,7 @@ const recreateTables = async () => {
           price DECIMAL(10, 2) NOT NULL,
           image VARCHAR(255),
           stock_quantity INT NOT NULL DEFAULT 0,
+          year VARCHAR(100) NOT NULL,
           category VARCHAR(100) NOT NULL,
           seller_id INT NOT NULL,
           created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

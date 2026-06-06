@@ -62,28 +62,28 @@ const seedDatabase = async () => {
     console.log("Seeding products...");
 
     const products = [
-      { name:'Roberts Retractor',desc:'Used for retraction in orthodontics models.',price:150,stock:50,cat:'1st Year',img:'https://images.unsplash.com/photo-1606811841689-23dfddce3e95?w=500&auto=format&fit=crop&q=60'},
-      { name:'Triangular Clasp',desc:'Standard clasp for partial dentures.',price:45,stock:100,cat:'1st Year',img:'https://images.unsplash.com/photo-1598256989467-f584fbbc9277?w=500&auto=format&fit=crop&q=60'},
-      { name:'Z Spring',desc:'Orthodontic spring for lab exercises.',price:20,stock:200,cat:'1st Year',img:'https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?w=500&auto=format&fit=crop&q=60'},
+      { name:'Roberts Retractor',desc:'Used for retraction in orthodontics models.',price:150,stock:50,year:'1st Year',cat:'permanent teeth wax carvings',img:'https://images.unsplash.com/photo-1606811841689-23dfddce3e95?w=500&auto=format&fit=crop&q=60'},
+      { name:'Triangular Clasp',desc:'Standard clasp for partial dentures.',price:45,stock:100,year:'1st Year',cat:'permanent teeth wax carvings',img:'https://images.unsplash.com/photo-1598256989467-f584fbbc9277?w=500&auto=format&fit=crop&q=60'},
+      { name:'Z Spring',desc:'Orthodontic spring for lab exercises.',price:20,stock:200,year:'1st Year',cat:'permanent teeth wax carvings',img:'https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?w=500&auto=format&fit=crop&q=60'},
 
-      { name:'Adams Clasp',desc:'Robust retention clasp.',price:55,stock:150,cat:'2nd Year',img:'https://images.unsplash.com/photo-1536841280383-746a50302ad9?w=500&auto=format&fit=crop&q=60'},
-      { name:'Short Labial Bow',desc:'Labial bow for anterior retraction.',price:85,stock:80,cat:'2nd Year',img:'https://images.unsplash.com/photo-1629909613654-28e377c37b09?w=500&auto=format&fit=crop&q=60'},
-      { name:'Long Labial Bow',desc:'Extended labial bow.',price:90,stock:75,cat:'2nd Year',img:'https://images.unsplash.com/photo-1606811841689-23dfddce3e95?w=500&auto=format&fit=crop&q=60'},
+      { name:'Adams Clasp',desc:'Robust retention clasp.',price:55,stock:150,year:'2nd Year',cat:'preclinical prosthodontics',img:'https://images.unsplash.com/photo-1536841280383-746a50302ad9?w=500&auto=format&fit=crop&q=60'},
+      { name:'Short Labial Bow',desc:'Labial bow for anterior retraction.',price:85,stock:80,year:'2nd Year',cat:'preclinical prosthodontics',img:'https://images.unsplash.com/photo-1629909613654-28e377c37b09?w=500&auto=format&fit=crop&q=60'},
+      { name:'Long Labial Bow',desc:'Extended labial bow.',price:90,stock:75,year:'2nd Year',cat:'preclinical prosthodontics',img:'https://images.unsplash.com/photo-1606811841689-23dfddce3e95?w=500&auto=format&fit=crop&q=60'},
 
-      { name:'Split Labial Bow',desc:'Modified labial bow.',price:110,stock:60,cat:'3rd Year',img:'https://images.unsplash.com/photo-1598256989467-f584fbbc9277?w=500&auto=format&fit=crop&q=60'},
-      { name:'Modified Split Labial Bow',desc:'Advanced split design.',price:125,stock:40,cat:'3rd Year',img:'https://images.unsplash.com/photo-1536841280383-746a50302ad9?w=500&auto=format&fit=crop&q=60'},
-      { name:'Coffin Spring',desc:'Palatal expansion spring.',price:175,stock:35,cat:'3rd Year',img:'https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?w=500&auto=format&fit=crop&q=60'},
+      { name:'Split Labial Bow',desc:'Modified labial bow.',price:110,stock:60,year:'3rd Year',cat:'primary teeth wax carvings',img:'https://images.unsplash.com/photo-1598256989467-f584fbbc9277?w=500&auto=format&fit=crop&q=60'},
+      { name:'Modified Split Labial Bow',desc:'Advanced split design.',price:125,stock:40,year:'3rd Year',cat:'primary teeth wax carvings',img:'https://images.unsplash.com/photo-1536841280383-746a50302ad9?w=500&auto=format&fit=crop&q=60'},
+      { name:'Coffin Spring',desc:'Palatal expansion spring.',price:175,stock:35,year:'3rd Year',cat:'primary teeth wax carvings',img:'https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?w=500&auto=format&fit=crop&q=60'},
 
-      { name:'Buccal Canine Retractor',desc:'Canine retraction appliance.',price:140,stock:45,cat:'4th Year',img:'https://images.unsplash.com/photo-1629909613654-28e377c37b09?w=500&auto=format&fit=crop&q=60'},
-      { name:'Helical Canine Retractor',desc:'Light continuous canine force.',price:160,stock:30,cat:'4th Year',img:'https://images.unsplash.com/photo-1606811841689-23dfddce3e95?w=500&auto=format&fit=crop&q=60'}
+      { name:'Buccal Canine Retractor',desc:'Canine retraction appliance.',price:140,stock:45,year:'4th Year',cat:'Orthodontics',img:'https://images.unsplash.com/photo-1629909613654-28e377c37b09?w=500&auto=format&fit=crop&q=60'},
+      { name:'Helical Canine Retractor',desc:'Light continuous canine force.',price:160,stock:30,year:'4th Year',cat:'Orthodontics',img:'https://images.unsplash.com/photo-1606811841689-23dfddce3e95?w=500&auto=format&fit=crop&q=60'}
     ];
 
     for (let p of products) {
       await pool.query(
         `INSERT INTO products
-        (name,description,price,stock_quantity,category,image,seller_id)
-        VALUES ($1,$2,$3,$4,$5,$6,$7)`,
-        [p.name,p.desc,p.price,p.stock,p.cat,p.img,sellerId]
+        (name,description,price,stock_quantity,year,category,image,seller_id)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+        [p.name,p.desc,p.price,p.stock,p.year,p.cat,p.img,sellerId]
       );
     }
 

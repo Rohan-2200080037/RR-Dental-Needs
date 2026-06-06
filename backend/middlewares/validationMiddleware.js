@@ -34,7 +34,8 @@ const validateProduct = (req, res, next) => {
         description: Joi.string().required(),
         price: Joi.number().positive().required(),
         stock_quantity: Joi.number().integer().min(0).required(),
-        category: Joi.string().valid('1st Year', '2nd Year', '3rd Year', '4th Year').required()
+        year: Joi.string().valid('1st Year', '2nd Year', '3rd Year', '4th Year').required(),
+        category: Joi.string().valid('permanent teeth wax carvings', 'preclinical prosthodontics', 'primary teeth wax carvings', 'Orthodontics').required()
     });
 
     const { error } = schema.validate(req.body);

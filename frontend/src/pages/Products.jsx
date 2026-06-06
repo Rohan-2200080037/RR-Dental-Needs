@@ -10,6 +10,7 @@ const Products = () => {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [filterYear, setFilterYear] = useState('');
     const [filterCategory, setFilterCategory] = useState('');
     const [sortBy, setSortBy] = useState(''); // 'price_asc', 'price_desc', 'newest'
     const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
@@ -40,6 +41,7 @@ const Products = () => {
     // Apply Filters & Search
     let filteredProducts = products.filter(p => {
         let matchesSearch = true;
+        let matchesYear = true;
         let matchesCategory = true;
 
         if (searchQuery) {
@@ -47,11 +49,15 @@ const Products = () => {
                             p.description.toLowerCase().includes(searchQuery.toLowerCase());
         }
 
+        if (filterYear) {
+            matchesYear = p.year === filterYear;
+        }
+
         if (filterCategory) {
             matchesCategory = p.category === filterCategory;
         }
 
-        return matchesSearch && matchesCategory;
+        return matchesSearch && matchesYear && matchesCategory;
     });
 
     // Apply Sorting
@@ -75,12 +81,19 @@ const Products = () => {
     };
 
     const clearFilters = () => {
+        setFilterYear('');
         setFilterCategory('');
         setSortBy('');
         navigate('/products');
     };
 
-    const categories = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
+    const years = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
+    const categories = [
+        { value: 'permanent teeth wax carvings', label: 'Permanent Teeth Wax Carvings' },
+        { value: 'preclinical prosthodontics', label: 'Preclinical Prosthodontics' },
+        { value: 'primary teeth wax carvings', label: 'Primary Teeth Wax Carvings' },
+        { value: 'Orthodontics', label: 'Preclinical Orthodontics' }
+    ];
 
     const FilterSidebar = () => (
         <div className="space-y-8">
@@ -99,25 +112,53 @@ const Products = () => {
                 </form>
             </div>
 
+            {/* Year Filter */}
+            <div>
+                <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4">Year</h3>
+                <div className="space-y-3">
+                    {years.map(yr => (
+                        <label key={yr} className="flex items-center group cursor-pointer">
+                            <input 
+                                type="radio" 
+                                name="year" 
+                                value={yr}
+                                checked={filterYear === yr}
+                                onChange={() => setFilterYear(yr)}
+                                className="w-4 h-4 text-primary bg-slate-100 border-slate-300 focus:ring-primary/50"
+                            />
+                            <span className={`ml-3 text-sm transition-colors ${filterYear === yr ? 'font-medium text-primary' : 'text-slate-600 group-hover:text-slate-900'}`}>
+                                {yr}
+                            </span>
+                        </label>
+                    ))}
+                    {filterYear && (
+                        <button onClick={() => setFilterYear('')} className="text-xs text-slate-400 hover:text-red-500 underline mt-1">Clear year</button>
+                    )}
+                </div>
+            </div>
+
             {/* Category Filter */}
             <div>
                 <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4">Category</h3>
                 <div className="space-y-3">
                     {categories.map(cat => (
-                        <label key={cat} className="flex items-center group cursor-pointer">
+                        <label key={cat.value} className="flex items-center group cursor-pointer">
                             <input 
                                 type="radio" 
                                 name="category" 
-                                value={cat}
-                                checked={filterCategory === cat}
-                                onChange={() => setFilterCategory(cat)}
+                                value={cat.value}
+                                checked={filterCategory === cat.value}
+                                onChange={() => setFilterCategory(cat.value)}
                                 className="w-4 h-4 text-primary bg-slate-100 border-slate-300 focus:ring-primary/50"
                             />
-                            <span className={`ml-3 text-sm transition-colors ${filterCategory === cat ? 'font-medium text-primary' : 'text-slate-600 group-hover:text-slate-900'}`}>
-                                {cat} Requirements
+                            <span className={`ml-3 text-sm transition-colors ${filterCategory === cat.value ? 'font-medium text-primary' : 'text-slate-600 group-hover:text-slate-900'}`}>
+                                {cat.label}
                             </span>
                         </label>
                     ))}
+                    {filterCategory && (
+                        <button onClick={() => setFilterCategory('')} className="text-xs text-slate-400 hover:text-red-500 underline mt-1">Clear category</button>
+                    )}
                 </div>
             </div>
 
@@ -158,7 +199,7 @@ const Products = () => {
                 </div>
             </div>
 
-            {(filterCategory || sortBy || searchQuery) && (
+            {(filterYear || filterCategory || sortBy || searchQuery) && (
                 <div className="pt-4 border-t border-slate-200">
                     <Button variant="outline" className="w-full text-sm" onClick={clearFilters}>
                         Clear All Filters

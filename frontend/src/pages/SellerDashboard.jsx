@@ -21,12 +21,13 @@ const SellerDashboard = () => {
     // Product Filter State
     const [searchQuery, setSearchQuery] = useState('');
     const [yearFilter, setYearFilter] = useState('all');
+    const [categoryFilter, setCategoryFilter] = useState('all');
 
     // Product Form State
     const [showForm, setShowForm] = useState(false);
     const [editingId, setEditingId] = useState(null);
     const [formData, setFormData] = useState({
-        name: '', description: '', price: '', stock_quantity: '', category: '1st Year', image: ''
+        name: '', description: '', price: '', stock_quantity: '', year: '1st Year', category: 'permanent teeth wax carvings', image: ''
     });
     const [imageFile, setImageFile] = useState(null);
     const [imagePreviewUrl, setImagePreviewUrl] = useState('');
@@ -69,7 +70,7 @@ const SellerDashboard = () => {
                     if (activeTab === 'add-product') {
                         setShowForm(true);
                         setEditingId(null);
-                        setFormData({ name: '', description: '', price: '', stock_quantity: '', category: '1st Year', image: ''});
+                        setFormData({ name: '', description: '', price: '', stock_quantity: '', year: '1st Year', category: 'permanent teeth wax carvings', image: ''});
                         setImageFile(null);
                         setImagePreviewUrl('');
                     } else {
@@ -104,6 +105,7 @@ const SellerDashboard = () => {
             submitData.append('description', formData.description);
             submitData.append('price', formData.price);
             submitData.append('stock_quantity', formData.stock_quantity);
+            submitData.append('year', formData.year);
             submitData.append('category', formData.category);
             
             if (imageFile) {
@@ -132,7 +134,7 @@ const SellerDashboard = () => {
             
             setShowForm(false);
             setEditingId(null);
-            setFormData({ name: '', description: '', price: '', stock_quantity: '', category: '1st Year', image: ''});
+            setFormData({ name: '', description: '', price: '', stock_quantity: '', year: '1st Year', category: 'permanent teeth wax carvings', image: ''});
             setImageFile(null);
             setImagePreviewUrl('');
             
@@ -154,7 +156,8 @@ const SellerDashboard = () => {
             description: product.description,
             price: product.price,
             stock_quantity: product.stock_quantity,
-            category: product.category,
+            year: product.year || '1st Year',
+            category: product.category || 'permanent teeth wax carvings',
             image: product.image || ''
         });
         setImageFile(null);
@@ -270,7 +273,7 @@ const SellerDashboard = () => {
                                     setShowForm(!showForm);
                                     if (!showForm) {
                                         setEditingId(null);
-                                        setFormData({ name: '', description: '', price: '', stock_quantity: '', category: '1st Year', image: ''});
+                                        setFormData({ name: '', description: '', price: '', stock_quantity: '', year: '1st Year', category: 'permanent teeth wax carvings', image: ''});
                                         setImageFile(null);
                                         setImagePreviewUrl('');
                                     }
@@ -348,8 +351,8 @@ const SellerDashboard = () => {
                                                 <Input label="Product Name" name="name" value={formData.name} onChange={handleFormChange} required placeholder="e.g. Dental Mirror High Quality" />
                                             </div>
                                             <div className="space-y-1">
-                                                <label className="block text-sm font-bold text-slate-700 mb-1.5 ml-1">Category</label>
-                                                <select name="category" className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-primary/10 bg-white text-slate-900 font-medium transition-all" value={formData.category} onChange={handleFormChange}>
+                                                <label className="block text-sm font-bold text-slate-700 mb-1.5 ml-1">Year</label>
+                                                <select name="year" className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-primary/10 bg-white text-slate-900 font-medium transition-all" value={formData.year} onChange={handleFormChange}>
                                                     <option value="1st Year">1st Year</option>
                                                     <option value="2nd Year">2nd Year</option>
                                                     <option value="3rd Year">3rd Year</option>
@@ -361,6 +364,15 @@ const SellerDashboard = () => {
                                             </div>
                                             <div className="space-y-1">
                                                 <Input label="Available Stock" type="number" name="stock_quantity" value={formData.stock_quantity} onChange={handleFormChange} required min="0" />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="block text-sm font-bold text-slate-700 mb-1.5 ml-1">Category</label>
+                                                <select name="category" className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-primary/10 bg-white text-slate-900 font-medium transition-all" value={formData.category} onChange={handleFormChange}>
+                                                    <option value="permanent teeth wax carvings">Permanent Teeth Wax Carvings</option>
+                                                    <option value="preclinical prosthodontics">Preclinical Prosthodontics</option>
+                                                    <option value="primary teeth wax carvings">Primary Teeth Wax Carvings</option>
+                                                    <option value="Orthodontics">Preclinical Orthodontics</option>
+                                                </select>
                                             </div>
                                             
                                             <div className="md:col-span-2 space-y-2">
@@ -411,9 +423,9 @@ const SellerDashboard = () => {
                                 </div>
                             ) : (
                                 <div className="space-y-4">
-                                    {/* Search & Year Filter Bar */}
-                                    <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
-                                        <div className="relative flex-1">
+                                    {/* Search, Year & Category Filter Bar */}
+                                    <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center flex-wrap">
+                                        <div className="relative flex-1 min-w-[200px]">
                                             <MagnifyingGlassIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
                                             <input
                                                 type="text"
@@ -452,14 +464,35 @@ const SellerDashboard = () => {
                                                 <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                                             </div>
                                         </div>
+                                        <div className="relative">
+                                            <FunnelIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-400 pointer-events-none" />
+                                            <select
+                                                value={categoryFilter}
+                                                onChange={(e) => setCategoryFilter(e.target.value)}
+                                                className={`w-full sm:w-auto pl-10 pr-10 py-3 rounded-xl border text-sm font-bold appearance-none cursor-pointer transition-all shadow-sm focus:outline-none focus:ring-4 focus:ring-indigo-500/10 ${
+                                                    categoryFilter !== 'all'
+                                                        ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
+                                                        : 'bg-white border-slate-200 text-slate-700'
+                                                }`}
+                                            >
+                                                <option value="all">All Categories</option>
+                                                <option value="permanent teeth wax carvings">Permanent Teeth Wax Carvings</option>
+                                                <option value="preclinical prosthodontics">Preclinical Prosthodontics</option>
+                                                <option value="primary teeth wax carvings">Primary Teeth Wax Carvings</option>
+                                                <option value="Orthodontics">Preclinical Orthodontics</option>
+                                            </select>
+                                            <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none">
+                                                <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                                            </div>
+                                        </div>
                                     </div>
 
                                     <div className="flex justify-between items-center px-2">
                                         <h3 className="font-black text-slate-800 tracking-tight">Inventory Status</h3>
                                         <div className="flex items-center gap-2">
-                                            {(searchQuery || yearFilter !== 'all') && (
+                                            {(searchQuery || yearFilter !== 'all' || categoryFilter !== 'all') && (
                                                 <button
-                                                    onClick={() => { setSearchQuery(''); setYearFilter('all'); }}
+                                                    onClick={() => { setSearchQuery(''); setYearFilter('all'); setCategoryFilter('all'); }}
                                                     className="text-[10px] font-black text-red-500 uppercase tracking-[0.15em] bg-red-50 px-3 py-1.5 rounded-full border border-red-100 hover:bg-red-100 transition-colors cursor-pointer"
                                                 >
                                                     Clear Filters
@@ -471,8 +504,9 @@ const SellerDashboard = () => {
                                                         const matchesSearch = !searchQuery || 
                                                             p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                                                             String(p.id).includes(searchQuery);
-                                                        const matchesYear = yearFilter === 'all' || p.category === yearFilter;
-                                                        return matchesSearch && matchesYear;
+                                                        const matchesYear = yearFilter === 'all' || p.year === yearFilter;
+                                                        const matchesCategory = categoryFilter === 'all' || p.category === categoryFilter;
+                                                        return matchesSearch && matchesYear && matchesCategory;
                                                     }).length} / {products.length} Products
                                             </div>
                                         </div>
@@ -486,6 +520,7 @@ const SellerDashboard = () => {
                                                         <th className="px-8 py-5 text-left font-bold uppercase tracking-widest text-[11px]">Product Details</th>
                                                         <th className="px-8 py-5 text-left font-bold uppercase tracking-widest text-[11px]">Price</th>
                                                         <th className="px-8 py-5 text-left font-bold uppercase tracking-widest text-[11px]">Inventory</th>
+                                                        <th className="px-8 py-5 text-left font-bold uppercase tracking-widest text-[11px]">Category</th>
                                                         <th className="px-8 py-5 text-right font-bold uppercase tracking-widest text-[11px]">Actions</th>
                                                     </tr>
                                                 </thead>
@@ -495,8 +530,9 @@ const SellerDashboard = () => {
                                                         const matchesSearch = !searchQuery || 
                                                             p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                                                             String(p.id).includes(searchQuery);
-                                                        const matchesYear = yearFilter === 'all' || p.category === yearFilter;
-                                                        return matchesSearch && matchesYear;
+                                                        const matchesYear = yearFilter === 'all' || p.year === yearFilter;
+                                                        const matchesCategory = categoryFilter === 'all' || p.category === categoryFilter;
+                                                        return matchesSearch && matchesYear && matchesCategory;
                                                     })
                                                     .map((p, idx) => (
                                                         <tr key={p.id} className="hover:bg-blue-50/50 transition-colors group even:bg-slate-100/80 border-b border-slate-200 last:border-0">
@@ -516,7 +552,7 @@ const SellerDashboard = () => {
                                                                     <div>
                                                                         <div className="font-extrabold text-slate-900 leading-tight group-hover:text-primary transition-colors">{p.name}</div>
                                                                         <div className="flex items-center mt-1.5">
-                                                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{p.category}</span>
+                                                                            <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest bg-indigo-50 px-1.5 py-0.5 rounded">{p.year}</span>
                                                                             <span className="mx-2 text-slate-200">|</span>
                                                                             <span className="text-[10px] font-mono text-slate-300">ID: #{p.id}</span>
                                                                         </div>
@@ -532,6 +568,9 @@ const SellerDashboard = () => {
                                                                     <span className={`font-black text-sm ${p.stock_quantity === 0 ? 'text-red-500' : 'text-slate-700'}`}>{p.stock_quantity}</span>
                                                                     <span className="text-[10px] font-bold text-slate-400 ml-1.5 uppercase">Left</span>
                                                                 </div>
+                                                            </td>
+                                                            <td className="px-8 py-5 bg-purple-50/40 group-hover:bg-transparent transition-colors">
+                                                                <span className="text-[10px] font-bold text-purple-700 bg-purple-100 px-2 py-1 rounded-lg border border-purple-200">{p.category}</span>
                                                             </td>
                                                             <td className="px-8 py-5 text-right bg-slate-200/30 group-hover:bg-transparent transition-colors">
                                                                 <div className="flex justify-end gap-2">
@@ -557,30 +596,31 @@ const SellerDashboard = () => {
                                                         const matchesSearch = !searchQuery || 
                                                             p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                                                             String(p.id).includes(searchQuery);
-                                                        const matchesYear = yearFilter === 'all' || p.category === yearFilter;
-                                                        return matchesSearch && matchesYear;
+                                                        const matchesYear = yearFilter === 'all' || p.year === yearFilter;
+                                                        const matchesCategory = categoryFilter === 'all' || p.category === categoryFilter;
+                                                        return matchesSearch && matchesYear && matchesCategory;
                                                     }).length === 0 && (
                                                         <tr>
                                                             <td colSpan="5" className="px-8 py-24 text-center">
                                                                 <div className="flex flex-col items-center">
                                                                     <div className="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center mb-4 border border-slate-100">
-                                                                        {(searchQuery || yearFilter !== 'all') ? (
+                                                                        {(searchQuery || yearFilter !== 'all' || categoryFilter !== 'all') ? (
                                                                             <MagnifyingGlassIcon className="w-8 h-8 text-slate-200" />
                                                                         ) : (
                                                                             <ShoppingBagIcon className="w-8 h-8 text-slate-200" />
                                                                         )}
                                                                     </div>
                                                                     <h4 className="font-black text-slate-400 uppercase tracking-widest text-sm">
-                                                                        {(searchQuery || yearFilter !== 'all') ? 'No Matches Found' : 'Inventory Empty'}
+                                                                        {(searchQuery || yearFilter !== 'all' || categoryFilter !== 'all') ? 'No Matches Found' : 'Inventory Empty'}
                                                                     </h4>
                                                                     <p className="text-slate-300 text-xs mt-1">
-                                                                        {(searchQuery || yearFilter !== 'all') 
+                                                                        {(searchQuery || yearFilter !== 'all' || categoryFilter !== 'all') 
                                                                             ? 'Try adjusting your search or filter criteria' 
                                                                             : 'Start by adding your first dental product'}
                                                                     </p>
-                                                                    {(searchQuery || yearFilter !== 'all') && (
+                                                                    {(searchQuery || yearFilter !== 'all' || categoryFilter !== 'all') && (
                                                                         <button
-                                                                            onClick={() => { setSearchQuery(''); setYearFilter('all'); }}
+                                                                            onClick={() => { setSearchQuery(''); setYearFilter('all'); setCategoryFilter('all'); }}
                                                                             className="mt-4 text-xs font-bold text-primary hover:text-primary/80 underline underline-offset-4 transition-colors"
                                                                         >
                                                                             Clear all filters

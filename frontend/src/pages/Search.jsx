@@ -15,10 +15,17 @@ const Search = () => {
     const [filters, setFilters] = useState({
         minPrice: '',
         maxPrice: '',
+        year: searchParams.get('year') || '',
         category: searchParams.get('category') || ''
     });
 
-    const categories = ['1st Year', '2nd Year', '3rd Year', '4th Year', 'Endodontics', 'Orthodontics', 'General'];
+    const years = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
+    const categories = [
+        { value: 'permanent teeth wax carvings', label: 'Permanent Teeth Wax Carvings' },
+        { value: 'preclinical prosthodontics', label: 'Preclinical Prosthodontics' },
+        { value: 'primary teeth wax carvings', label: 'Primary Teeth Wax Carvings' },
+        { value: 'Orthodontics', label: 'Preclinical Orthodontics' }
+    ];
 
     const fetchSearchResults = async () => {
         setLoading(true);
@@ -27,6 +34,7 @@ const Search = () => {
             if (query) params.append('q', query);
             if (filters.minPrice) params.append('minPrice', filters.minPrice);
             if (filters.maxPrice) params.append('maxPrice', filters.maxPrice);
+            if (filters.year) params.append('year', filters.year);
             if (filters.category) params.append('category', filters.category);
 
             const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/products/search?${params.toString()}`);
@@ -48,6 +56,8 @@ const Search = () => {
 
     const applyFilters = () => {
         const newParams = new URLSearchParams(searchParams);
+        if (filters.year) newParams.set('year', filters.year);
+        else newParams.delete('year');
         if (filters.category) newParams.set('category', filters.category);
         else newParams.delete('category');
         setSearchParams(newParams);
@@ -78,6 +88,21 @@ const Search = () => {
 
                             <div className="space-y-6">
                                 <div>
+                                    <label className="block text-sm font-semibold text-slate-700 mb-2">Year</label>
+                                    <select 
+                                        name="year"
+                                        className="w-full rounded-lg border-slate-300 text-sm focus:ring-primary focus:border-primary"
+                                        value={filters.year}
+                                        onChange={handleFilterChange}
+                                    >
+                                        <option value="">All Years</option>
+                                        {years.map(yr => (
+                                            <option key={yr} value={yr}>{yr}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div>
                                     <label className="block text-sm font-semibold text-slate-700 mb-2">Category</label>
                                     <select 
                                         name="category"
@@ -87,7 +112,7 @@ const Search = () => {
                                     >
                                         <option value="">All Categories</option>
                                         {categories.map(cat => (
-                                            <option key={cat} value={cat}>{cat}</option>
+                                            <option key={cat.value} value={cat.value}>{cat.label}</option>
                                         ))}
                                     </select>
                                 </div>
@@ -128,7 +153,7 @@ const Search = () => {
                             <div className="bg-white py-20 rounded-2xl border border-slate-200 text-center">
                                 <p className="text-slate-500 font-medium">No products match your search/filters.</p>
                                 <Button variant="ghost" className="mt-4" onClick={() => {
-                                    setFilters({ minPrice: '', maxPrice: '', category: '' });
+                                    setFilters({ minPrice: '', maxPrice: '', year: '', category: '' });
                                     setSearchParams({ q: query });
                                 }}>Clear All Filters</Button>
                             </div>

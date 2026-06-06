@@ -23,7 +23,8 @@ const ProductCard = ({ product }) => {
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
         <div className="absolute top-3 right-3 flex flex-col gap-2">
-           <Badge variant="primary" className="shadow-sm">{product.category}</Badge>
+           {product.year && <Badge variant="primary" className="shadow-sm text-[10px]">{product.year}</Badge>}
+           <Badge variant="secondary" className="shadow-sm text-[10px] bg-purple-600 text-white border-purple-700 capitalize">{product.category}</Badge>
            {product.stock_quantity < 5 && product.stock_quantity > 0 && (
              <Badge variant="warning" className="shadow-sm">
                {(user?.role === 'admin' || user?.role === 'seller') ? `Only ${product.stock_quantity} left` : 'Low Stock'}

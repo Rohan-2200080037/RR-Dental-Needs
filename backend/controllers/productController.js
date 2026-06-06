@@ -31,7 +31,7 @@ const handleImageUpload = async (file) => {
 };
 
 exports.createProduct = async (req, res) => {
-    const { name, description, price, stock_quantity, category } = req.body;
+    const { name, description, price, stock_quantity, year, category } = req.body;
     let image = req.body.image;
     if (req.file) {
         image = await handleImageUpload(req.file);
@@ -46,14 +46,14 @@ exports.createProduct = async (req, res) => {
         return res.status(403).json({ message: "Seller profile not found or pending approval." });
     }
 
-    if (!name || !description || !price || !category) {
+    if (!name || !description || !price || !year || !category) {
         return res.status(400).json({ message: "Required fields are missing." });
     }
 
     try {
         const result = await pool.query(
-            'INSERT INTO Products (name, description, price, image, stock_quantity, category, seller_id) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
-            [name, description, price, image, stock_quantity || 0, category, req.user.sellerId]
+            'INSERT INTO Products (name, description, price, image, stock_quantity, year, category, seller_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id',
+            [name, description, price, image, stock_quantity || 0, year, category, req.user.sellerId]
         );
         res.status(201).json({ id: result.rows[0].id, message: "Product created successfully." });
     } catch (err) {
@@ -94,9 +94,20 @@ exports.getProductsByCategory = async (req, res) => {
     }
 };
 
+exports.getProductsByYear = async (req, res) => {
+    const { year } = req.params;
+    try {
+        const decodedYear = decodeURIComponent(year);
+        const result = await pool.query('SELECT * FROM Products WHERE year = $1', [decodedYear]);
+        res.status(200).json(result.rows);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
+
 exports.updateProduct = async (req, res) => {
     const { id } = req.params;
-    const { name, description, price, stock_quantity, category } = req.body;
+    const { name, description, price, stock_quantity, year, category } = req.body;
     
     let image = req.body.image;
     if (req.file) {
@@ -113,12 +124,12 @@ exports.updateProduct = async (req, res) => {
             return res.status(403).json({ message: "Unauthorized to update this product." });
         }
 
-        let query = 'UPDATE Products SET name=$1, description=$2, price=$3, stock_quantity=$4, category=$5 WHERE id=$6';
-        let queryParams = [name, description, price, stock_quantity, category, id];
+        let query = 'UPDATE Products SET name=$1, description=$2, price=$3, stock_quantity=$4, year=$5, category=$6 WHERE id=$7';
+        let queryParams = [name, description, price, stock_quantity, year, category, id];
 
         if (image) {
-             query = 'UPDATE Products SET name=$1, description=$2, price=$3, image=$4, stock_quantity=$5, category=$6 WHERE id=$7';
-             queryParams = [name, description, price, image, stock_quantity, category, id];
+             query = 'UPDATE Products SET name=$1, description=$2, price=$3, image=$4, stock_quantity=$5, year=$6, category=$7 WHERE id=$8';
+             queryParams = [name, description, price, image, stock_quantity, year, category, id];
         }
 
         await pool.query(query, queryParams);
@@ -166,12 +177,13 @@ exports.getSellerProducts = async (req, res) => {
 exports.getRecommendedProducts = async (req, res) => {
     const { id } = req.params;
     try {
-        const productResult = await pool.query('SELECT category FROM Products WHERE id = $1', [id]);
+        const productResult = await pool.query('SELECT category, year FROM Products WHERE id = $1', [id]);
         if (productResult.rows.length === 0) {
             return res.status(404).json({ message: "Product not found." });
         }
-        const category = productResult.rows[0].category;
-        const result = await pool.query('SELECT * FROM Products WHERE category = $1 AND id != $2 LIMIT 4', [category, id]);
+        const { category, year } = productResult.rows[0];
+        // Recommend products from same category or same year
+        const result = await pool.query('SELECT * FROM Products WHERE (category = $1 OR year = $2) AND id != $3 LIMIT 4', [category, year, id]);
         res.status(200).json(result.rows);
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -179,7 +191,7 @@ exports.getRecommendedProducts = async (req, res) => {
 };
 
 exports.searchProducts = async (req, res) => {
-    const { q, minPrice, maxPrice, category } = req.query;
+    const { q, minPrice, maxPrice, category, year } = req.query;
     let query = 'SELECT * FROM Products WHERE 1=1';
     let queryParams = [];
     let paramCount = 1;
@@ -205,6 +217,12 @@ exports.searchProducts = async (req, res) => {
     if (category) {
         query += ` AND category = $${paramCount}`;
         queryParams.push(category);
+        paramCount++;
+    }
+
+    if (year) {
+        query += ` AND year = $${paramCount}`;
+        queryParams.push(year);
         paramCount++;
     }
 

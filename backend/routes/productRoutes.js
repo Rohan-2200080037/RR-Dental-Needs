@@ -10,6 +10,7 @@ router.get('/search', productController.searchProducts);
 router.get('/:id', productController.getProductById);
 router.get('/recommend/:id', productController.getRecommendedProducts);
 router.get('/category/:category', productController.getProductsByCategory);
+router.get('/year/:year', productController.getProductsByYear);
 
 // Protected routes (Seller/Admin)
 router.post('/', [verifyToken, isRole(['seller']), upload.single('image')], productController.createProduct);

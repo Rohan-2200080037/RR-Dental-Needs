@@ -35,34 +35,40 @@ const Category = () => {
     }, [decodedCategory]);
 
     return (
-        <div className="bg-slate-50 min-h-screen pt-8 pb-20">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                
-                <div className="mb-10">
-                    <button 
-                        onClick={() => navigate(-1)} 
-                        className="inline-flex items-center text-sm font-medium text-slate-500 hover:text-primary mb-6 transition-colors"
+        <div className="min-h-screen pb-20">
+            {/* Hero Banner */}
+            <div className="bg-gradient-to-br from-teal-600 via-teal-700 to-emerald-800 relative overflow-hidden">
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.1)_0%,transparent_60%)]" />
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 relative">
+                    <button
+                        onClick={() => navigate(-1)}
+                        className="inline-flex items-center text-sm font-medium text-teal-100 hover:text-white mb-6 transition-colors"
                     >
-                        <ArrowLeftIcon className="w-4 h-4 mr-1" />
+                        <ArrowLeftIcon className="w-4 h-4 mr-1.5" />
                         Back
                     </button>
-                    
-                    <div className="bg-white rounded-2xl p-8 sm:p-12 shadow-sm border border-slate-200 text-center relative overflow-hidden">
-                        {/* Decorative Background */}
-                        <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-primary/5 rounded-full blur-3xl"></div>
-                        <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-40 h-40 bg-secondary/5 rounded-full blur-3xl"></div>
-                        
-                        <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mb-4 relative z-10">
-                            {decodedCategory} Requirements
-                        </h1>
-                        <p className="text-lg text-slate-500 max-w-2xl mx-auto relative z-10">
-                            Specialized tools and materials tailored for your academic year. All products are sourced from verified sellers to ensure the highest quality.
-                        </p>
+                    <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight mb-3">
+                        {decodedCategory}{' '}
+                        <span className="text-teal-200">
+                            {['1st Year', '2nd Year', '3rd Year', '4th Year'].includes(decodedCategory) ? 'Requirements' : 'Instruments'}
+                        </span>
+                    </h1>
+                    <p className="text-teal-100/80 text-base sm:text-lg max-w-2xl">
+                        Specialized tools and materials tailored for your academic journey. All products sourced from verified sellers for the highest quality.
+                    </p>
+                </div>
+            </div>
+
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6">
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-6 mb-8">
+                    <div className="flex items-center gap-2 text-sm text-slate-500">
+                        <span className="font-semibold text-slate-700">{products.length}</span>
+                        {products.length === 1 ? 'product' : 'products'} found
                     </div>
                 </div>
 
                 {error && (
-                    <div className="bg-red-50 text-red-800 p-4 rounded-xl border border-red-200 mb-8 font-medium shadow-sm">
+                    <div className="bg-red-50 text-red-700 p-4 rounded-xl border border-red-200 mb-8 text-sm font-medium">
                         {error}
                     </div>
                 )}
@@ -71,23 +77,22 @@ const Category = () => {
                     <PageLoader />
                 ) : products.length === 0 ? (
                     <div className="bg-white p-12 rounded-2xl border border-slate-200 shadow-sm text-center">
-                        <div className="w-20 h-20 bg-slate-50 border border-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                            <span className="text-3xl">📭</span>
+                        <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100">
+                            <span className="text-2xl">🔍</span>
                         </div>
-                        <h3 className="text-xl font-bold text-slate-900 mb-2">No products available</h3>
-                        <p className="text-slate-500 mb-8 max-w-md mx-auto">There are currently no instruments listed for this year in our catalog. Please check back later.</p>
-                        <Button variant="primary" onClick={() => navigate('/')}>Return Home</Button>
+                        <h3 className="text-lg font-bold text-slate-900 mb-1">No products available</h3>
+                        <p className="text-sm text-slate-500 mb-6 max-w-sm mx-auto">
+                            There are currently no instruments listed for {decodedCategory}. Check back later or browse other categories.
+                        </p>
+                        <Button variant="outline" size="sm" className="border-slate-300 text-slate-600" onClick={() => navigate('/products')}>
+                            Browse All Products
+                        </Button>
                     </div>
                 ) : (
-                    <div>
-                        <div className="flex justify-between items-center mb-6">
-                            <span className="text-slate-600 font-medium">{products.length} Products Found</span>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                            {products.map(product => (
-                                <ProductCard key={product.id} product={product} />
-                            ))}
-                        </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+                        {products.map((product, idx) => (
+                            <ProductCard key={product.id} product={product} index={idx} />
+                        ))}
                     </div>
                 )}
             </div>

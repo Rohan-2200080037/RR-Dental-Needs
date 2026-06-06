@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { FunnelIcon, MagnifyingGlassIcon, XMarkIcon, AdjustmentsHorizontalIcon } from '@heroicons/react/24/outline';
+import { FunnelIcon, MagnifyingGlassIcon, XMarkIcon, AdjustmentsHorizontalIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
 import ProductCard from '../components/ui/ProductCard';
 import { PageLoader } from '../components/ui/Loader';
 import Button from '../components/ui/Button';
@@ -12,9 +12,9 @@ const Products = () => {
     const [error, setError] = useState(null);
     const [filterYear, setFilterYear] = useState('');
     const [filterCategory, setFilterCategory] = useState('');
-    const [sortBy, setSortBy] = useState(''); // 'price_asc', 'price_desc', 'newest'
+    const [sortBy, setSortBy] = useState('');
     const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
-    
+
     const location = useLocation();
     const navigate = useNavigate();
     const queryParams = new URLSearchParams(location.search);
@@ -38,15 +38,14 @@ const Products = () => {
         window.scrollTo(0, 0);
     }, []);
 
-    // Apply Filters & Search
     let filteredProducts = products.filter(p => {
         let matchesSearch = true;
         let matchesYear = true;
         let matchesCategory = true;
 
         if (searchQuery) {
-            matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                            p.description.toLowerCase().includes(searchQuery.toLowerCase());
+            matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                p.description.toLowerCase().includes(searchQuery.toLowerCase());
         }
 
         if (filterYear) {
@@ -60,7 +59,6 @@ const Products = () => {
         return matchesSearch && matchesYear && matchesCategory;
     });
 
-    // Apply Sorting
     if (sortBy === 'price_asc') {
         filteredProducts.sort((a, b) => Number(a.price) - Number(b.price));
     } else if (sortBy === 'price_desc') {
@@ -76,7 +74,7 @@ const Products = () => {
         if (q?.trim()) {
             navigate(`/products?search=${encodeURIComponent(q.trim())}`);
         } else {
-            navigate(`/products`);
+            navigate('/products');
         }
     };
 
@@ -95,153 +93,161 @@ const Products = () => {
         { value: 'Orthodontics', label: 'Preclinical Orthodontics' }
     ];
 
+    const sortOptions = [
+        { value: '', label: 'Newest' },
+        { value: 'price_asc', label: 'Price: Low to High' },
+        { value: 'price_desc', label: 'Price: High to Low' },
+    ];
+
+    const hasActiveFilters = filterYear || filterCategory || sortBy || searchQuery;
+
     const FilterSidebar = () => (
-        <div className="space-y-8">
-            {/* Search */}
+        <div className="space-y-6">
             <div>
-                <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4">Search</h3>
-                <form onSubmit={handleSearchSubmit} className="relative">
-                    <input
-                        type="text"
-                        name="q"
-                        defaultValue={searchQuery}
-                        placeholder="Search products..."
-                        className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm"
-                    />
-                    <MagnifyingGlassIcon className="absolute left-3 top-2.5 h-5 w-5 text-slate-400" />
-                </form>
-            </div>
-
-            {/* Year Filter */}
-            <div>
-                <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4">Year</h3>
-                <div className="space-y-3">
+                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Year</h3>
+                <div className="space-y-1">
                     {years.map(yr => (
-                        <label key={yr} className="flex items-center group cursor-pointer">
-                            <input 
-                                type="radio" 
-                                name="year" 
-                                value={yr}
-                                checked={filterYear === yr}
-                                onChange={() => setFilterYear(yr)}
-                                className="w-4 h-4 text-primary bg-slate-100 border-slate-300 focus:ring-primary/50"
-                            />
-                            <span className={`ml-3 text-sm transition-colors ${filterYear === yr ? 'font-medium text-primary' : 'text-slate-600 group-hover:text-slate-900'}`}>
-                                {yr}
-                            </span>
-                        </label>
+                        <button
+                            key={yr}
+                            onClick={() => setFilterYear(filterYear === yr ? '' : yr)}
+                            className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all ${filterYear === yr
+                                    ? 'bg-teal-50 text-teal-700 font-semibold border border-teal-200'
+                                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 border border-transparent'
+                                }`}
+                        >
+                            {yr}
+                        </button>
                     ))}
-                    {filterYear && (
-                        <button onClick={() => setFilterYear('')} className="text-xs text-slate-400 hover:text-red-500 underline mt-1">Clear year</button>
-                    )}
                 </div>
             </div>
 
-            {/* Category Filter */}
             <div>
-                <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4">Category</h3>
-                <div className="space-y-3">
+                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Category</h3>
+                <div className="space-y-1">
                     {categories.map(cat => (
-                        <label key={cat.value} className="flex items-center group cursor-pointer">
-                            <input 
-                                type="radio" 
-                                name="category" 
-                                value={cat.value}
-                                checked={filterCategory === cat.value}
-                                onChange={() => setFilterCategory(cat.value)}
-                                className="w-4 h-4 text-primary bg-slate-100 border-slate-300 focus:ring-primary/50"
-                            />
-                            <span className={`ml-3 text-sm transition-colors ${filterCategory === cat.value ? 'font-medium text-primary' : 'text-slate-600 group-hover:text-slate-900'}`}>
-                                {cat.label}
-                            </span>
-                        </label>
+                        <button
+                            key={cat.value}
+                            onClick={() => setFilterCategory(filterCategory === cat.value ? '' : cat.value)}
+                            className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all capitalize ${filterCategory === cat.value
+                                    ? 'bg-teal-50 text-teal-700 font-semibold border border-teal-200'
+                                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 border border-transparent'
+                                }`}
+                        >
+                            {cat.label}
+                        </button>
                     ))}
-                    {filterCategory && (
-                        <button onClick={() => setFilterCategory('')} className="text-xs text-slate-400 hover:text-red-500 underline mt-1">Clear category</button>
-                    )}
                 </div>
             </div>
 
-            {/* Sort Order */}
-            <div>
-                <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4">Sort By</h3>
-                <div className="space-y-3">
-                    <label className="flex items-center group cursor-pointer">
-                        <input 
-                            type="radio" 
-                            name="sort" 
-                            checked={sortBy === 'price_asc'}
-                            onChange={() => setSortBy('price_asc')}
-                            className="w-4 h-4 text-primary border-slate-300 focus:ring-primary"
-                        />
-                        <span className="ml-3 text-sm text-slate-600 group-hover:text-slate-900">Price: Low to High</span>
-                    </label>
-                    <label className="flex items-center group cursor-pointer">
-                        <input 
-                            type="radio" 
-                            name="sort" 
-                            checked={sortBy === 'price_desc'}
-                            onChange={() => setSortBy('price_desc')}
-                            className="w-4 h-4 text-primary border-slate-300 focus:ring-primary"
-                        />
-                        <span className="ml-3 text-sm text-slate-600 group-hover:text-slate-900">Price: High to Low</span>
-                    </label>
-                    <label className="flex items-center group cursor-pointer">
-                        <input 
-                            type="radio" 
-                            name="sort" 
-                            checked={sortBy === 'newest'}
-                            onChange={() => setSortBy('newest')}
-                            className="w-4 h-4 text-primary border-slate-300 focus:ring-primary"
-                        />
-                        <span className="ml-3 text-sm text-slate-600 group-hover:text-slate-900">Newest Arrivals</span>
-                    </label>
-                </div>
-            </div>
-
-            {(filterYear || filterCategory || sortBy || searchQuery) && (
-                <div className="pt-4 border-t border-slate-200">
-                    <Button variant="outline" className="w-full text-sm" onClick={clearFilters}>
-                        Clear All Filters
-                    </Button>
-                </div>
+            {hasActiveFilters && (
+                <button
+                    onClick={clearFilters}
+                    className="w-full py-2.5 text-sm font-medium text-slate-500 hover:text-red-600 border border-slate-200 rounded-lg hover:border-red-200 hover:bg-red-50 transition-all"
+                >
+                    Clear All Filters
+                </button>
             )}
         </div>
     );
 
     return (
-        <div className="bg-slate-50 min-h-screen pt-8 pb-20">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                
-                <div className="md:flex md:items-end md:justify-between mb-8">
-                    <div>
-                        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
-                            {searchQuery ? `Search Results for "${searchQuery}"` : 'All Instruments'}
-                        </h1>
-                        <p className="mt-2 text-slate-500">
-                            Showing {filteredProducts.length} results
-                        </p>
+        <div className="min-h-screen pb-20">
+            {/* Hero Banner */}
+            <div className="bg-gradient-to-br from-teal-600 via-teal-700 to-emerald-800">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+                        <div>
+                            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight">
+                                {searchQuery ? (
+                                    <>
+                                        Results for "<span className="text-teal-200">{searchQuery}</span>"
+                                    </>
+                                ) : (
+                                    'All Instruments'
+                                )}
+                            </h1>
+                            <p className="mt-3 text-teal-100/80 text-base sm:text-lg max-w-xl">
+                                Browse our complete collection of dental instruments and materials for every academic year.
+                            </p>
+                        </div>
+                        <form onSubmit={handleSearchSubmit} className="relative w-full sm:w-72">
+                            <input
+                                type="text"
+                                name="q"
+                                defaultValue={searchQuery}
+                                placeholder="Search instruments..."
+                                className="w-full pl-10 pr-4 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white placeholder-teal-200/60 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/30 text-sm"
+                            />
+                            <MagnifyingGlassIcon className="absolute left-3 top-3 h-5 w-5 text-teal-200/60" />
+                        </form>
                     </div>
-                    <div className="mt-4 md:mt-0 lg:hidden">
-                        <Button variant="secondary" onClick={() => setIsMobileFiltersOpen(true)} className="w-full sm:w-auto">
-                            <AdjustmentsHorizontalIcon className="w-5 h-5 mr-2" />
-                            Filters
-                        </Button>
+                </div>
+            </div>
+
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6">
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-6 mb-8">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                        <div className="flex items-center gap-2 text-sm text-slate-500">
+                            <span className="font-semibold text-slate-700">{filteredProducts.length}</span>
+                            {filteredProducts.length === 1 ? 'product' : 'products'} found
+                        </div>
+
+                        <div className="flex items-center gap-2 sm:ml-auto">
+                            {years.map(yr => (
+                                <button
+                                    key={yr}
+                                    onClick={() => setFilterYear(filterYear === yr ? '' : yr)}
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${filterYear === yr
+                                            ? 'bg-teal-50 text-teal-700 border-teal-200'
+                                            : 'text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-700'
+                                        }`}
+                                >
+                                    {yr}
+                                </button>
+                            ))}
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            <div className="relative">
+                                <select
+                                    value={sortBy}
+                                    onChange={(e) => setSortBy(e.target.value)}
+                                    className="appearance-none pl-3 pr-8 py-1.5 text-xs font-medium border border-slate-200 rounded-lg bg-white text-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-300 cursor-pointer"
+                                >
+                                    {sortOptions.map(opt => (
+                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                    ))}
+                                </select>
+                                <ChevronDownIcon className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+                            </div>
+                            <button
+                                onClick={() => setIsMobileFiltersOpen(true)}
+                                className="lg:hidden p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors"
+                            >
+                                <AdjustmentsHorizontalIcon className="w-5 h-5" />
+                            </button>
+                        </div>
                     </div>
                 </div>
 
                 <div className="flex flex-col lg:flex-row gap-8">
                     {/* Desktop Sidebar */}
                     <div className="hidden lg:block w-64 flex-shrink-0">
-                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 sticky top-24">
+                        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm sticky top-24">
+                            <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+                                <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Filters</h2>
+                                {hasActiveFilters && (
+                                    <span className="w-2 h-2 rounded-full bg-teal-500" />
+                                )}
+                            </div>
                             <FilterSidebar />
                         </div>
                     </div>
 
                     {/* Product Grid */}
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                         {error && (
-                            <div className="bg-red-50 text-red-800 p-4 rounded-xl border border-red-200 mb-6 font-medium">
+                            <div className="bg-red-50 text-red-700 p-4 rounded-xl border border-red-200 mb-6 text-sm font-medium">
                                 {error}
                             </div>
                         )}
@@ -249,18 +255,24 @@ const Products = () => {
                         {loading ? (
                             <PageLoader />
                         ) : filteredProducts.length === 0 ? (
-                            <div className="bg-white p-12 rounded-2xl border border-slate-200 border-dashed text-center">
-                                <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <FunnelIcon className="w-10 h-10 text-slate-400" />
+                            <div className="bg-white p-12 rounded-2xl border border-slate-200 text-center">
+                                <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100">
+                                    <FunnelIcon className="w-7 h-7 text-slate-300" />
                                 </div>
-                                <h3 className="text-xl font-bold text-slate-900 mb-2">No products found</h3>
-                                <p className="text-slate-500 mb-6 max-w-md mx-auto">We couldn't find any instruments matching your current search and filter criteria.</p>
-                                <Button onClick={clearFilters} variant="primary">Clear All Filters</Button>
+                                <h3 className="text-lg font-bold text-slate-900 mb-1">No products found</h3>
+                                <p className="text-sm text-slate-500 mb-6 max-w-sm mx-auto">
+                                    {searchQuery
+                                        ? `No results for "${searchQuery}". Try adjusting your search or filters.`
+                                        : 'No instruments match your current filters. Try a different combination.'}
+                                </p>
+                                <Button onClick={clearFilters} variant="outline" size="sm" className="border-slate-300 text-slate-600">
+                                    Clear All Filters
+                                </Button>
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-                                {filteredProducts.map(product => (
-                                    <ProductCard key={product.id} product={product} />
+                            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+                                {filteredProducts.map((product, idx) => (
+                                    <ProductCard key={product.id} product={product} index={idx} />
                                 ))}
                             </div>
                         )}
@@ -268,18 +280,18 @@ const Products = () => {
                 </div>
             </div>
 
-            {/* Mobile Filters Modal */}
+            {/* Mobile Filters Drawer */}
             {isMobileFiltersOpen && (
                 <div className="fixed inset-0 z-50 flex lg:hidden">
-                    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsMobileFiltersOpen(false)}></div>
-                    <div className="relative flex-1 flex flex-col max-w-xs w-full bg-white shadow-2xl overflow-y-auto transform transition-transform ml-auto">
-                        <div className="p-4 flex items-center justify-between border-b border-slate-100">
-                            <h2 className="text-lg font-bold text-slate-900">Filters</h2>
-                            <button onClick={() => setIsMobileFiltersOpen(false)} className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors">
-                                <XMarkIcon className="w-6 h-6" />
+                    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsMobileFiltersOpen(false)} />
+                    <div className="relative flex-1 flex flex-col max-w-xs w-full bg-white shadow-2xl ml-auto">
+                        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+                            <h2 className="text-base font-bold text-slate-900">Filters</h2>
+                            <button onClick={() => setIsMobileFiltersOpen(false)} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors">
+                                <XMarkIcon className="w-5 h-5" />
                             </button>
                         </div>
-                        <div className="p-6">
+                        <div className="flex-1 overflow-y-auto p-5">
                             <FilterSidebar />
                         </div>
                     </div>

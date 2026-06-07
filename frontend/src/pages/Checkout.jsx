@@ -873,14 +873,7 @@ const Checkout = () => {
                                                 FREE
                                             </span>
                                         ) : shippingCharge > 0 ? (
-                                            <>
-                                                <span className="font-semibold text-slate-900">₹{shippingCharge.toLocaleString()}</span>
-                                                {shippingRate?.baseRate > 0 && (
-                                                    <div className="text-[10px] text-slate-400 mt-0.5">
-                                                        ₹{shippingRate.baseRate} base + ₹{shippingCharge - shippingRate.baseRate} {paymentMethod === 'COD' ? 'COD' : 'service'} fee
-                                                    </div>
-                                                )}
-                                            </>
+                                            <span className="font-semibold text-slate-900">₹{shippingCharge.toLocaleString()}</span>
                                         ) : (
                                             <span className="text-xs text-slate-400">Enter pincode</span>
                                         )}

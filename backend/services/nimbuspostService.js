@@ -22,7 +22,9 @@ async function nimbusRequest(method, endpoint, data = null, params = null) {
   if (data) config.data = data;
   if (params) config.params = params;
   try {
+    logger.info(`[NIMBUSPOST DEBUG] Request: ${method} ${config.url} params=${JSON.stringify(params)}`);
     const { data: result } = await axios(config);
+    logger.info(`[NIMBUSPOST DEBUG] Response: ${JSON.stringify(result).slice(0, 500)}`);
     return result;
   } catch (err) {
     logger.error(`NimbusPost API error [${endpoint}]: ${err.response?.data?.message || err.message}`);
@@ -76,12 +78,17 @@ exports.getServiceableCouriers = async (deliveryPincode, weight, cod = false) =>
     const params = { pickup_pincode: pickupPincode, delivery_pincode: deliveryPincode, weight, cod: cod ? '1' : '0' };
     const result = await nimbusRequest('get', '/couriers', null, params);
     const couriers = result.data || [];
-    const rates = couriers.map(c => ({
-      id: c.id,
-      courier_name: c.name,
-      rate: c.total_charge || c.rate || 80,
-      estimated_delivery_days: c.etd || c.estimated_delivery_days || 5
-    }));
+    logger.info(`[NIMBUSPOST DEBUG] Couriers raw: ${JSON.stringify(couriers).slice(0, 500)}`);
+    const rates = couriers.map(c => {
+      const rate = c.total_charge || c.rate || c.courier_rate || 80;
+      logger.info(`[NIMBUSPOST DEBUG] Courier ${c.name}: total_charge=${c.total_charge}, rate=${c.rate}, etd=${c.etd}, final_rate=${rate}`);
+      return {
+        id: c.id,
+        courier_name: c.name,
+        rate,
+        estimated_delivery_days: c.etd || c.estimated_delivery_days || 5
+      };
+    });
     return {
       available_courier_companies: rates,
       recommended_courier: rates.length > 0 ? rates.reduce((a, b) => (a.rate < b.rate ? a : b)) : null

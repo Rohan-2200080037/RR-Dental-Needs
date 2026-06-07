@@ -406,7 +406,7 @@ const Checkout = () => {
                     return;
                 }
 
-                const keyId = import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_placeholder';
+                const keyId = (import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_placeholder').trim();
                 console.log("[RAZORPAY DEBUG] Using key_id:", keyId);
                 console.log("[RAZORPAY DEBUG] Razorpay SDK available:", typeof window.Razorpay);
 

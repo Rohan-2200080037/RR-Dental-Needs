@@ -5,6 +5,7 @@ const notificationController = require('./notificationController');
 
 exports.getRates = async (req, res) => {
   const { pincode, weight, cod } = req.query;
+  console.log(`[NIMBUSPOST DEBUG] getRates called: pincode=${pincode}, weight=${weight}, cod=${cod}`);
   if (!pincode) return res.status(400).json({ message: "Delivery pincode is required." });
   try {
     const result = await nimbuspost.getServiceableCouriers(pincode, parseFloat(weight || 0.3), cod === 'true');

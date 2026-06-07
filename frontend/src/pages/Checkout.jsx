@@ -58,7 +58,7 @@ const Checkout = () => {
     const qualifiesFreeShipping = subtotal >= FREE_SHIPPING_THRESHOLD;
     const totalAmount = subtotal + shippingCharge;
 
-    const fetchRates = useCallback(async (pincode) => {
+    const fetchRates = useCallback(async (pincode, isCod) => {
         if (!pincode || pincode.length !== 6 || qualifiesFreeShipping) {
             setShippingCharge(0);
             setShippingRate(null);
@@ -66,35 +66,30 @@ const Checkout = () => {
             return;
         }
         setShippingLoading(true);
+        const cod = isCod !== undefined ? isCod : paymentMethod === 'COD';
         try {
             const { data } = await axios.get(`${import.meta.env.VITE_API_URL}/api/shipping/rates`, {
-                params: { pincode, weight: 0.5 },
+                params: { pincode, weight: 0.3, cod },
                 headers: { Authorization: `Bearer ${token}` }
             });
-            if (data.recommended) {
-                setShippingCharge(data.recommended.rate);
-                setShippingRate(data.recommended);
-            } else if (data.available?.length > 0) {
+            if (data.available?.length > 0) {
                 const cheapest = data.available.reduce((a, b) => (a.rate < b.rate ? a : b));
-                setShippingCharge(cheapest.rate);
-                setShippingRate(cheapest);
+                const surcharge = cod ? 2 : 5;
+                const baseRate = cheapest.rate;
+                const rate = baseRate + surcharge;
+                setShippingCharge(rate);
+                setShippingRate({ ...cheapest, rate, baseRate, isCod: cod });
             }
         } catch (err) {
             console.error("Shipping rate fetch failed:", err);
-            setShippingCharge(80);
-            setShippingRate({ courier_name: 'Standard Courier', rate: 80 });
+            const baseRate = cod ? 80 : 80;
+            const surcharge = cod ? 2 : 5;
+            setShippingCharge(baseRate + surcharge);
+            setShippingRate({ courier_name: 'Standard Courier', rate: baseRate + surcharge, baseRate, isCod: cod });
         } finally {
             setShippingLoading(false);
         }
-    }, [qualifiesFreeShipping, token]);
-
-    useEffect(() => {
-        if (qualifiesFreeShipping) {
-            setShippingCharge(0);
-            setShippingRate(null);
-            setShippingLoading(false);
-        }
-    }, [qualifiesFreeShipping]);
+    }, [qualifiesFreeShipping, token, paymentMethod]);
 
     useEffect(() => {
         const pincode = formData.pincode;
@@ -103,6 +98,13 @@ const Checkout = () => {
             if (!qualifiesFreeShipping) fetchRates(pincode);
         }
     }, [formData.pincode, fetchRates, qualifiesFreeShipping]);
+
+    useEffect(() => {
+        const pincode = formData.pincode;
+        if (pincode && pincode.length === 6 && !qualifiesFreeShipping) {
+            fetchRates(pincode, paymentMethod === 'COD');
+        }
+    }, [paymentMethod]);
 
     useEffect(() => {
         const loadAddresses = async () => {
@@ -860,7 +862,7 @@ const Checkout = () => {
 
                                 <div className="flex justify-between items-center">
                                     <dt>Delivery Charge</dt>
-                                    <dd>
+                                    <dd className="text-right">
                                         {shippingLoading ? (
                                             <span className="inline-flex items-center gap-1.5 text-xs text-slate-400">
                                                 <span className="w-3 h-3 border-2 border-slate-300 border-t-primary rounded-full animate-spin"></span>
@@ -871,7 +873,14 @@ const Checkout = () => {
                                                 FREE
                                             </span>
                                         ) : shippingCharge > 0 ? (
-                                            <span className="font-semibold text-slate-900">₹{shippingCharge.toLocaleString()}</span>
+                                            <>
+                                                <span className="font-semibold text-slate-900">₹{shippingCharge.toLocaleString()}</span>
+                                                {shippingRate?.baseRate > 0 && (
+                                                    <div className="text-[10px] text-slate-400 mt-0.5">
+                                                        ₹{shippingRate.baseRate} base + ₹{shippingCharge - shippingRate.baseRate} {paymentMethod === 'COD' ? 'COD' : 'service'} fee
+                                                    </div>
+                                                )}
+                                            </>
                                         ) : (
                                             <span className="text-xs text-slate-400">Enter pincode</span>
                                         )}

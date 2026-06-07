@@ -37,7 +37,7 @@ function simulateResponse(endpoint, data) {
       data: [
         { id: 1, name: 'Delhivery', rate: 80, estimated_delivery_days: 5 },
         { id: 2, name: 'Ecom Express', rate: 75, estimated_delivery_days: 6 },
-        { id: 3, name: 'XpressBees', rate: 70, estimated_delivery_days: 4 }
+        { id: 3, name: 'XpressBees', total_charge: 68, etd: 4 }
       ]
     };
   }
@@ -72,23 +72,22 @@ function simulateResponse(endpoint, data) {
 
 exports.getServiceableCouriers = async (deliveryPincode, weight, cod = false) => {
   try {
-    const result = await nimbusRequest('get', '/couriers');
+    const pickupPincode = process.env.NIMBUSPOST_PICKUP_PINCODE || '520001';
+    const params = { pickup_pincode: pickupPincode, delivery_pincode: deliveryPincode, weight, cod: cod ? '1' : '0' };
+    const result = await nimbusRequest('get', '/couriers', null, params);
     const couriers = result.data || [];
+    const rates = couriers.map(c => ({
+      id: c.id,
+      courier_name: c.name,
+      rate: c.total_charge || c.rate || 80,
+      estimated_delivery_days: c.etd || c.estimated_delivery_days || 5
+    }));
     return {
-      available_courier_companies: couriers.map(c => ({
-        id: c.id,
-        courier_name: c.name,
-        rate: c.rate || 80,
-        estimated_delivery_days: c.estimated_delivery_days || 5
-      })),
-      recommended_courier: couriers.length > 0 ? {
-        courier_name: couriers[0].name,
-        rate: couriers[0].rate || 80,
-        estimated_delivery_days: couriers[0].estimated_delivery_days || 5
-      } : null
+      available_courier_companies: rates,
+      recommended_courier: rates.length > 0 ? rates.reduce((a, b) => (a.rate < b.rate ? a : b)) : null
     };
   } catch (err) {
-    logger.warn('NimbusPost courier list failed, using fallback rate');
+    logger.warn(`NimbusPost courier rates failed for pincode ${deliveryPincode}: ${err.message}, using fallback`);
     return {
       available_courier_companies: [{ courier_name: 'Standard Courier', rate: 80, estimated_delivery_days: 5 }],
       recommended_courier: { courier_name: 'Standard Courier', rate: 80, estimated_delivery_days: 5 }

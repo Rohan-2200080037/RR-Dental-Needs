@@ -172,7 +172,7 @@ const Checkout = () => {
             name: addr.name || '',
             phone: addr.phone || '',
             email: user?.email || '',
-            building: '',
+            building: addr.address || '',
             flat: '',
             street: '',
             area: addr.address || '',

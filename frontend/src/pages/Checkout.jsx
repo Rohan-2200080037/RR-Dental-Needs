@@ -392,19 +392,33 @@ const Checkout = () => {
                 clearCartState();
                 navigate('/profile?tab=orders', { state: { message: 'Order placed successfully!' } });
             } else if (paymentMethod === 'Razorpay') {
+                console.log("[RAZORPAY DEBUG] Creating Razorpay order with amount:", totalAmount);
                 const { data: rzpOrder } = await axios.post(`${import.meta.env.VITE_API_URL}/api/payment/create-order`,
                     { amount: totalAmount },
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
+                console.log("[RAZORPAY DEBUG] Order created response:", rzpOrder);
+
+                if (!rzpOrder || !rzpOrder.id) {
+                    console.error("[RAZORPAY DEBUG] No order ID in response!");
+                    setError('Failed to create payment order. No order ID returned.');
+                    setLoading(false);
+                    return;
+                }
+
+                const keyId = import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_placeholder';
+                console.log("[RAZORPAY DEBUG] Using key_id:", keyId);
+                console.log("[RAZORPAY DEBUG] Razorpay SDK available:", typeof window.Razorpay);
 
                 const options = {
-                    key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_placeholder',
+                    key: keyId,
                     amount: rzpOrder.amount,
                     currency: rzpOrder.currency,
                     name: 'RR Dental Needs',
                     description: `Order of ${items.length} item(s)`,
                     order_id: rzpOrder.id,
                     handler: async function (response) {
+                        console.log("[RAZORPAY DEBUG] Payment success handler called:", response);
                         try {
                             await axios.post(`${import.meta.env.VITE_API_URL}/api/payment/verify`,
                                 {
@@ -420,11 +434,13 @@ const Checkout = () => {
                             clearCartState();
                             navigate('/profile?tab=orders', { state: { message: 'Payment successful! Order placed.' } });
                         } catch (verifyErr) {
+                            console.error("[RAZORPAY DEBUG] Verify error:", verifyErr.response?.data || verifyErr.message);
                             setError(verifyErr.response?.data?.message || 'Payment verification failed.');
                         }
                     },
                     modal: {
                         ondismiss: function () {
+                            console.log("[RAZORPAY DEBUG] Razorpay modal dismissed by user");
                             setLoading(false);
                             setError('Payment cancelled by user.');
                         }
@@ -439,8 +455,26 @@ const Checkout = () => {
                     }
                 };
 
-                const rzp = new window.Razorpay(options);
+                console.log("[RAZORPAY DEBUG] Opening Razorpay checkout with options:", {
+                    key: keyId,
+                    amount: rzpOrder.amount,
+                    currency: rzpOrder.currency,
+                    order_id: rzpOrder.id,
+                    name: 'RR Dental Needs'
+                });
+
+                let rzp;
+                try {
+                    rzp = new window.Razorpay(options);
+                } catch (initErr) {
+                    console.error("[RAZORPAY DEBUG] Razorpay init error:", initErr);
+                    setError('Failed to initialize payment gateway. Razorpay SDK may not be loaded.');
+                    setLoading(false);
+                    return;
+                }
+
                 rzp.on('payment.failed', function (response) {
+                    console.error("[RAZORPAY DEBUG] Payment failed event:", response.error);
                     setError(response.error.description || 'Payment failed.');
                     setLoading(false);
                 });

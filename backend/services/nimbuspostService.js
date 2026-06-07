@@ -133,11 +133,22 @@ exports.createShipment = async (orderData) => {
       price: (parseFloat(i.selling_price) || 0).toString(),
       sku: i.sku || ''
     })),
-    pickup_warehouse_id: WAREHOUSE_ID || '1',
-    rto_warehouse_id: WAREHOUSE_ID || '1',
     support_email: process.env.NIMBUSPOST_SUPPORT_EMAIL || '',
     support_phone: (process.env.NIMBUSPOST_SUPPORT_PHONE || '').replace(/\D/g, '')
   };
+
+  if (WAREHOUSE_ID) {
+    payload.pickup_warehouse_id = WAREHOUSE_ID;
+    payload.rto_warehouse_id = WAREHOUSE_ID;
+  }
+
+  logger.info(`[NIMBUSPOST DEBUG] createShipment payload: ${JSON.stringify({
+    ...payload,
+    pickup_warehouse_id: payload.pickup_warehouse_id,
+    rto_warehouse_id: payload.rto_warehouse_id,
+    consignee: { ...payload.consignee, phone: payload.consignee.phone },
+    order_items: `${payload.order_items.length} item(s)`
+  })}`);
 
   return nimbusRequest('post', '/shipments/create', payload);
 };

@@ -11,6 +11,9 @@ const razorpay = new Razorpay({
 exports.createRazorpayOrder = async (req, res) => {
     const { amount, currency = 'INR', receipt } = req.body;
     
+    console.log("[RAZORPAY DEBUG] createRazorpayOrder called with:", { amount, currency, receipt });
+    console.log("[RAZORPAY DEBUG] Using key_id:", (process.env.RAZORPAY_KEY_ID || 'rzp_test_placeholder').slice(0, 12) + '...');
+    
     if (!amount) {
         return res.status(400).json({ message: "Amount is required." });
     }
@@ -26,16 +29,21 @@ exports.createRazorpayOrder = async (req, res) => {
             receipt: receipt || `receipt_${Date.now()}`
         };
 
+        console.log("[RAZORPAY DEBUG] Calling razorpay.orders.create with options:", JSON.stringify(options));
         const order = await razorpay.orders.create(options);
+        console.log("[RAZORPAY DEBUG] razorpay.orders.create response:", JSON.stringify(order));
         res.status(201).json(order);
     } catch (err) {
-        console.error("Razorpay Order Creation Error:", err);
+        console.error("[RAZORPAY DEBUG] Order Creation Error:", err);
+        console.error("[RAZORPAY DEBUG] Error details:", JSON.stringify(err, Object.getOwnPropertyNames(err)));
         res.status(500).json({ message: "Could not create Razorpay order." });
     }
 };
 
 exports.verifyPayment = async (req, res) => {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature, order_id } = req.body;
+    
+    console.log("[RAZORPAY DEBUG] verifyPayment called with:", { razorpay_order_id, razorpay_payment_id, razorpay_signature: razorpay_signature?.slice(0, 20) + '...' });
     
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
         return res.status(400).json({ message: "Missing required payment fields: order_id, payment_id, signature." });

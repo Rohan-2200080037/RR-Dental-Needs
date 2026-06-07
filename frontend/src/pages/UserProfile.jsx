@@ -33,7 +33,7 @@ const UserProfile = () => {
     const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
     const [editingAddress, setEditingAddress] = useState(null);
     const [addressFormData, setAddressFormData] = useState({
-        name: '', phone: '', address: '', city: '', state: '', pincode: ''
+        name: '', phone: '', address: '', city: '', state: '', pincode: '', latitude: null, longitude: null
     });
     const [states] = useState(Object.keys(indiaData));
     const [cities, setCities] = useState([]);
@@ -187,7 +187,9 @@ const UserProfile = () => {
             address: addr.address,
             city: addr.city,
             state: addr.state,
-            pincode: addr.pincode
+            pincode: addr.pincode,
+            latitude: addr.latitude || null,
+            longitude: addr.longitude || null
         });
         setIsAddressModalOpen(true);
     };
@@ -741,6 +743,22 @@ const UserProfile = () => {
                                     </div>
                                     <Input label="Pincode" name="pincode" value={addressFormData.pincode} onChange={handleAddressFormChange} required />
                                 </div>
+                                {addressFormData.latitude && addressFormData.longitude && (
+                                    <div className="mb-8 flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3">
+                                        <MapPinIcon className="w-4 h-4 text-emerald-600" />
+                                        <span className="text-sm text-emerald-800 font-medium">
+                                            Location pinned: {Number(addressFormData.latitude).toFixed(4)}, {Number(addressFormData.longitude).toFixed(4)}
+                                        </span>
+                                        <a
+                                            href={`https://www.google.com/maps?q=${addressFormData.latitude},${addressFormData.longitude}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="ml-auto text-xs font-semibold text-primary hover:text-primary-hover underline"
+                                        >
+                                            View Map
+                                        </a>
+                                    </div>
+                                )}
                                 
                                 <div className="flex space-x-4">
                                     <Button type="button" variant="outline" className="flex-1" onClick={() => setIsAddressModalOpen(false)}>Cancel</Button>

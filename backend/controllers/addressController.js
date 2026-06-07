@@ -47,7 +47,7 @@ exports.getAddresses = async (req, res) => {
 exports.updateAddress = async (req, res) => {
     const { id } = req.params;
     const userId = req.user.id;
-    const { name, phone, address, city, state, pincode } = req.body;
+    const { name, phone, address, city, state, pincode, latitude, longitude } = req.body;
 
     try {
         const result = await pool.query('SELECT user_id FROM Addresses WHERE id = $1', [id]);
@@ -55,8 +55,8 @@ exports.updateAddress = async (req, res) => {
         if (result.rows[0].user_id !== userId) return res.status(403).json({ message: "Unauthorized." });
 
         await pool.query(
-            'UPDATE Addresses SET name=$1, phone=$2, address=$3, city=$4, state=$5, pincode=$6 WHERE id=$7',
-            [name, phone, address, city, state, pincode, id]
+            'UPDATE Addresses SET name=$1, phone=$2, address=$3, city=$4, state=$5, pincode=$6, latitude=$7, longitude=$8 WHERE id=$9',
+            [name, phone, address, city, state, pincode, latitude || null, longitude || null, id]
         );
         res.status(200).json({ message: "Address updated successfully." });
     } catch (err) {

@@ -168,15 +168,45 @@ const Checkout = () => {
     };
 
     const selectSavedAddress = (addr) => {
+        const fullAddress = addr.address || '';
+        const parts = fullAddress.split(',').map(p => p.trim()).filter(Boolean);
+        let building = '', flat = '', street = '', area = '', landmark = '';
+
+        if (parts.length >= 1) building = parts[0];
+        if (parts.length === 2) {
+            area = parts[1];
+        } else if (parts.length === 3) {
+            if (/road|rd\.?$|street|st\.?$|lane/i.test(parts[1])) {
+                street = parts[1];
+                area = parts[2];
+            } else if (/^(near|opposite|opp|beside|behind|next\s+to|above)/i.test(parts[2])) {
+                flat = parts[1];
+                landmark = parts[2];
+                area = parts[1];
+            } else {
+                flat = parts[1];
+                area = parts[2];
+            }
+        } else if (parts.length >= 4) {
+            flat = parts[1];
+            const remaining = parts.slice(2);
+            const roadMatch = remaining.findIndex(p => /road|rd\.?$|street|st\.?$|lane/i.test(p));
+            const lmMatch = remaining.findIndex(p => /^(near|opposite|opp|beside|behind|next\s+to|above)/i.test(p));
+            if (roadMatch >= 0) street = remaining[roadMatch];
+            if (lmMatch >= 0) landmark = remaining[lmMatch];
+            const areaParts = remaining.filter((_, i) => i !== roadMatch && i !== lmMatch);
+            area = areaParts.join(', ');
+        }
+
         setFormData({
             name: addr.name || '',
             phone: addr.phone || '',
             email: user?.email || '',
-            building: addr.address || '',
-            flat: '',
-            street: '',
-            area: addr.address || '',
-            landmark: '',
+            building: building || fullAddress,
+            flat,
+            street,
+            area: area || fullAddress,
+            landmark,
             city: addr.city || '',
             state: addr.state || '',
             pincode: addr.pincode || '',

@@ -101,6 +101,9 @@ exports.createShipment = async (orderData) => {
   const fname = nameParts[0] || 'Customer';
   const lname = nameParts.slice(1).join(' ') || '';
 
+  const phoneRaw = (orderData.billing_phone || '').toString().replace(/\D/g, '');
+  const phoneClean = phoneRaw.slice(-10);
+
   const payload = {
     consignee: {
       name: orderData.billing_customer_name || 'Customer',
@@ -109,7 +112,7 @@ exports.createShipment = async (orderData) => {
       city: orderData.billing_city || '',
       state: orderData.billing_state || '',
       pincode: (orderData.billing_pincode || '').toString(),
-      phone: (orderData.billing_phone || '').toString(),
+      phone: phoneClean,
       email: orderData.billing_email || ''
     },
     order: {
@@ -133,7 +136,7 @@ exports.createShipment = async (orderData) => {
     pickup_warehouse_id: WAREHOUSE_ID || '1',
     rto_warehouse_id: WAREHOUSE_ID || '1',
     support_email: process.env.NIMBUSPOST_SUPPORT_EMAIL || '',
-    support_phone: process.env.NIMBUSPOST_SUPPORT_PHONE || ''
+    support_phone: (process.env.NIMBUSPOST_SUPPORT_PHONE || '').replace(/\D/g, '')
   };
 
   return nimbusRequest('post', '/shipments/create', payload);

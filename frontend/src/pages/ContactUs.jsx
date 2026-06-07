@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { MapPinIcon, PhoneIcon, EnvelopeIcon, PaperAirplaneIcon } from '@heroicons/react/24/outline';
+import { MapPinIcon, PhoneIcon, EnvelopeIcon, PaperAirplaneIcon, ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 
@@ -34,8 +34,9 @@ const ContactUs = () => {
     };
 
     const contactInfo = [
-        { icon: PhoneIcon, title: "Phone Number", details: "+1 234 567 8900", bg: "bg-emerald-50", color: "text-emerald-600" },
-        { icon: EnvelopeIcon, title: "Email Address", details: "rrdentalneeds@gmail.com", bg: "bg-rose-50", color: "text-rose-600" }
+        { icon: PhoneIcon, title: "Phone Number", details: "7207063315", bg: "bg-emerald-50", color: "text-emerald-600" },
+        { icon: EnvelopeIcon, title: "Email Address", details: "rrdentalneeds@gmail.com", bg: "bg-rose-50", color: "text-rose-600" },
+        { icon: ChatBubbleLeftRightIcon, title: "WhatsApp", details: "7207063315", bg: "bg-green-50", color: "text-green-600", link: "https://wa.me/7207063315" }
     ];
 
     return (
@@ -70,21 +71,24 @@ const ContactUs = () => {
                     <div className="lg:col-span-1 space-y-6">
                         {contactInfo.map((info, index) => {
                             const Icon = info.icon;
+                            const Card = info.link ? 'a' : 'div';
+                            const cardProps = info.link ? { href: info.link, target: '_blank', rel: 'noopener noreferrer' } : {};
                             return (
                                 <motion.div
                                     key={index}
                                     initial={{ opacity: 0, x: -20 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     transition={{ duration: 0.5, delay: 0.3 + (index * 0.1) }}
-                                    className="bg-white rounded-2xl p-6 shadow-xl shadow-slate-200/40 border border-slate-100 flex items-start"
                                 >
-                                    <div className={`w-12 h-12 rounded-xl flex-shrink-0 flex items-center justify-center mr-4 ${info.bg} ${info.color}`}>
-                                        <Icon className="w-6 h-6" />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-lg font-bold text-slate-900 mb-1">{info.title}</h3>
-                                        <p className="text-slate-600 leading-relaxed">{info.details}</p>
-                                    </div>
+                                    <Card {...cardProps} className={`bg-white rounded-2xl p-6 shadow-xl shadow-slate-200/40 border border-slate-100 flex items-start ${info.link ? 'hover:shadow-green-200/50 hover:border-green-200 transition-all cursor-pointer' : ''}`}>
+                                        <div className={`w-12 h-12 rounded-xl flex-shrink-0 flex items-center justify-center mr-4 ${info.bg} ${info.color}`}>
+                                            <Icon className="w-6 h-6" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-lg font-bold text-slate-900 mb-1">{info.title}</h3>
+                                            <p className="text-slate-600 leading-relaxed">{info.details}</p>
+                                        </div>
+                                    </Card>
                                 </motion.div>
                             );
                         })}

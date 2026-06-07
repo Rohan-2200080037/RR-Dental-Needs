@@ -222,6 +222,14 @@ const OrderDetails = () => {
                                             {order.shipping_status || 'Pending'}
                                         </Badge>
                                     </p>
+                                    {order.estimated_delivery_date && (
+                                        <p className="text-sm">
+                                            <span className="font-semibold text-slate-500">Est. Delivery Date:</span>
+                                            <span className="font-bold text-emerald-700 ml-1">
+                                                {new Date(order.estimated_delivery_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                                            </span>
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         </Card>

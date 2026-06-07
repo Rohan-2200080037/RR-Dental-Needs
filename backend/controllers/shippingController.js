@@ -9,7 +9,16 @@ exports.getRates = async (req, res) => {
   if (!pincode) return res.status(400).json({ message: "Delivery pincode is required." });
   try {
     const result = await nimbuspost.getServiceableCouriers(pincode, parseFloat(weight || 0.3), cod === 'true');
-    res.status(200).json({ success: true, available: result.available_courier_companies || [], recommended: result.recommended_courier });
+    const now = new Date();
+    const available = (result.available_courier_companies || []).map(c => ({
+      ...c,
+      estimated_delivery_date: new Date(now.getTime() + (c.estimated_delivery_days || 5) * 86400000).toISOString().split('T')[0]
+    }));
+    const recommended = result.recommended_courier ? {
+      ...result.recommended_courier,
+      estimated_delivery_date: new Date(now.getTime() + (result.recommended_courier.estimated_delivery_days || 5) * 86400000).toISOString().split('T')[0]
+    } : null;
+    res.status(200).json({ success: true, available, recommended });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

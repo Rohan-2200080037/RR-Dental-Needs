@@ -189,6 +189,12 @@ async function runMigrations() {
       ADD COLUMN IF NOT EXISTS delivery_longitude DECIMAL(10, 7) DEFAULT NULL;
     `);
     console.log('Schema migration: lat/lng columns ensured on Orders table.');
+
+    await pool.query(`
+      ALTER TABLE Orders
+      ADD COLUMN IF NOT EXISTS estimated_delivery_date DATE DEFAULT NULL;
+    `);
+    console.log('Schema migration: estimated_delivery_date column ensured on Orders table.');
   } catch (err) {
     console.error('Schema migration error:', err.message);
   }

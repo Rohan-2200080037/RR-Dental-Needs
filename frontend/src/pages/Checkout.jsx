@@ -54,6 +54,8 @@ const Checkout = () => {
     const [shippingLoading, setShippingLoading] = useState(false);
     const prevPincodeRef = useRef('');
 
+    const [estimatedDeliveryDate, setEstimatedDeliveryDate] = useState(null);
+
     const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     const qualifiesFreeShipping = subtotal >= FREE_SHIPPING_THRESHOLD;
     const totalAmount = subtotal + shippingCharge;
@@ -62,6 +64,7 @@ const Checkout = () => {
         if (!pincode || pincode.length !== 6 || qualifiesFreeShipping) {
             setShippingCharge(0);
             setShippingRate(null);
+            setEstimatedDeliveryDate(null);
             setShippingLoading(false);
             return;
         }
@@ -90,6 +93,7 @@ const Checkout = () => {
                 }
                 setShippingCharge(Math.round(rate));
                 setShippingRate({ ...selected, rate, isCod: cod, codCharge });
+                setEstimatedDeliveryDate(selected.estimated_delivery_date || null);
             }
         } catch (err) {
             console.error("Shipping rate fetch failed:", err);
@@ -399,6 +403,7 @@ const Checkout = () => {
             shouldSaveAddress,
             shippingCharge,
             shippingProvider: qualifiesFreeShipping ? 'Free Shipping' : 'Flat Shipping',
+            estimatedDeliveryDate,
         };
 
         try {
@@ -900,6 +905,15 @@ const Checkout = () => {
                                         )}
                                     </dd>
                                 </div>
+
+                                {estimatedDeliveryDate && (
+                                    <div className="flex justify-between items-center pt-2">
+                                        <dt className="text-sm font-semibold text-slate-600">Est. Delivery by</dt>
+                                        <dd className="text-sm font-bold text-teal-700">
+                                            {new Date(estimatedDeliveryDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                        </dd>
+                                    </div>
+                                )}
 
                                 <div className="pt-4 mt-4 border-t border-slate-200 flex justify-between items-center bg-slate-50/50 -mx-4 px-4 py-3 rounded-lg">
                                     <dt className="text-base font-bold text-slate-900">Total Amount</dt>

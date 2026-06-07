@@ -105,6 +105,9 @@ const OrderHistory = () => {
                                                         <p className="font-semibold text-slate-700">Shipping: <span className={order.shipping_charge > 0 ? 'text-slate-700' : 'text-emerald-600'}>{order.shipping_charge > 0 ? `₹${Number(order.shipping_charge).toLocaleString()}` : 'FREE'}</span></p>
                                                         <p className="text-[10px] mt-0.5">Status: <span className="font-bold text-teal-600">{order.shipping_status || 'Pending'}</span></p>
                                                         {order.courier_name && <p className="text-[10px] mt-0.5">Courier: {order.courier_name} {order.tracking_number ? `| ${order.tracking_number}` : ''}</p>}
+                                                        {order.estimated_delivery_date && (
+                                                            <p className="text-[10px] mt-0.5">Est. Delivery: <span className="font-bold text-emerald-700">{new Date(order.estimated_delivery_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span></p>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </div>

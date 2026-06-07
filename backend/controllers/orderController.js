@@ -159,8 +159,9 @@ exports.processOrderCreation = async (client, userId, orderDetails) => {
             user_id, address_id, total_price, payment_method, order_status, payment_status, 
             razorpay_order_id, razorpay_payment_id,
             shipping_charge, shipping_status,
-            delivery_latitude, delivery_longitude
-         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id`,
+            delivery_latitude, delivery_longitude,
+            estimated_delivery_date
+         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING id`,
         [
             userId, 
             addressId, 
@@ -173,7 +174,8 @@ exports.processOrderCreation = async (client, userId, orderDetails) => {
             shippingCharge,
             'Pending',
             latitude,
-            longitude
+            longitude,
+            estimatedDeliveryDate
         ]
     );
     const orderId = orderResult.rows[0].id;
@@ -219,6 +221,7 @@ exports.getUserOrders = async (req, res) => {
         const result = await pool.query(`
             SELECT o.id, o.order_date, o.total_price, o.order_status, o.payment_method,
                    o.shipping_charge, o.shipping_status, o.courier_name, o.tracking_number,
+                   o.estimated_delivery_date,
                    a.name as delivery_name, a.address, a.city, a.state, a.pincode
             FROM Orders o
             JOIN Addresses a ON o.address_id = a.id
@@ -255,6 +258,7 @@ exports.getSellerOrders = async (req, res) => {
         const result = await pool.query(`
             SELECT DISTINCT o.id as order_id, o.order_date, o.order_status, o.payment_method, o.payment_status,
                    o.shipping_charge, o.shipping_status, o.courier_name, o.tracking_number, o.total_price,
+                   o.estimated_delivery_date,
                    u.email as customer_email, a.name as customer_name, a.phone, a.address, a.city, a.state, a.pincode
             FROM Orders o
             JOIN Addresses a ON o.address_id = a.id
@@ -468,6 +472,7 @@ exports.getAllOrders = async (req, res) => {
     try {
         const result = await pool.query(`
             SELECT o.id, o.order_date, o.total_price, o.order_status, o.payment_method, o.shipping_charge, o.shipping_provider,
+                   o.estimated_delivery_date,
                    u.email as user_email
             FROM Orders o
             JOIN Users u ON o.user_id = u.id
@@ -488,6 +493,37 @@ exports.deleteOrderAsAdmin = async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 };
+
+exports.updateEstimatedDeliveryDate = async (req, res) => {
+    const { id } = req.params;
+    const { estimated_delivery_date } = req.body;
+
+    if (!estimated_delivery_date) {
+        return res.status(400).json({ message: "estimated_delivery_date is required." });
+    }
+
+    try {
+        const orderRes = await pool.query('SELECT id, user_id FROM Orders WHERE id = $1', [id]);
+        if (orderRes.rows.length === 0) return res.status(404).json({ message: "Order not found." });
+
+        await pool.query(
+            'UPDATE Orders SET estimated_delivery_date = $1 WHERE id = $2',
+            [estimated_delivery_date, id]
+        );
+
+        const notificationController = require('./notificationController');
+        await notificationController.createNotification(
+            orderRes.rows[0].user_id,
+            `The estimated delivery date for order #${id} has been updated to ${new Date(estimated_delivery_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}.`,
+            `/profile?tab=orders`
+        );
+
+        res.status(200).json({ message: "Estimated delivery date updated." });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
+
 exports.getOrderById = async (req, res) => {
     const { id } = req.params;
     const userId = req.user.id;

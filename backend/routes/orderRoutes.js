@@ -21,5 +21,6 @@ router.put('/:id/status', isRole(['seller', 'admin']), orderController.updateOrd
 router.put('/:id/payment-status', isRole(['seller', 'admin']), orderController.updatePaymentStatus);
 router.put('/:id/shipping', isRole(['seller', 'admin']), orderController.updateShipping);
 router.delete('/:id/admin', isRole(['admin']), orderController.deleteOrderAsAdmin);
+router.put('/:id/estimated-delivery-date', isRole(['seller', 'admin']), orderController.updateEstimatedDeliveryDate);
 
 module.exports = router;

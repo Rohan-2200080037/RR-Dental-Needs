@@ -43,6 +43,9 @@ const SellerDashboard = () => {
         shipping_status: 'Pending'
     });
 
+    const [editingEstDate, setEditingEstDate] = useState(null);
+    const [estDateValue, setEstDateValue] = useState('');
+
     const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -330,6 +333,24 @@ const SellerDashboard = () => {
             tracking_number: order.tracking_number || '',
             shipping_status: order.shipping_status || 'Pending'
         });
+    };
+
+    const handleUpdateEstDate = async (orderId) => {
+        if (!estDateValue) return;
+        try {
+            await axios.put(`${import.meta.env.VITE_API_URL}/api/orders/${orderId}/estimated-delivery-date`,
+                { estimated_delivery_date: estDateValue },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            setFeedback("Estimated delivery date updated successfully!");
+            await refreshOrders();
+            setEditingEstDate(null);
+            setEstDateValue('');
+            setTimeout(() => setFeedback(''), 3000);
+        } catch (err) {
+            setFeedback(err.response?.data?.message || 'Failed to update estimated delivery date');
+            setTimeout(() => setFeedback(''), 3000);
+        }
     };
 
     if (error && !user?.sellerId) {
@@ -933,6 +954,46 @@ const SellerDashboard = () => {
                                                              <div className="text-[9px] text-slate-400 mt-0.5">
                                                                  <span>Ship: {Number(o.shipping_charge) > 0 ? `₹${Number(o.shipping_charge).toLocaleString()}` : 'FREE'} | Total: ₹{Number(o.total_price || 0).toLocaleString()}</span>
                                                              </div>
+                                                             <div className="mt-1 flex items-center gap-1">
+                                                                 {editingEstDate === o.order_id ? (
+                                                                     <>
+                                                                         <input
+                                                                             type="date"
+                                                                             value={estDateValue}
+                                                                             onChange={(e) => setEstDateValue(e.target.value)}
+                                                                             className="w-28 text-[10px] px-1.5 py-0.5 border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-primary/30"
+                                                                         />
+                                                                         <button
+                                                                             onClick={() => handleUpdateEstDate(o.order_id)}
+                                                                             className="px-1.5 py-0.5 text-[9px] font-bold text-white bg-teal-600 hover:bg-teal-700 rounded transition-colors"
+                                                                         >
+                                                                             Save
+                                                                         </button>
+                                                                         <button
+                                                                             onClick={() => { setEditingEstDate(null); setEstDateValue(''); }}
+                                                                             className="px-1.5 py-0.5 text-[9px] font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded transition-colors"
+                                                                         >
+                                                                             X
+                                                                         </button>
+                                                                     </>
+                                                                 ) : (
+                                                                     <>
+                                                                         {o.estimated_delivery_date ? (
+                                                                             <span className="text-[10px] font-semibold text-emerald-700">
+                                                                                 Est: {new Date(o.estimated_delivery_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                                                             </span>
+                                                                         ) : (
+                                                                             <span className="text-[10px] text-slate-400 italic">No est. date</span>
+                                                                         )}
+                                                                         <button
+                                                                             onClick={() => { setEditingEstDate(o.order_id); setEstDateValue(o.estimated_delivery_date ? o.estimated_delivery_date.split('T')[0] : ''); }}
+                                                                             className="px-1.5 py-0.5 text-[9px] font-medium text-indigo-600 bg-indigo-50 border border-indigo-100 rounded hover:bg-indigo-100 transition-colors"
+                                                                         >
+                                                                             Edit Date
+                                                                         </button>
+                                                                     </>
+                                                                 )}
+                                                             </div>
                                                          </td>
                                                         <td className="px-4 py-3">
                                                             <div className="flex flex-wrap gap-1">
@@ -1119,6 +1180,15 @@ const SellerDashboard = () => {
                             </div>
 
                             {/* Courier Info */}
+                            {orderInfoModal.estimated_delivery_date && (
+                                <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                                    <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Estimated Delivery</h3>
+                                    <p className="text-sm font-bold text-emerald-700">
+                                        {new Date(orderInfoModal.estimated_delivery_date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+                                    </p>
+                                </div>
+                            )}
+
                             {(orderInfoModal.courier_name || orderInfoModal.tracking_number) && (
                                 <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
                                     <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Courier</h3>

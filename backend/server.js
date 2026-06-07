@@ -175,6 +175,20 @@ async function runMigrations() {
       `);
     }
     console.log('Schema migration: logistics_settings table ensured.');
+
+    await pool.query(`
+      ALTER TABLE Addresses
+      ADD COLUMN IF NOT EXISTS latitude DECIMAL(10, 7) DEFAULT NULL,
+      ADD COLUMN IF NOT EXISTS longitude DECIMAL(10, 7) DEFAULT NULL;
+    `);
+    console.log('Schema migration: lat/lng columns ensured on Addresses table.');
+
+    await pool.query(`
+      ALTER TABLE Orders
+      ADD COLUMN IF NOT EXISTS delivery_latitude DECIMAL(10, 7) DEFAULT NULL,
+      ADD COLUMN IF NOT EXISTS delivery_longitude DECIMAL(10, 7) DEFAULT NULL;
+    `);
+    console.log('Schema migration: lat/lng columns ensured on Orders table.');
   } catch (err) {
     console.error('Schema migration error:', err.message);
   }

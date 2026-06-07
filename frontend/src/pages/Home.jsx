@@ -7,6 +7,7 @@ import ProductCard from '../components/ui/ProductCard';
 import { PageLoader } from '../components/ui/Loader';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
+import { sortNumericAlpha } from '../utils/sortProducts';
 
 const Home = () => {
     const [products, setProducts] = useState([]);
@@ -208,7 +209,7 @@ const Home = () => {
                             variants={staggerContainer}
                             className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 xl:gap-8"
                         >
-                            {products.slice(0, 8).map((product) => (
+                            {sortNumericAlpha(products).slice(0, 8).map((product) => (
                                 <motion.div key={product.id} variants={fadeIn} className="h-full">
                                     <ProductCard product={product} />
                                 </motion.div>

@@ -3,6 +3,7 @@ const pool = require('../db');
 const crypto = require('crypto');
 const axios = require('axios');
 const PHONEPE_CONFIG = require('../config/phonepeConfig');
+const logger = require('../services/loggingService');
 
 const razorpay = new Razorpay({
     key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_placeholder',
@@ -15,19 +16,19 @@ exports.createRazorpayOrder = async (req, res) => {
     if (!amount) {
         return res.status(400).json({ message: "Amount is required." });
     }
+    const amountPaise = Math.round(amount * 100);
+    if (amountPaise < 100) {
+        return res.status(400).json({ message: "Minimum amount is 1.00 INR (100 paise)." });
+    }
 
     try {
         const options = {
-            amount: Math.round(amount * 100), // razorpay expects amount in paise
+            amount: amountPaise,
             currency: currency,
             receipt: receipt || `receipt_${Date.now()}`
         };
 
         const order = await razorpay.orders.create(options);
-        
-        // Optionally store this razorpay order id in a temporary table or just return it
-        // We will link it to the actual order in createOrder or updateOrder status
-        
         res.status(201).json(order);
     } catch (err) {
         console.error("Razorpay Order Creation Error:", err);
@@ -37,13 +38,16 @@ exports.createRazorpayOrder = async (req, res) => {
 
 exports.verifyPayment = async (req, res) => {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature, order_id } = req.body;
-    const crypto = require('crypto');
+    
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+        return res.status(400).json({ message: "Missing required payment fields: order_id, payment_id, signature." });
+    }
 
+    const crypto = require('crypto');
     const hmac = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET || 'placeholder_secret');
     
     let isVerified = false;
     if (razorpay_signature === 'phonepe_verified') {
-        // This is a PhonePe transaction already verified by checkPhonePeStatus
         isVerified = true;
     } else {
         hmac.update(razorpay_order_id + "|" + razorpay_payment_id);
@@ -64,6 +68,12 @@ exports.verifyPayment = async (req, res) => {
                 rzpOrderId: razorpay_order_id,
                 rzpPaymentId: razorpay_payment_id
             });
+
+            // Auto-confirm prepaid orders and update shipping status
+            await client.query(
+                "UPDATE Orders SET order_status = 'Confirmed', shipping_status = 'Pending' WHERE id = $1",
+                [orderId]
+            );
 
             await client.query('COMMIT');
 
@@ -90,6 +100,12 @@ exports.verifyPayment = async (req, res) => {
                     );
                 }
             }
+
+            // 4. Auto-trigger NimbusPost shipment for prepaid orders
+            const shippingController = require('./shippingController');
+            shippingController.triggerAutomaticShipment(orderId).catch(err => {
+                logger.error(`Auto-shipment after payment failed for order ${orderId}: ${err.message}`);
+            });
             
             res.status(200).json({ message: "Payment verified and order created successfully.", orderId });
         } catch (err) {

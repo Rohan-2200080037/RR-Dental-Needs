@@ -28,7 +28,7 @@ const Footer = () => {
               <a href="#" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-primary hover:text-white transition-colors">
                 <FaTwitter size={20} />
               </a>
-              <a href="#" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-primary hover:text-white transition-colors">
+              <a href="https://www.instagram.com/rr_dental_needs?igsh=ZnB1MjFuc295N2Ro" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-primary hover:text-white transition-colors">
                 <FaInstagram size={20} />
               </a>
               <a href="#" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-primary hover:text-white transition-colors">
@@ -103,7 +103,7 @@ const Footer = () => {
               <li className="flex items-start"></li>
               <li className="flex items-center">
                 <PhoneIcon className="w-6 h-6 text-primary mr-3 flex-shrink-0" />
-                <span className="text-slate-400">+91 9948533315</span>
+                <span className="text-slate-400">+91 7207063315</span>
               </li>
               <li className="flex items-center">
                 <EnvelopeIcon className="w-6 h-6 text-primary mr-3 flex-shrink-0" />

@@ -5,6 +5,7 @@ import { FunnelIcon, MagnifyingGlassIcon, XMarkIcon, AdjustmentsHorizontalIcon }
 import ProductCard from '../components/ui/ProductCard';
 import { PageLoader } from '../components/ui/Loader';
 import Button from '../components/ui/Button';
+import { sortNumericAlpha } from '../utils/sortProducts';
 
 const Products = () => {
     const [products, setProducts] = useState([]);
@@ -67,6 +68,8 @@ const Products = () => {
         filteredProducts.sort((a, b) => Number(b.price) - Number(a.price));
     } else if (sortBy === 'newest') {
         filteredProducts.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+    } else {
+        filteredProducts = sortNumericAlpha(filteredProducts);
     }
 
     const handleSearchSubmit = (e) => {

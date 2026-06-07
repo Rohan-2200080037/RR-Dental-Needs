@@ -72,7 +72,7 @@ const OrderDetails = () => {
                                     <h2 style={{ fontSize: '16pt', fontWeight: 'bold', margin: 0 }}>RR Dental Needs</h2>
                                     <p style={{ margin: 0 }}>Vijayawada, Andhra Pradesh</p>
                                     <p style={{ margin: 0 }}>Email: rrdentalneeds@gmail.com</p>
-                                    <p style={{ margin: 0 }}>Phone: +91 9948533315</p>
+                                    <p style={{ margin: 0 }}>Phone: +91 7207063315</p>
                                 </td>
                                 <td style={{ width: '30%', border: 'none', padding: 0, textAlign: 'right' }}>
                                     <div style={{ display: 'inline-block', width: '60px', height: '60px', backgroundColor: '#0d9488', color: 'white', borderRadius: '8px', lineHeight: '60px', textAlign: 'center', fontWeight: '900', fontSize: '24pt' }}>RR</div>
@@ -183,7 +183,7 @@ const OrderDetails = () => {
                                 </div>
                             )}
                         </Card>
- 
+
                         {/* Shipping Information */}
                         <Card className="p-8 border border-teal-200 bg-teal-50/20 relative overflow-hidden">
                             <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
@@ -216,8 +216,8 @@ const OrderDetails = () => {
                                         <span className="font-semibold text-slate-500">Shipping Status:</span>
                                         <Badge variant={
                                             order.shipping_status === 'Delivered' ? 'success' :
-                                            order.shipping_status === 'Shipped' ? 'info' :
-                                            order.shipping_status === 'Packed' ? 'warning' : 'warning'
+                                                order.shipping_status === 'Shipped' ? 'info' :
+                                                    order.shipping_status === 'Packed' ? 'warning' : 'warning'
                                         } className="ml-1">
                                             {order.shipping_status || 'Pending'}
                                         </Badge>
@@ -255,7 +255,7 @@ const OrderDetails = () => {
                             </div>
                             <div className="p-8 bg-slate-50/50 border-t border-slate-200">
                                 <div className="flex justify-between items-center">
-                                    <span className="text-slate-500 font-bold text-lg uppercase tracking-wider">Total Amount Paid</span>
+                                    <span className="text-slate-500 font-bold text-lg uppercase tracking-wider">{order.payment_method === 'COD' && order.payment_status !== 'Completed' ? 'To be paid' : 'Amount Paid'}</span>
                                     <span className="text-3xl font-black text-primary">₹{Number(order.total_price).toLocaleString()}</span>
                                 </div>
                             </div>

@@ -5,6 +5,7 @@ import ProductCard from '../components/ui/ProductCard';
 import { PageLoader } from '../components/ui/Loader';
 import Button from '../components/ui/Button';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { sortNumericAlpha } from '../utils/sortProducts';
 
 const Category = () => {
     const { category } = useParams();
@@ -84,7 +85,7 @@ const Category = () => {
                             <span className="text-slate-600 font-medium">{products.length} Products Found</span>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                            {products.map(product => (
+                            {sortNumericAlpha(products).map(product => (
                                 <ProductCard key={product.id} product={product} />
                             ))}
                         </div>

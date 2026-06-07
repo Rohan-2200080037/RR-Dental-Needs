@@ -263,7 +263,7 @@ const Navbar = () => {
                           <Link to="/seller" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary">Seller Dashboard</Link>
                         )}
                         <Link to="/profile" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary">My Profile</Link>
-                        <Link to="/profile?tab=orders" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary">My Orders</Link>
+                        <Link to="/orders" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary">My Orders</Link>
                         <hr className="my-1 border-slate-100" />
                         <button
                           onClick={handleLogout}
@@ -374,7 +374,7 @@ const Navbar = () => {
                     My Profile
                   </Link>
                   <Link
-                    to="/profile?tab=orders"
+                    to="/orders"
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-primary hover:bg-teal-50 flex items-center"
                   >

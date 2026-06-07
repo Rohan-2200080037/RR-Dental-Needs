@@ -6,7 +6,9 @@ const logger = require('../services/loggingService');
 exports.createOrder = async (req, res) => {
     const userId = req.user.id;
     const { 
-        name, phone, address, city, state, pincode, paymentMethod = 'COD', shouldSaveAddress = false,
+        name, phone, address, city, state, pincode, 
+        latitude = null, longitude = null,
+        paymentMethod = 'COD', shouldSaveAddress = false,
         shippingCharge = 0, shippingProvider = 'Free Shipping', estimatedDeliveryDate = null
     } = req.body;
 
@@ -44,7 +46,7 @@ exports.createOrder = async (req, res) => {
         }
 
         const { orderId, totalPrice, cartItems, lowStockItems } = await exports.processOrderCreation(client, userId, {
-            name, phone, address, city, state, pincode, paymentMethod,
+            name, phone, address, city, state, pincode, latitude, longitude, paymentMethod,
             shouldSaveAddress, paymentStatus: 'Pending',
             shippingCharge, shippingProvider, estimatedDeliveryDate
         });
@@ -87,6 +89,7 @@ exports.createOrder = async (req, res) => {
 exports.processOrderCreation = async (client, userId, orderDetails) => {
     const { 
         name, phone, address, city, state, pincode, 
+        latitude = null, longitude = null,
         paymentMethod, paymentStatus = 'Pending', 
         rzpOrderId = null, rzpPaymentId = null,
         shouldSaveAddress = false,
@@ -143,8 +146,8 @@ exports.processOrderCreation = async (client, userId, orderDetails) => {
     } else {
         // Create new address - is_saved depends on shouldSaveAddress checkbox
         const addressResult = await client.query(
-            'INSERT INTO Addresses (user_id, name, phone, address, city, state, pincode, is_saved) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id',
-            [userId, name, phone, address, city, state, pincode, shouldSaveAddress]
+            'INSERT INTO Addresses (user_id, name, phone, address, city, state, pincode, is_saved, latitude, longitude) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id',
+            [userId, name, phone, address, city, state, pincode, shouldSaveAddress, latitude, longitude]
         );
         addressId = addressResult.rows[0].id;
     }
@@ -155,8 +158,9 @@ exports.processOrderCreation = async (client, userId, orderDetails) => {
         `INSERT INTO Orders (
             user_id, address_id, total_price, payment_method, order_status, payment_status, 
             razorpay_order_id, razorpay_payment_id,
-            shipping_charge, shipping_status
-         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id`,
+            shipping_charge, shipping_status,
+            delivery_latitude, delivery_longitude
+         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id`,
         [
             userId, 
             addressId, 
@@ -167,7 +171,9 @@ exports.processOrderCreation = async (client, userId, orderDetails) => {
             rzpOrderId, 
             rzpPaymentId,
             shippingCharge,
-            'Pending'
+            'Pending',
+            latitude,
+            longitude
         ]
     );
     const orderId = orderResult.rows[0].id;
@@ -285,11 +291,11 @@ exports.cancelOrder = async (req, res) => {
         if (result.rows[0].user_id !== userId) return res.status(403).json({ message: "Unauthorized." });
         
         const status = result.rows[0].order_status;
-        if (status === 'Shipped' || status === 'Delivered') {
-            return res.status(400).json({ message: "Order cannot be cancelled at this stage" });
+        if (status === 'Packed' || status === 'Shipped' || status === 'Delivered') {
+            return res.status(400).json({ message: "Order cannot be cancelled after it has been packed." });
         }
-        if (status !== 'Pending' && status !== 'Packed') {
-            return res.status(400).json({ message: "Only pending or packed orders can be cancelled." });
+        if (status !== 'Pending') {
+            return res.status(400).json({ message: "Only pending orders can be cancelled." });
         }
 
         // Restore stock

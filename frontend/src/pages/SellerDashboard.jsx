@@ -6,7 +6,7 @@ import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
-import { PencilSquareIcon, TrashIcon, ShoppingBagIcon, ClipboardDocumentListIcon, MagnifyingGlassIcon, FunnelIcon } from '@heroicons/react/24/outline';
+import { PencilSquareIcon, TrashIcon, ShoppingBagIcon, ClipboardDocumentListIcon, MagnifyingGlassIcon, FunnelIcon, TruckIcon, ChevronDownIcon, InformationCircleIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 const SellerDashboard = () => {
     const { token, user } = useAuthStore();
@@ -31,6 +31,8 @@ const SellerDashboard = () => {
     });
     const [imageFile, setImageFile] = useState(null);
     const [imagePreviewUrl, setImagePreviewUrl] = useState('');
+
+    const [orderInfoModal, setOrderInfoModal] = useState(null);
 
     // Shipping management states
     const [shippingSubTab, setShippingSubTab] = useState('pending'); // 'pending', 'shipped', 'delivered'
@@ -200,7 +202,20 @@ const SellerDashboard = () => {
             await axios.put(`${import.meta.env.VITE_API_URL}/api/orders/${orderId}/status`, { status: newStatus }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            setOrders(orders.map(o => o.order_id === orderId ? { ...o, order_status: newStatus } : o));
+            const shippingSyncStatuses = ['Pending', 'Packed', 'Shipped', 'Delivered'];
+            if (shippingSyncStatuses.includes(newStatus)) {
+                await axios.put(`${import.meta.env.VITE_API_URL}/api/orders/${orderId}/shipping`, { shipping_status: newStatus }, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+            }
+            setOrders(orders.map(o => {
+                if (o.order_id !== orderId) return o;
+                const updated = { ...o, order_status: newStatus };
+                if (shippingSyncStatuses.includes(newStatus)) {
+                    updated.shipping_status = newStatus;
+                }
+                return updated;
+            }));
             setFeedback(`Status updated to ${newStatus}`);
             setTimeout(() => setFeedback(''), 3000);
         } catch (err) {
@@ -517,34 +532,40 @@ const SellerDashboard = () => {
                                                 </button>
                                             )}
                                         </div>
-                                        <select
-                                            value={yearFilter}
-                                            onChange={(e) => setYearFilter(e.target.value)}
-                                            className={`px-3 py-2 rounded-lg border text-xs font-medium appearance-none cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-primary/20 ${yearFilter !== 'all'
-                                                    ? 'bg-teal-50 border-teal-200 text-teal-700'
-                                                    : 'bg-white border-slate-200 text-slate-600'
-                                                }`}
-                                        >
-                                            <option value="all">All Years</option>
-                                            <option value="1st Year">1st Year</option>
-                                            <option value="2nd Year">2nd Year</option>
-                                            <option value="3rd Year">3rd Year</option>
-                                            <option value="4th Year">4th Year</option>
-                                        </select>
-                                        <select
-                                            value={categoryFilter}
-                                            onChange={(e) => setCategoryFilter(e.target.value)}
-                                            className={`px-3 py-2 rounded-lg border text-xs font-medium appearance-none cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-primary/20 ${categoryFilter !== 'all'
-                                                    ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
-                                                    : 'bg-white border-slate-200 text-slate-600'
-                                                }`}
-                                        >
-                                            <option value="all">All Categories</option>
-                                            <option value="permanent teeth wax carvings">Permanent Teeth Wax Carvings</option>
-                                            <option value="preclinical prosthodontics">Preclinical Prosthodontics</option>
-                                            <option value="primary teeth wax carvings">Primary Teeth Wax Carvings</option>
-                                            <option value="Orthodontics">Preclinical Orthodontics</option>
-                                        </select>
+                                        <div className="relative">
+                                            <select
+                                                value={yearFilter}
+                                                onChange={(e) => setYearFilter(e.target.value)}
+                                                className={`px-3 py-2 pr-8 rounded-lg border text-xs font-medium appearance-none cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-primary/20 w-full ${yearFilter !== 'all'
+                                                        ? 'bg-teal-50 border-teal-200 text-teal-700'
+                                                        : 'bg-white border-slate-200 text-slate-600'
+                                                    }`}
+                                            >
+                                                <option value="all">All Years</option>
+                                                <option value="1st Year">1st Year</option>
+                                                <option value="2nd Year">2nd Year</option>
+                                                <option value="3rd Year">3rd Year</option>
+                                                <option value="4th Year">4th Year</option>
+                                            </select>
+                                            <ChevronDownIcon className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none w-3.5 h-3.5 text-slate-400" />
+                                        </div>
+                                        <div className="relative">
+                                            <select
+                                                value={categoryFilter}
+                                                onChange={(e) => setCategoryFilter(e.target.value)}
+                                                className={`px-3 py-2 pr-8 rounded-lg border text-xs font-medium appearance-none cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-primary/20 w-full ${categoryFilter !== 'all'
+                                                        ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
+                                                        : 'bg-white border-slate-200 text-slate-600'
+                                                    }`}
+                                            >
+                                                <option value="all">All Categories</option>
+                                                <option value="permanent teeth wax carvings">Permanent Teeth Wax Carvings</option>
+                                                <option value="preclinical prosthodontics">Preclinical Prosthodontics</option>
+                                                <option value="primary teeth wax carvings">Primary Teeth Wax Carvings</option>
+                                                <option value="Orthodontics">Preclinical Orthodontics</option>
+                                            </select>
+                                            <ChevronDownIcon className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none w-3.5 h-3.5 text-slate-400" />
+                                        </div>
                                     </div>
 
                                     <div className="flex items-center justify-between px-1">
@@ -761,16 +782,19 @@ const SellerDashboard = () => {
                                                                         onChange={(e) => setShippingForm({ ...shippingForm, tracking_number: e.target.value })}
                                                                         className="w-full text-[10px] px-2 py-1 border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-primary/30"
                                                                     />
+                                                                    <div className="relative">
                                                                     <select
                                                                         value={shippingForm.shipping_status}
                                                                         onChange={(e) => setShippingForm({ ...shippingForm, shipping_status: e.target.value })}
-                                                                        className="w-full text-[10px] px-2 py-1 border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-primary/30 bg-white"
+                                                                        className="w-full text-[10px] px-2 py-1 pr-7 border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-primary/30 bg-white appearance-none cursor-pointer"
                                                                     >
                                                                         <option value="Pending">Pending</option>
                                                                         <option value="Packed">Packed</option>
                                                                         <option value="Shipped">Shipped</option>
                                                                         <option value="Delivered">Delivered</option>
                                                                     </select>
+                                                                    <ChevronDownIcon className="absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none w-3 h-3 text-slate-400" />
+                                                                </div>
                                                                 </div>
                                                             ) : (
                                                                 <div className="text-xs text-slate-600">
@@ -925,33 +949,45 @@ const SellerDashboard = () => {
                                                             <div className="text-[10px] text-slate-400">{o.phone}</div>
                                                         </td>
                                                         <td className="px-4 py-3 text-right">
-                                                            {o.order_status === 'Cancelled' ? (
-                                                                <span className="inline-block px-2 py-0.5 bg-red-50 text-red-600 rounded text-[9px] font-medium uppercase tracking-wider">Voided</span>
-                                                            ) : (
-                                                                <div className="flex items-center justify-end gap-2">
-                                                                    <select
-                                                                        className={`text-[9px] font-medium rounded-lg border py-1.5 pl-2 pr-6 focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer bg-white ${o.order_status === 'Delivered' ? 'text-emerald-700 border-emerald-200 bg-emerald-50' :
-                                                                                o.order_status === 'Shipped' ? 'text-blue-700 border-blue-200 bg-blue-50' :
-                                                                                    'text-slate-600 border-slate-200'
-                                                                            }`}
-                                                                        value={o.order_status}
-                                                                        onChange={(e) => handleOrderStatusUpdate(o.order_id, e.target.value)}
-                                                                    >
-                                                                        <option value="Pending">Pending</option>
-                                                                        <option value="Packed">Packed</option>
-                                                                        <option value="Shipped">Shipped</option>
-                                                                        <option value="Delivered">Delivered</option>
-                                                                    </select>
-                                                                    {o.payment_status !== 'Completed' && (
-                                                                        <button
-                                                                            onClick={() => handlePaymentStatusUpdate(o.order_id)}
-                                                                            className="px-2 py-1.5 text-[9px] font-medium text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-lg hover:bg-indigo-100 transition-colors whitespace-nowrap"
-                                                                        >
-                                                                            Mark Paid
-                                                                        </button>
-                                                                    )}
-                                                                </div>
-                                                            )}
+                                                            <div className="flex items-center justify-end gap-2">
+                                                                {o.order_status === 'Cancelled' ? (
+                                                                    <span className="inline-block px-2 py-0.5 bg-red-50 text-red-600 rounded text-[9px] font-medium uppercase tracking-wider">Voided</span>
+                                                                ) : (
+                                                                    <div className="flex items-center justify-end gap-2">
+                                                                        <div className="relative">
+                                                                            <select
+                                                                                className={`text-[9px] font-medium rounded-lg border py-1.5 pl-2 pr-7 focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer bg-white ${o.order_status === 'Delivered' ? 'text-emerald-700 border-emerald-200 bg-emerald-50' :
+                                                                                        o.order_status === 'Shipped' ? 'text-blue-700 border-blue-200 bg-blue-50' :
+                                                                                            'text-slate-600 border-slate-200'
+                                                                                    }`}
+                                                                                value={o.order_status}
+                                                                                onChange={(e) => handleOrderStatusUpdate(o.order_id, e.target.value)}
+                                                                            >
+                                                                                <option value="Pending">Pending</option>
+                                                                                <option value="Packed">Packed</option>
+                                                                                <option value="Shipped">Shipped</option>
+                                                                                <option value="Delivered">Delivered</option>
+                                                                            </select>
+                                                                            <ChevronDownIcon className="absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none w-3 h-3 text-slate-400" />
+                                                                        </div>
+                                                                        {o.payment_status !== 'Completed' && (
+                                                                            <button
+                                                                                onClick={() => handlePaymentStatusUpdate(o.order_id)}
+                                                                                className="px-2 py-1.5 text-[9px] font-medium text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-lg hover:bg-indigo-100 transition-colors whitespace-nowrap"
+                                                                            >
+                                                                                Mark Paid
+                                                                            </button>
+                                                                        )}
+                                                                    </div>
+                                                                )}
+                                                                <button
+                                                                    onClick={() => setOrderInfoModal(o)}
+                                                                    className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-all"
+                                                                    title="View Order Info"
+                                                                >
+                                                                    <InformationCircleIcon className="w-4 h-4" />
+                                                                </button>
+                                                            </div>
                                                         </td>
                                                     </tr>
                                                 ))}
@@ -977,6 +1013,135 @@ const SellerDashboard = () => {
                     )}
                 </div>
             </div>
+            {/* Order Info Modal */}
+            {orderInfoModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setOrderInfoModal(null)}>
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+                        <div className="sticky top-0 bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between rounded-t-2xl z-10">
+                            <h2 className="text-lg font-bold text-slate-900">Order #{orderInfoModal.order_id}</h2>
+                            <button onClick={() => setOrderInfoModal(null)} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-all">
+                                <XMarkIcon className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <div className="p-6 space-y-6">
+                            {/* Status Badges */}
+                            <div className="flex flex-wrap items-center gap-3">
+                                <Badge variant={
+                                    orderInfoModal.order_status === 'Delivered' ? 'success' :
+                                    orderInfoModal.order_status === 'Shipped' ? 'info' :
+                                    orderInfoModal.order_status === 'Cancelled' ? 'danger' : 'warning'
+                                }>
+                                    {orderInfoModal.order_status}
+                                </Badge>
+                                <Badge variant={orderInfoModal.payment_status === 'Completed' ? 'success' : 'warning'}>
+                                    {orderInfoModal.payment_status === 'Completed' ? 'Paid' : 'Unpaid'}
+                                </Badge>
+                                {orderInfoModal.shipping_status && (
+                                    <Badge variant={
+                                        orderInfoModal.shipping_status === 'Delivered' ? 'success' :
+                                        orderInfoModal.shipping_status === 'Shipped' ? 'info' : 'warning'
+                                    }>
+                                        Ship: {orderInfoModal.shipping_status}
+                                    </Badge>
+                                )}
+                            </div>
+
+                            {/* Customer Contact */}
+                            <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Customer & Contact</h3>
+                                <div className="grid grid-cols-2 gap-3 text-sm">
+                                    <div>
+                                        <span className="text-slate-400 text-xs block">Name</span>
+                                        <span className="font-medium text-slate-800">{orderInfoModal.customer_name}</span>
+                                    </div>
+                                    <div>
+                                        <span className="text-slate-400 text-xs block">Phone</span>
+                                        <span className="font-medium text-slate-800">{orderInfoModal.phone}</span>
+                                    </div>
+                                    <div className="col-span-2">
+                                        <span className="text-slate-400 text-xs block">Email</span>
+                                        <span className="font-medium text-slate-800">{orderInfoModal.customer_email || 'N/A'}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Shipping Address */}
+                            <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Shipping Address</h3>
+                                <div className="text-sm text-slate-800 leading-relaxed">
+                                    <p className="font-medium">{orderInfoModal.address}</p>
+                                    <p>{orderInfoModal.city}, {orderInfoModal.state} - {orderInfoModal.pincode}</p>
+                                </div>
+                            </div>
+
+                            {/* Payment Info */}
+                            <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Payment</h3>
+                                <div className="grid grid-cols-2 gap-3 text-sm">
+                                    <div>
+                                        <span className="text-slate-400 text-xs block">Method</span>
+                                        <span className="font-medium text-slate-800">{orderInfoModal.payment_method || 'N/A'}</span>
+                                    </div>
+                                    <div>
+                                        <span className="text-slate-400 text-xs block">Status</span>
+                                        <span className={`font-medium ${orderInfoModal.payment_status === 'Completed' ? 'text-emerald-700' : 'text-amber-700'}`}>
+                                            {orderInfoModal.payment_status || 'Pending'}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <span className="text-slate-400 text-xs block">Shipping</span>
+                                        <span className="font-medium text-slate-800">
+                                            {Number(orderInfoModal.shipping_charge) > 0 ? `₹${Number(orderInfoModal.shipping_charge).toLocaleString()}` : 'FREE'}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <span className="text-slate-400 text-xs block">Total</span>
+                                        <span className="font-bold text-slate-900">₹{Number(orderInfoModal.total_price || 0).toLocaleString()}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Order Items */}
+                            <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Products ({orderInfoModal.items?.length || 0})</h3>
+                                <div className="divide-y divide-slate-200">
+                                    {orderInfoModal.items?.map((item, i) => (
+                                        <div key={i} className="flex items-center justify-between py-2.5 first:pt-0 last:pb-0">
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                <span className="shrink-0 w-6 h-6 flex items-center justify-center bg-slate-200 text-slate-600 rounded text-[10px] font-bold">{item.quantity}x</span>
+                                                <span className="text-sm font-medium text-slate-800 truncate">{item.name}</span>
+                                            </div>
+                                            <span className="text-sm font-semibold text-slate-700 whitespace-nowrap ml-3">₹{Number(item.price).toLocaleString()}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Courier Info */}
+                            {(orderInfoModal.courier_name || orderInfoModal.tracking_number) && (
+                                <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                                    <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Courier</h3>
+                                    <div className="grid grid-cols-2 gap-3 text-sm">
+                                        {orderInfoModal.courier_name && (
+                                            <div>
+                                                <span className="text-slate-400 text-xs block">Courier</span>
+                                                <span className="font-medium text-slate-800">{orderInfoModal.courier_name}</span>
+                                            </div>
+                                        )}
+                                        {orderInfoModal.tracking_number && (
+                                            <div>
+                                                <span className="text-slate-400 text-xs block">Tracking</span>
+                                                <span className="font-mono font-medium text-slate-800">{orderInfoModal.tracking_number}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </DashboardLayout>
     );
 };

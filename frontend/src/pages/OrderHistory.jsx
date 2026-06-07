@@ -110,7 +110,7 @@ const OrderHistory = () => {
                                             </div>
                                             <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-center border-t sm:border-t-0 pt-4 sm:pt-0">
                                                 <div className="mb-0 sm:mb-2 text-left sm:text-right">
-                                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">Total</p>
+                                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">{order.payment_method === 'COD' ? 'To be paid' : 'Amount Paid'}</p>
                                                     <p className="text-xl font-black text-primary">₹{Number(order.total_price).toLocaleString()}</p>
                                                 </div>
                                                 <div className="flex flex-col sm:flex-row items-center gap-3">

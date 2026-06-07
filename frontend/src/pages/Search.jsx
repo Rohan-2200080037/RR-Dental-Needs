@@ -5,6 +5,7 @@ import ProductCard from '../components/ui/ProductCard';
 import { PageLoader } from '../components/ui/Loader';
 import { MagnifyingGlassIcon, AdjustmentsHorizontalIcon } from '@heroicons/react/24/outline';
 import Button from '../components/ui/Button';
+import { sortNumericAlpha } from '../utils/sortProducts';
 
 const Search = () => {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -159,7 +160,7 @@ const Search = () => {
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {products.map(product => (
+                                {sortNumericAlpha(products).map(product => (
                                     <ProductCard key={product.id} product={product} />
                                 ))}
                             </div>

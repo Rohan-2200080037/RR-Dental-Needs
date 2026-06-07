@@ -9,3 +9,7 @@
 {"level":"error","message":"Shiprocket create shipment failed for order 6: Shiprocket authentication failed","timestamp":"2026-06-06T17:04:44.140Z"}
 {"level":"error","message":"Shiprocket API error [/orders/create/adhoc]: Oops! Invalid Data.","timestamp":"2026-06-06T17:13:37.487Z"}
 {"level":"error","message":"Shiprocket create shipment failed for order 6: Shiprocket request failed: Oops! Invalid Data.","timestamp":"2026-06-06T17:13:37.488Z"}
+{"level":"error","message":"NimbusPost API error [/shipments/create]: Support email and phone number on the shipping label must be provided and OTP-verified to proceed.","timestamp":"2026-06-07T06:11:42.845Z"}
+{"level":"error","message":"NimbusPost create shipment failed for order 12: NimbusPost request failed: Support email and phone number on the shipping label must be provided and OTP-verified to proceed.","timestamp":"2026-06-07T06:11:42.846Z"}
+{"level":"error","message":"NimbusPost API error [/shipments/create]: Support email and phone number on the shipping label must be provided and OTP-verified to proceed.","timestamp":"2026-06-07T06:12:23.149Z"}
+{"level":"error","message":"NimbusPost create shipment failed for order 12: NimbusPost request failed: Support email and phone number on the shipping label must be provided and OTP-verified to proceed.","timestamp":"2026-06-07T06:12:23.150Z"}

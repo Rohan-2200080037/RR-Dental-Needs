@@ -122,7 +122,7 @@ exports.createShipment = async (orderData) => {
       cod_charges: orderData.payment_method === 'COD' ? Math.round(parseFloat(orderData.total_amount || 0) * 0.02) : 0,
       payment_type: orderData.payment_method === 'COD' ? 'cod' : 'prepaid',
       total: Math.round(parseFloat(orderData.total_amount || 0)),
-      package_weight: Math.round((orderData.weight || 0.5) * 1000), // convert kg to grams
+      package_weight: Math.round((orderData.weight || 0.3) * 1000), // convert kg to grams
       package_length: 10,
       package_height: 10,
       package_breadth: 10

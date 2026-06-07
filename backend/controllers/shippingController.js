@@ -7,7 +7,7 @@ exports.getRates = async (req, res) => {
   const { pincode, weight, cod } = req.query;
   if (!pincode) return res.status(400).json({ message: "Delivery pincode is required." });
   try {
-    const result = await nimbuspost.getServiceableCouriers(pincode, parseFloat(weight || 0.5), cod === 'true');
+    const result = await nimbuspost.getServiceableCouriers(pincode, parseFloat(weight || 0.3), cod === 'true');
     res.status(200).json({ success: true, available: result.available_courier_companies || [], recommended: result.recommended_courier });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -42,7 +42,7 @@ exports.createShipment = async (req, res) => {
       billing_country: 'India',
       payment_method: order.payment_method === 'COD' ? 'COD' : 'Prepaid',
       total_amount: parseFloat(order.total_price),
-      weight: 0.5,
+      weight: 0.3,
       order_items: items.map(i => ({
         name: i.name,
         sku: `PROD-${i.id}`,

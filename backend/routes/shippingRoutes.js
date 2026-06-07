@@ -3,9 +3,10 @@ const router = express.Router();
 const shippingController = require('../controllers/shippingController');
 const { verifyToken, isRole } = require('../middlewares/authMiddleware');
 
+router.get('/warehouses', shippingController.listWarehouses);
+
 router.use(verifyToken);
 
-router.get('/warehouses', isRole(['seller', 'admin']), shippingController.listWarehouses);
 router.get('/rates', shippingController.getRates);
 router.post('/create/:orderId', isRole(['seller', 'admin']), shippingController.createShipment);
 router.post('/assign-awb/:shipmentId', isRole(['seller', 'admin']), shippingController.assignAWB);

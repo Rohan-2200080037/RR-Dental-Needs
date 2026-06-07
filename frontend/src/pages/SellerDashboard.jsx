@@ -349,11 +349,11 @@ const SellerDashboard = () => {
 
     const totalOrders = activeOrders.length;
     const totalRevenue = deliveredOrders.reduce((acc, order) => {
-        const orderTotal = order.items.reduce((sum, item) => sum + (item.quantity * item.price), 0);
+        const orderTotal = (order.items || []).reduce((sum, item) => sum + (item.quantity * item.price), 0);
         return acc + orderTotal;
     }, 0);
     const productsSold = deliveredOrders.reduce((acc, order) => {
-        const itemsSold = order.items.reduce((sum, item) => sum + item.quantity, 0);
+        const itemsSold = (order.items || []).reduce((sum, item) => sum + item.quantity, 0);
         return acc + itemsSold;
     }, 0);
 
@@ -920,7 +920,7 @@ const SellerDashboard = () => {
                                                 .filter(o => {
                                                     if (orderSubTab === 'delivered') return o.order_status === 'Delivered';
                                                     if (orderSubTab === 'cancelled') return o.order_status === 'Cancelled';
-                                                    return ['Pending', 'Packed', 'Shipped'].includes(o.order_status);
+                                                    return ['Pending', 'Confirmed', 'Packed', 'Shipped'].includes(o.order_status);
                                                 })
                                                 .map((o, idx) => (
                                                     <tr key={o.order_id} className="hover:bg-slate-50 transition-colors group">
@@ -994,7 +994,7 @@ const SellerDashboard = () => {
                                             {orders.filter(o => {
                                                 if (orderSubTab === 'delivered') return o.order_status === 'Delivered';
                                                 if (orderSubTab === 'cancelled') return o.order_status === 'Cancelled';
-                                                return ['Pending', 'Packed', 'Shipped'].includes(o.order_status);
+                                                return ['Pending', 'Confirmed', 'Packed', 'Shipped'].includes(o.order_status);
                                             }).length === 0 && (
                                                 <tr>
                                                     <td colSpan="5" className="px-4 py-16 text-center">
@@ -1034,8 +1034,8 @@ const SellerDashboard = () => {
                                 }>
                                     {orderInfoModal.order_status}
                                 </Badge>
-                                <Badge variant={orderInfoModal.payment_status === 'Completed' ? 'success' : 'warning'}>
-                                    {orderInfoModal.payment_status === 'Completed' ? 'Paid' : 'Unpaid'}
+                                <Badge variant={['Paid', 'Completed'].includes(orderInfoModal.payment_status) ? 'success' : 'warning'}>
+                                    {['Paid', 'Completed'].includes(orderInfoModal.payment_status) ? 'Paid' : 'Unpaid'}
                                 </Badge>
                                 {orderInfoModal.shipping_status && (
                                     <Badge variant={

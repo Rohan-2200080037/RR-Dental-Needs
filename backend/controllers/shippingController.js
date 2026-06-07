@@ -56,6 +56,9 @@ exports.createShipment = async (req, res) => {
     const npShipmentId = (respData.id || respData.shipment_id || '').toString();
     const npAWB = (respData.awb || respData.awb_code || '').toString();
     const npOrderId = (respData.order_id || '').toString();
+    if (!npAWB) {
+      throw new Error(`NimbusPost did not return AWB/ID. Response: ${JSON.stringify(result).slice(0, 300)}`);
+    }
     logger.info(`NimbusPost shipment created for Order #${orderId}: NP ID ${npShipmentId}, AWB ${npAWB}`);
 
     await pool.query(
@@ -71,8 +74,8 @@ exports.createShipment = async (req, res) => {
 
     res.status(200).json({ message: "Shipment created in NimbusPost.", shipmentId: npShipmentId, orderId: npOrderId, awb: npAWB });
   } catch (err) {
-    logger.error(`NimbusPost create shipment failed for order ${orderId}: ${err.message}`);
-    res.status(500).json({ message: "Failed to create shipment." });
+    logger.error(`NimbusPost create shipment failed for order ${orderId}: ${err.stack || err.message}`);
+    res.status(500).json({ message: `Failed to create shipment: ${err.message}` });
   }
 };
 

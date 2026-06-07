@@ -15,7 +15,7 @@ import ProductDetail from './pages/ProductDetail';
 import Search from './pages/Search';
 import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
-import PaymentStatus from './pages/PaymentStatus';
+
 import UserProfile from './pages/UserProfile';
 import SellerDashboard from './pages/SellerDashboard';
 import AdminDashboard from './pages/AdminDashboard';
@@ -95,12 +95,6 @@ function App() {
               </ProtectedRoute>
           } />
 
-          <Route path="payment-status" element={
-              <ProtectedRoute>
-                <PaymentStatus />
-              </ProtectedRoute>
-          } />
-          
           <Route path="profile" element={
               <ProtectedRoute>
                 <UserProfile />

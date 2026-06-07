@@ -1,5 +1,6 @@
 const axios = require('axios');
 const logger = require('./loggingService');
+const { getRatesForPincode } = require('../data/nimbuspostRateChart');
 
 const BASE_URL = 'https://ship.nimbuspost.com/api';
 const API_KEY = process.env.NIMBUSPOST_API_KEY || '';
@@ -74,30 +75,52 @@ function simulateResponse(endpoint, data) {
 
 exports.getServiceableCouriers = async (deliveryPincode, weight, cod = false) => {
   try {
-    const pickupPincode = process.env.NIMBUSPOST_PICKUP_PINCODE || '520001';
-    const params = { pickup_pincode: pickupPincode, delivery_pincode: deliveryPincode, weight, cod: cod ? '1' : '0' };
-    const result = await nimbusRequest('get', '/couriers', null, params);
-    const couriers = result.data || [];
-    logger.info(`[NIMBUSPOST DEBUG] Couriers raw: ${JSON.stringify(couriers).slice(0, 500)}`);
-    const rates = couriers.map(c => {
-      const rate = c.total_charge || c.rate || c.courier_rate || 80;
-      logger.info(`[NIMBUSPOST DEBUG] Courier ${c.name}: total_charge=${c.total_charge}, rate=${c.rate}, etd=${c.etd}, final_rate=${rate}`);
-      return {
-        id: c.id,
-        courier_name: c.name,
-        rate,
-        estimated_delivery_days: c.etd || c.estimated_delivery_days || 5
-      };
-    });
+    const { zone, couriers } = getRatesForPincode(deliveryPincode);
+    logger.info(`[RATE CHART] Zone: ${zone} for pincode ${deliveryPincode}, ${couriers.length} couriers`);
+
+    const rates = couriers.map((c, i) => ({
+      id: i + 1,
+      courier_name: c.name,
+      rate: c.rate,
+      estimated_delivery_days: c.etd || 5,
+      cod_charge_flat: c.cod_flat,
+      cod_charge_pct: c.cod_pct
+    }));
+
     return {
       available_courier_companies: rates,
       recommended_courier: rates.length > 0 ? rates.reduce((a, b) => (a.rate < b.rate ? a : b)) : null
     };
   } catch (err) {
-    logger.warn(`NimbusPost courier rates failed for pincode ${deliveryPincode}: ${err.message}, using fallback`);
+    logger.warn(`Rate chart lookup failed for pincode ${deliveryPincode}: ${err.message}, trying API`);
+    try {
+      const pickupPincode = process.env.NIMBUSPOST_PICKUP_PINCODE || '520001';
+      const params = { pickup_pincode: pickupPincode, delivery_pincode: deliveryPincode, weight, cod: cod ? '1' : '0' };
+      const result = await nimbusRequest('get', '/couriers', null, params);
+      const apiCouriers = result.data || [];
+      const apiRates = apiCouriers.map(c => {
+        const rate = c.total_charge || c.rate || c.courier_rate || 80;
+        return {
+          id: c.id,
+          courier_name: c.name,
+          rate,
+          estimated_delivery_days: c.etd || c.estimated_delivery_days || 5,
+          cod_charge_flat: 0,
+          cod_charge_pct: 0
+        };
+      });
+      if (apiRates.length > 0) {
+        return {
+          available_courier_companies: apiRates,
+          recommended_courier: apiRates.reduce((a, b) => (a.rate < b.rate ? a : b))
+        };
+      }
+    } catch (apiErr) {
+      logger.warn(`NimbusPost API also failed: ${apiErr.message}`);
+    }
     return {
-      available_courier_companies: [{ courier_name: 'Standard Courier', rate: 80, estimated_delivery_days: 5 }],
-      recommended_courier: { courier_name: 'Standard Courier', rate: 80, estimated_delivery_days: 5 }
+      available_courier_companies: [{ courier_name: 'Standard Courier', rate: 80, estimated_delivery_days: 5, cod_charge_flat: 30, cod_charge_pct: 2 }],
+      recommended_courier: { courier_name: 'Standard Courier', rate: 80, estimated_delivery_days: 5, cod_charge_flat: 30, cod_charge_pct: 2 }
     };
   }
 };

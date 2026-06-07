@@ -69,27 +69,43 @@ const Checkout = () => {
         const cod = isCod !== undefined ? isCod : paymentMethod === 'COD';
         try {
             const { data } = await axios.get(`${import.meta.env.VITE_API_URL}/api/shipping/rates`, {
-                params: { pincode, weight: 0.3, cod },
+                params: { pincode, weight: 0.3, cod, subtotal },
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (data.available?.length > 0) {
-                const cheapest = data.available.reduce((a, b) => (a.rate < b.rate ? a : b));
-                const surcharge = cod ? 2 : 5;
-                const baseRate = cheapest.rate;
-                const rate = baseRate + surcharge;
-                setShippingCharge(rate);
-                setShippingRate({ ...cheapest, rate, baseRate, isCod: cod });
+                const amazon = data.available.find(c => c.courier_name?.toLowerCase().includes('amazon'));
+                let selected;
+                if (amazon) {
+                    selected = amazon;
+                } else {
+                    const sorted = [...data.available].sort((a, b) => a.rate - b.rate);
+                    selected = sorted[1] || sorted[0];
+                }
+                let rate, codCharge = 0;
+                if (cod) {
+                    codCharge = Math.max(selected.cod_charge_flat || 25, subtotal * (selected.cod_charge_pct || 2) / 100);
+                    rate = selected.rate + codCharge + 2;
+                } else {
+                    rate = selected.rate + 5;
+                }
+                setShippingCharge(Math.round(rate));
+                setShippingRate({ ...selected, rate, isCod: cod, codCharge });
             }
         } catch (err) {
             console.error("Shipping rate fetch failed:", err);
-            const baseRate = cod ? 80 : 80;
-            const surcharge = cod ? 2 : 5;
-            setShippingCharge(baseRate + surcharge);
-            setShippingRate({ courier_name: 'Standard Courier', rate: baseRate + surcharge, baseRate, isCod: cod });
+            let fallbackRate, fallbackCodCharge = 0;
+            if (cod) {
+                fallbackCodCharge = Math.max(25, subtotal * 2 / 100);
+                fallbackRate = 80 + fallbackCodCharge + 2;
+            } else {
+                fallbackRate = 80 + 5;
+            }
+            setShippingCharge(fallbackRate);
+            setShippingRate({ courier_name: 'Standard Courier', rate: fallbackRate, isCod: cod, codCharge: fallbackCodCharge });
         } finally {
             setShippingLoading(false);
         }
-    }, [qualifiesFreeShipping, token, paymentMethod]);
+    }, [qualifiesFreeShipping, token, paymentMethod, subtotal]);
 
     useEffect(() => {
         const pincode = formData.pincode;
@@ -873,7 +889,12 @@ const Checkout = () => {
                                                 FREE
                                             </span>
                                         ) : shippingCharge > 0 ? (
-                                            <span className="font-semibold text-slate-900">₹{shippingCharge.toLocaleString()}</span>
+                                            <div className="text-right">
+                                                <span className="font-semibold text-slate-900">₹{shippingCharge.toLocaleString()}</span>
+                                                {paymentMethod === 'COD' && shippingRate?.codCharge > 0 && (
+                                                    <div className="text-[10px] text-amber-600 font-medium mt-0.5">Includes ₹{Math.round(shippingRate.codCharge).toLocaleString()} COD charges</div>
+                                                )}
+                                            </div>
                                         ) : (
                                             <span className="text-xs text-slate-400">Enter pincode</span>
                                         )}

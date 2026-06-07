@@ -79,6 +79,15 @@ exports.createShipment = async (req, res) => {
   }
 };
 
+exports.listWarehouses = async (req, res) => {
+  try {
+    const result = await nimbuspost.getWarehouses();
+    res.status(200).json(result);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 exports.assignAWB = async (req, res) => {
   res.status(200).json({ message: "AWB is auto-assigned by NimbusPost on order creation." });
 };

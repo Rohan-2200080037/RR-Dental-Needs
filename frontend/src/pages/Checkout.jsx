@@ -158,8 +158,8 @@ const Checkout = () => {
             city: addr.city || '',
             state: addr.state || '',
             pincode: addr.pincode || '',
-            latitude: addr.latitude || null,
-            longitude: addr.longitude || null
+            latitude: Number(addr.latitude) || null,
+            longitude: Number(addr.longitude) || null
         });
         setLocationPinned(!!(addr.latitude && addr.longitude));
         setShowSavedAddresses(false);
